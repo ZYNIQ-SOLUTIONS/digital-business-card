@@ -8,6 +8,7 @@ export async function createClient() {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
+    process.env.SUPABASE_DATABASE_URL ||
     "https://placeholder.supabase.co";
 
   const supabaseAnonKey =
