@@ -7,7 +7,7 @@ import { ArrowLeft, MapPin, Check, User, Phone, Mail, Building, Plus, Camera, Lo
 import { useRef } from "react";
 
 export default function ConnectionsPage() {
-  const [connections, setConnections] = useState<Record<string, unknown>[]>([]);
+  const [connections, setConnections] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
