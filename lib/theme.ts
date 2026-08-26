@@ -58,5 +58,27 @@ export const themes: Record<string, any> = {
     gradient: "from-indigo-900/40 via-purple-900/20",
     iconBg: "bg-white/10",
     buttonText: "text-white"
+  },
+
+  "sync-sphere": {
+    bg: "bg-[#050507]",
+    textMain: "text-white",
+    textSecondary: "text-[#94A3B8]",
+    cardBg: "bg-[#121216]/60 backdrop-blur-xl",
+    headerBg: "bg-[#121216]/80 backdrop-blur-xl",
+    pillBg: "bg-white/5",
+    pillHover: "hover:bg-white/10",
+    accent: "text-[#8b5cf6]",
+    accentBg: "bg-[#8b5cf6]",
+    accentHover: "hover:bg-[#ec4899]",
+    border: "border-white/10",
+    pillBorder: "border-white/5",
+    tabBg: "bg-white/5",
+    tabActiveBg: "bg-white/10",
+    qrBg: "bg-[#1A1A20]",
+    gradient: "from-violet-500/20 via-pink-500/10",
+    iconBg: "bg-white/5",
+    buttonText: "text-white"
   }
+
 };

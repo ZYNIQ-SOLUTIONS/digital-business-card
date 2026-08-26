@@ -31,6 +31,7 @@ interface CardItem {
   company: string;
   is_published: boolean;
   theme?: string;
+  active_mode?: string;
   views_count: number;
   vcard_downloads_count: number;
   created_at: string;
@@ -89,6 +90,14 @@ export default function DashboardPage() {
   };
 
   
+  
+  const handleChangeMode = async (id: string, newMode: string) => {
+    const { error } = await supabase.from('cards').update({ active_mode: newMode }).eq('id', id);
+    if (!error) {
+      setCards(cards.map(c => c.id === id ? { ...c, active_mode: newMode } : c));
+    }
+  };
+
   const handleChangeTheme = async (id: string, newTheme: string) => {
     const { error } = await supabase.from('cards').update({ theme: newTheme }).eq('id', id);
     if (!error) {
@@ -266,6 +275,18 @@ export default function DashboardPage() {
                 </Link>
 
                 
+                
+                <select
+                  value={card.active_mode || "all"}
+                  onChange={(e) => handleChangeMode(card.id, e.target.value)}
+                  className="px-2 py-1.5 rounded-xl text-xs font-medium bg-[#F5F5F7] border border-black/[0.04] text-[#1D1D1F] hover:bg-[#E8E8ED] transition focus:outline-none"
+                  title="Contextual Mode"
+                >
+                  <option value="all">All Mode</option>
+                  <option value="work">Work Mode</option>
+                  <option value="social">Social Mode</option>
+                </select>
+
                 <select
                   value={card.theme || "apple-light"}
                   onChange={(e) => handleChangeTheme(card.id, e.target.value)}
@@ -274,6 +295,7 @@ export default function DashboardPage() {
                   <option value="apple-light">Apple Light</option>
                   <option value="apple-dark">Apple Dark</option>
                   <option value="midnight-glass">Midnight Glass</option>
+                  <option value="sync-sphere">Sync Sphere</option>
                 </select>
 
                 <button

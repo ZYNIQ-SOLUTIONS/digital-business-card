@@ -9,34 +9,43 @@ const ai = new GoogleGenAI({
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { name, email, phone, company, title, cardId } = data;
+    const { name, email, phone, company, title, cardId, userIdOverride } = data;
 
-    if (!cardId || !name) {
+    
+    const supabase = await createClient();
+    let ownerId = userIdOverride;
+    let ownerName = "I";
+    let ownerCompany = "my company";
+
+    if (!ownerId && !cardId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const supabase = await createClient();
-
-    // 1. Get the owner of the card
-    const { data: cardData, error: cardError } = await supabase
-      .from("cards")
-      .select("user_id, full_name, company")
-      .eq("id", cardId)
-      .single();
-
-    if (cardError || !cardData) {
-      return NextResponse.json({ error: "Card not found" }, { status: 404 });
+    if (cardId) {
+      const { data: cardData, error: cardError } = await supabase
+        .from("cards")
+        .select("user_id, full_name, company")
+        .eq("id", cardId)
+        .single();
+        
+      if (cardData) {
+        ownerId = cardData.user_id;
+        ownerName = cardData.full_name || ownerName;
+        ownerCompany = cardData.company || ownerCompany;
+      }
+    } else if (userIdOverride) {
+      // Just fallback to defaults if scanning directly from dashboard
+      ownerName = "I";
     }
 
-    const ownerId = cardData.user_id;
-    const locationStr = "in person"; // Placeholder for geofencing context
+    const locationStr = "in person";
 
     // 2. Draft follow-up message using Gemini
     let draftedMessage = "";
     try {
-      const prompt = `You are an AI networking assistant for ${cardData.full_name} who works at ${cardData.company}. 
+      const prompt = `You are an AI networking assistant for ${ownerName} who works at ${ownerCompany}. 
 They just met ${name} (Title: ${title}, Company: ${company}).
-Write a short, professional, and friendly follow-up email (2-3 sentences) from ${cardData.full_name} to ${name}. 
+Write a short, professional, and friendly follow-up email (2-3 sentences) from ${ownerName} to ${name}. 
 Do not include subject line, just the body.`;
 
       const response = await ai.models.generateContent({

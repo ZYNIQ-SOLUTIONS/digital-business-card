@@ -39,14 +39,16 @@ export default function DashboardLayout({
       <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2 group min-h-[44px]">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071E3] to-[#5856D6] p-0.5 shadow-sm flex items-center justify-center">
-                <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-[#0071E3]" />
-                </div>
+            <Link href="/dashboard" className="flex items-center gap-3 group min-h-[44px]">
+              <div className="logo-sync-container relative">
+                <svg width="28" height="28" viewBox="0 0 200 200" className="logo-sync">
+                  <path className="half half-top" d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeLinecap="round"/>
+                  <path className="half half-bot" d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#ec4899" strokeWidth="12" strokeLinecap="round"/>
+                  <circle className="core-node" cx="100" cy="100" r="15" fill="#1D1D1F"/>
+                </svg>
               </div>
-              <span className="text-[17px] font-semibold tracking-tight text-[#1D1D1F] hidden sm:block">
-                Digital Card Studio
+              <span className="font-display text-[17px] font-semibold tracking-tight text-[#1D1D1F] hidden sm:block">
+                SyncSphere
               </span>
             </Link>
           </div>

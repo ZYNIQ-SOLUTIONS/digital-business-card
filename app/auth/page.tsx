@@ -66,13 +66,15 @@ export default function AuthPage() {
         
         {/* App Emblem / Logo */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#0071E3] to-[#5856D6] p-0.5 shadow-md flex items-center justify-center">
-            <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-[#0071E3]" />
-            </div>
+          <div className="logo-sync-container relative flex justify-center mb-4">
+            <svg width="48" height="48" viewBox="0 0 200 200" className="logo-sync">
+              <path className="half half-top" d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeLinecap="round"/>
+              <path className="half half-bot" d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#ec4899" strokeWidth="12" strokeLinecap="round"/>
+              <circle className="core-node" cx="100" cy="100" r="15" fill="#1D1D1F"/>
+            </svg>
           </div>
 
-          <h1 className="text-2xl font-semibold tracking-tight text-[#1D1D1F]">
+          <h1 className="text-2xl font-display font-semibold tracking-tight text-[#1D1D1F]">
             {isSuccess ? "Check Your Inbox" : "Sign In to Your Card"}
           </h1>
           <p className="text-xs text-[#86868B] leading-relaxed">

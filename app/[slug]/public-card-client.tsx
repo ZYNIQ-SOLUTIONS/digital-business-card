@@ -92,6 +92,24 @@ export default function PublicCardClient({
   const activeTheme = card.theme || "apple-light";
   const t = themes[activeTheme] || themes["apple-light"];
 
+  const mode = card.active_mode || "all";
+  
+  const professionalLinks = ["linkedin", "calendly", "github", "twitter", "x", "website", "email"];
+  const socialLinks = ["instagram", "whatsapp", "telegram", "youtube", "discord", "snapchat", "tiktok"];
+  
+  const filteredLinks = card.social_links ? card.social_links.filter((link: any) => {
+    if (mode === "all") return true;
+    const platform = (link.platform || "").toLowerCase();
+    if (mode === "work") {
+      return professionalLinks.includes(platform) || !socialLinks.includes(platform);
+    }
+    if (mode === "social") {
+      return socialLinks.includes(platform) || !professionalLinks.includes(platform);
+    }
+    return true;
+  }) : [];
+
+
   const [activeTab, setActiveTab] = useState<"card" | "about" | "contact" | "nfc">("card");
   const [downloadedVCard, setDownloadedVCard] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);

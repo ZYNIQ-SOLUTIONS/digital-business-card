@@ -2,12 +2,51 @@
 
 import React, { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Mail, Check, User, MapPin, Loader2, Send } from "lucide-react";
+import { Mail, Check, User, MapPin, Loader2, Send, Camera } from "lucide-react";
+import { useRef } from "react";
 
 export default function ConnectionsPage() {
   const [connections, setConnections] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleScanCard = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    try {
+      const data = new FormData();
+      data.append("image", file);
+      
+      const res = await fetch("/api/ai/extract-card", {
+        method: "POST",
+        body: data,
+      });
+      
+      const result = await res.json();
+      if (res.ok) {
+        // Save to CRM directly
+        const { data: { user } } = await supabase.auth.getUser();
+        await fetch("/api/connections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...result, userIdOverride: user?.id, connectionSource: "Scanner" }),
+        });
+        fetchConnections();
+      } else {
+        alert("Extraction failed.");
+      }
+    } catch (err) {
+      alert("Error parsing card.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchConnections();
