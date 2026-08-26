@@ -1,0 +1,24 @@
+{
+  "name": "Ibrahim El Khalil - Digital Business Card",
+  "short_name": "Ibrahim Card",
+  "description": "Digital Business Card of Ibrahim El Khalil - Founder & AI Architect at ZYNIQ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F7",
+  "theme_color": "#F5F5F7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
