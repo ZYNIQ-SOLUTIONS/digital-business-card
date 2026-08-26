@@ -14,17 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ibrahim El Khalil — Founder & AI Architect | ZYNIQ",
-  description: "Digital Business Card of Ibrahim El Khalil - Founder & AI Architect at ZYNIQ",
+  title: "IZN | The Zen of Networking",
+  description: "The Last Business Card You Will Ever Need. Instantly share your contact info right from your Apple or Samsung Wallet.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Ibrahim Card",
+    title: "IZN",
   },
   icons: {
-    icon: "/icon-192.png",
-    apple: "/icon-192.png",
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 
