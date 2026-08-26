@@ -171,3 +171,71 @@ create policy "Authenticated users can upload avatar images."
 create policy "Authenticated users can update their avatar images."
   on storage.objects for update
   using (bucket_id = 'avatars' and auth.role() = 'authenticated');
+
+-- =============================================================================
+-- 5. INTELLIGENT NETWORKING PASS UPDATES
+-- =============================================================================
+
+-- Add Contextual Wallet Pass features to cards
+alter table public.cards 
+  add column if not exists active_mode text default 'default' not null,
+  add column if not exists geofence_locations jsonb default '[]'::jsonb;
+
+-- Create Connections Table (Two-Way Capture)
+create table if not exists public.connections (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  card_id uuid references public.cards(id) on delete set null,
+  contact_name text not null,
+  contact_email text default '',
+  contact_phone text default '',
+  contact_company text default '',
+  contact_title text default '',
+  met_at_location text default '',
+  met_at_time timestamptz default now() not null,
+  ai_drafted_message text default '',
+  status text default 'pending' not null,
+  created_at timestamptz default now() not null
+);
+
+-- Enable RLS on connections
+alter table public.connections enable row level security;
+
+create policy "Users can view their own connections." 
+  on public.connections for select 
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own connections." 
+  on public.connections for insert 
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own connections." 
+  on public.connections for update 
+  using (auth.uid() = user_id);
+
+create policy "Users can delete their own connections." 
+  on public.connections for delete 
+  using (auth.uid() = user_id);
+
+-- Create Organizations (B2B Enterprise Management)
+create table if not exists public.organizations (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  domain text,
+  logo_url text,
+  created_at timestamptz default now() not null
+);
+
+-- Create Organization Members
+create table if not exists public.organization_members (
+  id uuid default gen_random_uuid() primary key,
+  org_id uuid references public.organizations(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  role text default 'member' not null, -- 'admin', 'member'
+  created_at timestamptz default now() not null,
+  unique(org_id, user_id)
+);
+
+-- Add org_id to cards to link enterprise passes
+alter table public.cards 
+  add column if not exists org_id uuid references public.organizations(id) on delete set null;

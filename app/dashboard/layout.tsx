@@ -37,25 +37,25 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-[#0071E3] selection:text-white">
       {/* Top Header Bar */}
       <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0071E3] to-[#5856D6] p-0.5 shadow-xs flex items-center justify-center">
+            <Link href="/dashboard" className="flex items-center gap-2 group min-h-[44px]">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0071E3] to-[#5856D6] p-0.5 shadow-sm flex items-center justify-center">
                 <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-[#0071E3]" />
                 </div>
               </div>
-              <span className="text-sm font-semibold tracking-tight text-[#1D1D1F]">
+              <span className="text-[17px] font-semibold tracking-tight text-[#1D1D1F] hidden sm:block">
                 Digital Card Studio
               </span>
             </Link>
           </div>
 
           {/* Navigation Items */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Link
               href="/dashboard"
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+              className={`px-4 py-2 min-h-[44px] flex items-center rounded-full text-[15px] font-medium transition ${
                 pathname === "/dashboard"
                   ? "bg-black text-white"
                   : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
@@ -65,20 +65,42 @@ export default function DashboardLayout({
             </Link>
 
             <Link
-              href="/dashboard/cards/new"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium shadow-xs active:scale-95 transition"
+              href="/dashboard/connections"
+              className={`px-4 py-2 min-h-[44px] flex items-center rounded-full text-[15px] font-medium transition hidden md:flex ${
+                pathname === "/dashboard/connections"
+                  ? "bg-black text-white"
+                  : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
+              }`}
             >
-              <Plus className="w-3.5 h-3.5" />
+              Connections
+            </Link>
+
+            <Link
+              href="/dashboard/enterprise"
+              className={`px-4 py-2 min-h-[44px] flex items-center rounded-full text-[15px] font-medium transition hidden md:flex ${
+                pathname === "/dashboard/enterprise"
+                  ? "bg-black text-white"
+                  : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
+              }`}
+            >
+              Enterprise
+            </Link>
+
+            <Link
+              href="/dashboard/cards/new"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-[15px] font-medium shadow-sm active:scale-95 transition"
+            >
+              <Plus className="w-4 h-4" />
               <span>New Card</span>
             </Link>
 
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="p-2 rounded-full text-[#86868B] hover:text-red-600 hover:bg-red-50 transition"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-[#86868B] hover:text-red-600 hover:bg-red-50 transition"
               title="Sign Out"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         </div>

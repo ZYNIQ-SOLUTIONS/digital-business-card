@@ -1,141 +1,230 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
-import { 
-  Sparkles, 
-  ArrowRight, 
-  ShieldCheck, 
-  Smartphone, 
-  QrCode, 
-  Share2, 
-  CreditCard, 
-  Zap, 
-  CheckCircle2,
-  ExternalLink,
-  Layers,
-  Globe
-} from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { ArrowRight, Smartphone, Sparkles, Zap, QrCode, Shield, Bot, LayoutDashboard, Send } from "lucide-react";
 
-export default function LandingPage() {
+export default function Home() {
   return (
-    <main className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-[#0071E3] selection:text-white">
-      {/* Top Ambient Light Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-gradient-to-b from-blue-100/60 via-purple-50/20 to-transparent pointer-events-none blur-3xl" />
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-indigo-500 selection:text-white font-sans overflow-hidden">
+      
+      {/* Background Effects */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-600/20 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-600/20 blur-[120px]" />
+      </div>
 
-      {/* Navigation */}
-      <header className="sticky top-0 z-40 w-full bg-white/75 backdrop-blur-xl border-b border-black/[0.06]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0071E3] to-[#5856D6] p-0.5 shadow-xs flex items-center justify-center">
-              <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-[#0071E3]" />
-              </div>
-            </div>
-            <span className="text-sm font-semibold tracking-tight text-[#1D1D1F]">
-              CardStudio
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/auth"
-              className="text-xs font-semibold text-[#86868B] hover:text-[#1D1D1F] transition"
-            >
-              Sign In
-            </Link>
-
-            <Link
-              href="/auth"
-              className="px-3.5 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] active:scale-95 text-white text-xs font-semibold shadow-xs transition"
-            >
-              Get Started Free
-            </Link>
+      {/* Navbar */}
+      <nav className="relative z-10 w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <span className="font-bold text-lg tracking-wider text-white">IZN</span>
           </div>
         </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 text-center space-y-8 z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-black/[0.08] shadow-xs">
-          <span className="flex h-2 w-2 rounded-full bg-[#34C759] animate-pulse" />
-          <span className="text-xs font-medium text-[#1D1D1F]">
-            Universal Multi-User Digital Smart Cards
-          </span>
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-neutral-300">
+          <a href="#features" className="hover:text-white transition">Features</a>
+          <a href="#enterprise" className="hover:text-white transition">Enterprise</a>
+          <a href="#about" className="hover:text-white transition">Our Story</a>
         </div>
+        <div className="flex items-center gap-4">
+          <Link href="/auth" className="text-sm font-medium text-neutral-300 hover:text-white transition hidden sm:block">
+            Sign In
+          </Link>
+          <Link href="/auth" className="px-5 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition active:scale-95">
+            Get Started
+          </Link>
+        </div>
+      </nav>
 
-        <div className="space-y-3 max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-[#1D1D1F] leading-[1.1]">
-            Your Identity. <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0071E3] via-[#5856D6] to-[#E4405F]">
-              Reimagined with Apple Elegance.
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-6 pt-20 pb-32 space-y-32">
+        
+        {/* HERO SECTION */}
+        <section className="text-center max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span className="text-sm font-medium text-neutral-200">IZN (Pronounced Aizen) — The Zen of Networking.</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]">
+            The Last Business Card <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400">
+              You Will Ever Need.
             </span>
           </h1>
-          <p className="text-base sm:text-lg text-[#86868B] max-w-xl mx-auto leading-relaxed">
-            Create high-contrast digital business cards with dynamic vCard QR codes, Apple Wallet passes, and physical NFC compatibility. Zero cost.
+          
+          <p className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+            Instantly share your contact info, social links, and pitch decks right from your Apple or Samsung Wallet. No apps to download. No paper to print. Just tap, connect, and let AI do the rest.
           </p>
-        </div>
-
-        {/* Hero CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <Link
-            href="/auth"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-black hover:bg-neutral-900 active:scale-95 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(0,0,0,0.15)] transition"
-          >
-            <span>Create Your Free Card</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-
-          <Link
-            href="/demo"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-white hover:bg-neutral-50 active:scale-95 text-[#1D1D1F] text-sm font-semibold border border-black/[0.08] shadow-xs transition"
-          >
-            View Live Interactive Demo
-          </Link>
-        </div>
-
-        {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-12 text-left">
-          <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#0071E3] flex items-center justify-center">
-              <QrCode className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-[#1D1D1F]">Native vCard QR</h3>
-            <p className="text-xs text-[#86868B] leading-relaxed">
-              Scanning your card with any smartphone camera prompts users directly to save your complete contact details into their address book.
-            </p>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <Link href="/auth" className="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-black font-bold text-[15px] hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)]">
+              Create Your IZN Card (Free)
+            </Link>
+            <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-white/10 text-white font-bold text-[15px] hover:bg-white/20 active:scale-95 transition-all border border-white/10 flex items-center justify-center gap-2">
+              <Smartphone className="w-5 h-5" /> Watch the Magic
+            </button>
           </div>
+        </section>
 
-          <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-50 text-[#5856D6] flex items-center justify-center">
-              <CreditCard className="w-5 h-5" />
-            </div>
-            <h3 className="text-base font-semibold text-[#1D1D1F]">Apple Wallet Pass</h3>
-            <p className="text-xs text-[#86868B] leading-relaxed">
-              Generate genuine `.pkpass` passes for Apple Wallet with a single tap, synchronizing to iPhone and Apple Watch for offline sharing.
-            </p>
+        {/* HOW IT WORKS */}
+        <section className="space-y-16 py-10">
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-bold">Networking has never been this effortless.</h2>
           </div>
-
-          <div className="p-6 rounded-3xl bg-white border border-black/[0.06] shadow-xs space-y-3">
-            <div className="w-10 h-10 rounded-2xl bg-green-50 text-[#34C759] flex items-center justify-center">
-              <Smartphone className="w-5 h-5" />
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-[32px] bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all group">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <LayoutDashboard className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Step 1: Build Your Pass</h3>
+              <p className="text-neutral-400 leading-relaxed">Customize your digital card in seconds and add it directly to your native smartphone wallet.</p>
             </div>
-            <h3 className="text-base font-semibold text-[#1D1D1F]">NFC &amp; PWA Ready</h3>
-            <p className="text-xs text-[#86868B] leading-relaxed">
-              Program your link into physical NFC cards or tap Safari &quot;Add to Home Screen&quot; to carry an installable standalone app.
-            </p>
+            
+            <div className="p-8 rounded-[32px] bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all group">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Zap className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Step 2: Tap or Scan</h3>
+              <p className="text-neutral-400 leading-relaxed">Meet someone new? Just hold your phone near theirs or let them scan your QR code. They don’t need an app to receive it.</p>
+            </div>
+            
+            <div className="p-8 rounded-[32px] bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-all group">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Bot className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold mb-3">Step 3: Capture Everything</h3>
+              <p className="text-neutral-400 leading-relaxed">They save your info instantly, and our AI helps you capture theirs. Connection made.</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-black/[0.06] bg-white/60 py-6">
-        <div className="max-w-6xl mx-auto px-4 text-center text-xs text-[#86868B] space-y-1">
-          <p>© 2026 CardStudio • Powered by Supabase &amp; Next.js</p>
-          <p className="text-[11px] text-neutral-400">100% Free &amp; Open Architecture for Multi-User Digital Cards</p>
-        </div>
+        {/* CORE FEATURES */}
+        <section id="features" className="space-y-16">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-5xl font-bold">Beyond a Business Card. <br/>An Intelligent Networking Pass.</h2>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="p-10 rounded-[32px] bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 group hover:border-indigo-500/50 transition-colors">
+              <Smartphone className="w-10 h-10 text-indigo-400 mb-6" />
+              <h3 className="text-2xl font-bold mb-4">Lives in Your Native Wallet</h3>
+              <p className="text-neutral-400 leading-relaxed text-lg">Why open a clunky app? Your IZN card lives natively in your Apple Wallet and Samsung Wallet. Double-click your side button, and you are ready to network in less than two seconds.</p>
+            </div>
+
+            <div className="p-10 rounded-[32px] bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 group hover:border-purple-500/50 transition-colors">
+              <QrCode className="w-10 h-10 text-purple-400 mb-6" />
+              <h3 className="text-2xl font-bold mb-4">They Have a Paper Card? We Have AI.</h3>
+              <p className="text-neutral-400 leading-relaxed text-lg">Bridging the gap between the past and the future. If the person you meet hands you a paper business card, simply snap a photo of it through your IZN profile. Our AI instantly extracts their name, email, and company, saving it directly to your contacts. No typing required.</p>
+            </div>
+
+            <div className="p-10 rounded-[32px] bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 group hover:border-emerald-500/50 transition-colors">
+              <LayoutDashboard className="w-10 h-10 text-emerald-400 mb-6" />
+              <h3 className="text-2xl font-bold mb-4">Contextual "Modes" for Every Scenario</h3>
+              <p className="text-neutral-400 leading-relaxed text-lg">At a tech conference? Switch to Work Mode to highlight your LinkedIn and Calendly. At a casual meetup? Toggle Social Mode to share your Instagram. Your Apple Wallet pass updates dynamically based on where you are.</p>
+            </div>
+
+            <div className="p-10 rounded-[32px] bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 group hover:border-blue-500/50 transition-colors">
+              <Send className="w-10 h-10 text-blue-400 mb-6" />
+              <h3 className="text-2xl font-bold mb-4">AI-Powered Follow-Ups</h3>
+              <p className="text-neutral-400 leading-relaxed text-lg">People collect contacts and never talk to them again. Not with IZN. When you connect, we log the time and location. Later, our AI will automatically draft a personalized follow-up email for you. Just click "Send" and watch your network grow.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ENTERPRISE */}
+        <section id="enterprise" className="py-20">
+          <div className="bg-gradient-to-br from-indigo-900/40 via-purple-900/20 to-black rounded-[40px] p-10 md:p-16 border border-white/10 flex flex-col md:flex-row items-center gap-12">
+            <div className="flex-1 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-wider">
+                <Shield className="w-4 h-4 text-emerald-400" />
+                <span>IZN for Teams</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-bold">Built for Professionals. Scaled for Enterprise.</h2>
+              <p className="text-lg text-neutral-300 leading-relaxed">
+                Say goodbye to printing thousands of paper cards every time you hire someone new. With the IZN Team Dashboard, HR managers can generate perfectly branded Apple Wallet passes for 10 or 10,000 employees in one click.
+              </p>
+              <ul className="space-y-4 pt-4">
+                <li className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"/>
+                  </div>
+                  <span className="text-neutral-300"><strong>Instant Onboarding:</strong> Send wallet passes directly to new hires.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"/>
+                  </div>
+                  <span className="text-neutral-300"><strong>Instant Updates:</strong> Did someone get a promotion? Update their job title, and their wallet pass changes instantly.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"/>
+                  </div>
+                  <span className="text-neutral-300"><strong>Secure Offboarding:</strong> Revoke access with a single click when an employee leaves.</span>
+                </li>
+              </ul>
+              
+              <div className="pt-6">
+                <Link href="/auth" className="inline-flex px-8 py-4 rounded-full bg-indigo-500 text-white font-bold text-[15px] hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-500/30">
+                  Book a Team Demo
+                </Link>
+              </div>
+            </div>
+            
+            <div className="flex-1 w-full relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 blur-[80px]" />
+              <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-sm">
+                 <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                   <h4 className="font-semibold">IZN Team Directory</h4>
+                   <span className="text-xs bg-white/10 px-2 py-1 rounded">10 Active</span>
+                 </div>
+                 <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400" />
+                        <div>
+                          <div className="h-4 w-32 bg-white/20 rounded mb-1" />
+                          <div className="h-3 w-20 bg-white/10 rounded" />
+                        </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ABOUT US */}
+        <section id="about" className="text-center max-w-3xl mx-auto space-y-8 py-10">
+          <h2 className="text-3xl md:text-5xl font-bold">The Power of Three. <br/>The Zen of Networking.</h2>
+          <p className="text-lg text-neutral-400 leading-relaxed">
+            IZN isn’t just a name; it’s our DNA. Founded by <strong className="text-white">Ibrahim, Zaki, and Nadjib</strong>, we built IZN to solve our own frustrations with modern networking.
+          </p>
+          <p className="text-lg text-neutral-400 leading-relaxed">
+            We realized that making a connection shouldn't feel like work. It should feel seamless, effortless, and peaceful. That’s why IZN (pronounced Aizen) is designed to bring "Zen" to the way you meet people. We removed the friction, so you can focus on what actually matters: building relationships.
+          </p>
+        </section>
+
+        {/* FINAL CTA */}
+        <section className="relative overflow-hidden rounded-[40px] p-16 text-center border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-2xl bg-indigo-500/20 blur-[100px] pointer-events-none" />
+           <div className="relative z-10 space-y-8">
+             <h2 className="text-4xl md:text-6xl font-bold tracking-tight">Ready to Own the Room?</h2>
+             <p className="text-xl text-neutral-400 max-w-xl mx-auto">
+               Join the future of networking today. Ditch the paper, upgrade your digital wallet, and never lose a lead again.
+             </p>
+             <div>
+               <Link href="/auth" className="inline-flex px-10 py-5 rounded-full bg-white text-black font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_50px_rgba(255,255,255,0.4)]">
+                 Get Started for Free Today
+               </Link>
+               <p className="text-sm text-neutral-500 mt-4">Takes less than 60 seconds to set up.</p>
+             </div>
+           </div>
+        </section>
+        
+      </main>
+
+      <footer className="w-full border-t border-white/10 py-10 text-center text-neutral-500 text-sm">
+        <p>© {new Date().getFullYear()} IZN. The Zen of Networking. All rights reserved.</p>
       </footer>
-    </main>
+    </div>
   );
 }

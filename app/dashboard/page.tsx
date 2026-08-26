@@ -30,6 +30,7 @@ interface CardItem {
   title: string;
   company: string;
   is_published: boolean;
+  theme?: string;
   views_count: number;
   vcard_downloads_count: number;
   created_at: string;
@@ -84,6 +85,14 @@ export default function DashboardPage() {
       setTimeout(() => setCopiedId(null), 2500);
     } catch {
       // Fallback
+    }
+  };
+
+  
+  const handleChangeTheme = async (id: string, newTheme: string) => {
+    const { error } = await supabase.from('cards').update({ theme: newTheme }).eq('id', id);
+    if (!error) {
+      setCards(cards.map(c => c.id === id ? { ...c, theme: newTheme } : c));
     }
   };
 
@@ -255,6 +264,17 @@ export default function DashboardPage() {
                   <Edit3 className="w-3.5 h-3.5 text-[#0071E3]" />
                   <span>Edit Card</span>
                 </Link>
+
+                
+                <select
+                  value={card.theme || "apple-light"}
+                  onChange={(e) => handleChangeTheme(card.id, e.target.value)}
+                  className="px-2 py-1.5 rounded-xl text-xs font-medium bg-[#F5F5F7] border border-black/[0.04] text-[#1D1D1F] hover:bg-[#E8E8ED] transition focus:outline-none"
+                >
+                  <option value="apple-light">Apple Light</option>
+                  <option value="apple-dark">Apple Dark</option>
+                  <option value="midnight-glass">Midnight Glass</option>
+                </select>
 
                 <button
                   onClick={() => togglePublish(card.id, card.is_published)}

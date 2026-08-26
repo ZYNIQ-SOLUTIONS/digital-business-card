@@ -51,12 +51,12 @@ export default function AuthPage() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-80 bg-gradient-to-b from-blue-100/50 to-transparent pointer-events-none blur-3xl" />
 
       {/* Back to Home Link */}
-      <div className="w-full max-w-sm mb-4 z-10">
+      <div className="w-full max-w-sm mb-2 z-10 flex">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs text-[#86868B] hover:text-[#1D1D1F] font-medium transition"
+          className="inline-flex items-center gap-1.5 px-2 py-2 min-h-[44px] -ml-2 text-[15px] text-[#86868B] hover:text-[#1D1D1F] font-medium transition"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-5 h-5" />
           <span>Back to Home</span>
         </Link>
       </div>
@@ -84,25 +84,25 @@ export default function AuthPage() {
 
         {isSuccess ? (
           <div className="space-y-4 text-center">
-            <div className="w-12 h-12 mx-auto rounded-full bg-green-50 border border-green-200/80 flex items-center justify-center text-[#34C759]">
-              <CheckCircle2 className="w-6 h-6" />
+            <div className="w-14 h-14 mx-auto rounded-full bg-green-50 border border-green-200/80 flex items-center justify-center text-[#34C759]">
+              <CheckCircle2 className="w-7 h-7" />
             </div>
 
-            <p className="text-xs text-[#1D1D1F] bg-neutral-50 p-3.5 rounded-2xl border border-black/[0.04]">
+            <p className="text-[15px] text-[#1D1D1F] bg-neutral-50 p-4 rounded-2xl border border-black/[0.04]">
               Click the link in your email to instantly enter your dashboard. First time users will be guided through creating their first digital business card.
             </p>
 
             <button
               onClick={() => setIsSuccess(false)}
-              className="text-xs text-[#0071E3] font-medium hover:underline pt-2"
+              className="text-[15px] text-[#0071E3] font-medium hover:underline pt-2 min-h-[44px]"
             >
               Use a different email address
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSignInWithMagicLink} className="space-y-3.5">
+          <form onSubmit={handleSignInWithMagicLink} className="space-y-4">
             <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1.5 pl-1">
+              <label className="block text-[13px] font-medium text-[#86868B] mb-2 pl-1">
                 Your Full Name (Optional)
               </label>
               <input
@@ -110,29 +110,29 @@ export default function AuthPage() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Ibrahim El Khalil"
-                className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                className="w-full px-4 py-3.5 min-h-[50px] rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-[15px] text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1.5 pl-1">
+              <label className="block text-[13px] font-medium text-[#86868B] mb-2 pl-1">
                 Email Address
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full px-3.5 py-3 pl-10 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                  className="w-full px-4 py-3.5 pl-11 min-h-[50px] rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-[15px] text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
                 />
-                <Mail className="w-4 h-4 text-[#86868B] absolute left-3.5 top-3.5" />
+                <Mail className="w-5 h-5 text-[#86868B] absolute left-4" />
               </div>
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs leading-tight">
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[13px] leading-tight">
                 {errorMsg}
               </div>
             )}
@@ -140,17 +140,17 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition disabled:opacity-60"
+              className="w-full py-4 px-4 min-h-[56px] mt-2 rounded-[20px] bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition disabled:opacity-60"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   <span>Sending Magic Link...</span>
                 </>
               ) : (
                 <>
                   <span>Continue with Email</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
@@ -158,8 +158,8 @@ export default function AuthPage() {
         )}
 
         {/* Security Note */}
-        <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-[#86868B]">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#34C759]" />
+        <div className="pt-3 flex items-center justify-center gap-2 text-[13px] text-[#86868B]">
+          <ShieldCheck className="w-4 h-4 text-[#34C759]" />
           <span>Zero passwords • End-to-end encrypted link</span>
         </div>
       </div>

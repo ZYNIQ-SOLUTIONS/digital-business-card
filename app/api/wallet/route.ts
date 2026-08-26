@@ -95,6 +95,15 @@ END:VCARD`;
       }
     );
 
+    // @ts-ignore
+    pass.locations = Array.isArray(cardData.geofence_locations) && cardData.geofence_locations.length > 0 
+      ? cardData.geofence_locations.map((loc: any) => ({
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          relevantText: loc.relevantText || "Your digital card is ready to share."
+        }))
+      : undefined;
+
     pass.type = "generic";
 
     pass.primaryFields.push({
