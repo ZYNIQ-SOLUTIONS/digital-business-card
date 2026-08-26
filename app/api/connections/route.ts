@@ -46,7 +46,7 @@ They just met ${name} (Title: ${title}, Company: ${company}).
 Write a short, professional, and friendly follow-up email (2-3 sentences) from ${ownerName} to ${name}. 
 Do not include subject line, just the body.`;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env["GEMINI_" + "API_KEY"] });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,

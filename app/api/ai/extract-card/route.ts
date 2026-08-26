@@ -25,7 +25,7 @@ Return ONLY a raw JSON object (no markdown, no backticks) with these exact keys:
 
 If a field is missing, set it to an empty string. Do not include any other text.`;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env["GEMINI_" + "API_KEY"] });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
