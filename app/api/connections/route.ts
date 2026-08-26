@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -48,6 +46,7 @@ They just met ${name} (Title: ${title}, Company: ${company}).
 Write a short, professional, and friendly follow-up email (2-3 sentences) from ${ownerName} to ${name}. 
 Do not include subject line, just the body.`;
 
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,

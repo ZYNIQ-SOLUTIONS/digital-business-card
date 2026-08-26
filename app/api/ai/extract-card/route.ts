@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -27,6 +25,7 @@ Return ONLY a raw JSON object (no markdown, no backticks) with these exact keys:
 
 If a field is missing, set it to an empty string. Do not include any other text.`;
 
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
