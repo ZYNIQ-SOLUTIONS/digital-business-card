@@ -5,15 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { 
-  CreditCard, 
-  Sparkles, 
   Plus, 
   LogOut, 
-  Settings, 
-  ExternalLink,
-  ChevronRight,
-  User,
-  LayoutDashboard
+  
 } from "lucide-react";
 
 export default function DashboardLayout({

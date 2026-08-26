@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+
 
 export function PageLoader() {
   const [loading, setLoading] = useState(true);
-  const pathname = usePathname();
+  
 
   useEffect(() => {
     // Show loader for a brief moment on initial load

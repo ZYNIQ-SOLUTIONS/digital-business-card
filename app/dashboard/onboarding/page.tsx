@@ -7,12 +7,6 @@ import {
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
-  User, 
-  Briefcase, 
-  Globe, 
-  Phone, 
-  Mail, 
-  Share2, 
   Loader2 
 } from "lucide-react";
 
@@ -111,7 +105,7 @@ export default function OnboardingPage() {
         skills: ["Strategy", "Leadership", "Technology"],
       };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("cards")
         .insert(newCard)
         .select()

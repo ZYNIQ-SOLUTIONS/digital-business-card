@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Camera, X, Loader2, UploadCloud, CheckCircle2 } from "lucide-react";
+import { Camera, X, Loader2, CheckCircle2 } from "lucide-react";
 
 export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOpen: boolean; onClose: () => void; cardOwnerName: string; cardId: string }) {
   const [mode, setMode] = useState<"choose" | "camera" | "manual" | "success">("choose");
@@ -32,7 +32,7 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
         alert("Extraction failed. Please enter manually.");
         setMode("manual");
       }
-    } catch (err) {
+    } catch {
       alert("Error parsing card.");
       setMode("manual");
     } finally {
@@ -51,7 +51,7 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
         body: JSON.stringify({ ...formData, cardId }),
       });
       setMode("success");
-    } catch (err) {
+    } catch {
       alert("Failed to save connection.");
     } finally {
       setIsLoading(false);

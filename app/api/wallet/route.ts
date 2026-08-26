@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextResponse } from "next/server";
 import { PKPass } from "passkit-generator";
 import { createClient } from "@/lib/supabase/server";

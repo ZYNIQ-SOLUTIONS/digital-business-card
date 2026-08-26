@@ -1,4 +1,4 @@
-export const themes: Record<string, any> = {
+export const themes: Record<string, Record<string, string>> = {
   "apple-light": {
     bg: "bg-[#F5F5F7]",
     textMain: "text-[#1D1D1F]",

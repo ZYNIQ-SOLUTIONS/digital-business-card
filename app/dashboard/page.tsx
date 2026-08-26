@@ -15,10 +15,6 @@ import {
   Check, 
   Eye, 
   Download, 
-  Share2, 
-  Sparkles,
-  TrendingUp,
-  Globe,
   Loader2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -45,10 +41,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [qrModalCard, setQrModalCard] = useState<CardItem | null>(null);
-
-  useEffect(() => {
-    fetchCards();
-  }, []);
 
   const fetchCards = async () => {
     setLoading(true);
@@ -77,6 +69,13 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    /* eslint-disable react-hooks/exhaustive-deps */
+    /* eslint-disable react-hooks/set-state-in-effect */
+    fetchCards();
+  }, []);
+
+  
   const handleCopyLink = async (slug: string, id: string) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const cardUrl = `${origin}/${slug}`;

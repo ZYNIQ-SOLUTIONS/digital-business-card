@@ -33,7 +33,7 @@ export default function EnterpriseDashboard() {
       } else {
         alert("Failed to upload CSV.");
       }
-    } catch (e) {
+    } catch {
       alert("Error uploading CSV.");
     } finally {
       setIsUploading(false);

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Smartphone, Sparkles, Zap, QrCode, Shield, Bot, LayoutDashboard, Send } from "lucide-react";
+import { Smartphone, Zap, Shield, Bot, LayoutDashboard, Send } from "lucide-react";
 
 export default function Home() {
   return (
@@ -118,7 +118,7 @@ export default function Home() {
                <Send className="w-10 h-10 text-indigo-400 mb-6 relative z-10" />
                <div className="relative z-10">
                  <h3 className="text-2xl font-display font-semibold mb-3">AI Follow-ups</h3>
-                 <p className="text-neutral-400 text-sm">When you connect, our AI will automatically draft a personalized follow-up email. Just click "Send".</p>
+                 <p className="text-neutral-400 text-sm">When you connect, our AI will automatically draft a personalized follow-up email. Just click &quot;Send&quot;.</p>
                </div>
             </div>
 
@@ -192,10 +192,10 @@ export default function Home() {
         <section id="about" className="text-center max-w-3xl mx-auto space-y-8 py-10">
           <h2 className="text-3xl md:text-5xl font-display font-bold">The Power of Three. <br/>The Zen of Networking.</h2>
           <p className="text-lg text-neutral-400 leading-relaxed font-light">
-            IZN isn’t just a name; it’s our DNA. Founded by <strong className="text-white">Ibrahim, Zaki, and Nadjib</strong>, we built IZN to solve our own frustrations with modern networking.
+            IZN isn&apos;t just a name; it’s our DNA. Founded by <strong className="text-white">Ibrahim, Zaki, and Nadjib</strong>, we built IZN to solve our own frustrations with modern networking.
           </p>
           <p className="text-lg text-neutral-400 leading-relaxed font-light">
-            We realized that making a connection shouldn't feel like work. It should feel seamless, effortless, and peaceful. That’s why IZN (pronounced Aizen) is designed to bring "Zen" to the way you meet people. We removed the friction, so you can focus on what actually matters: building relationships.
+            We realized that making a connection shouldn&apos;t feel like work. It should feel seamless, effortless, and peaceful. That&apos;s why IZN (pronounced Aizen) is designed to bring &quot;Zen&quot; to the way you meet people. We removed the friction, so you can focus on what actually matters: building relationships.
           </p>
         </section>
 
