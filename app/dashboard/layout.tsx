@@ -48,7 +48,7 @@ export default function DashboardLayout({
                 </svg>
               </div>
               <span className="font-display text-[17px] font-semibold tracking-tight text-[#1D1D1F] hidden sm:block">
-                SyncSphere
+                IZN
               </span>
             </Link>
           </div>
