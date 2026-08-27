@@ -87,6 +87,17 @@ export default function OnboardingPage() {
         },
       ];
 
+      // Proactively ensure profile exists to satisfy foreign key constraint
+      await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          email: user.email || "",
+          full_name: formData.fullName || user.user_metadata?.full_name || "",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" }
+      );
+
       const newCard = {
         user_id: user.id,
         slug: formData.slug || `card-${Date.now().toString(36)}`,

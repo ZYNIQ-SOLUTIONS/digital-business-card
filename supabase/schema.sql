@@ -254,3 +254,14 @@ create table if not exists public.organization_members (
 -- Add org_id to cards to link enterprise passes
 alter table public.cards 
   add column if not exists org_id uuid references public.organizations(id) on delete set null;
+
+-- Backfill all existing auth.users into public.profiles
+insert into public.profiles (id, email, full_name, avatar_url)
+select 
+  id, 
+  email, 
+  coalesce(raw_user_meta_data->>'full_name', ''), 
+  coalesce(raw_user_meta_data->>'avatar_url', '')
+from auth.users
+on conflict (id) do nothing;
+

@@ -54,6 +54,17 @@ export default function NewCardPage() {
         return;
       }
 
+      // Proactively ensure profile exists to satisfy foreign key constraint
+      await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          email: user.email || "",
+          full_name: formData.fullName || user.user_metadata?.full_name || "",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "id" }
+      );
+
       const names = formData.fullName.trim().split(" ");
       const avatarInitials = names.length > 1
         ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
