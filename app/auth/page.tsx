@@ -5,11 +5,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
+import { GoogleIcon, GitHubIcon, TelegramIcon } from "@/components/icons";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -28,9 +29,6 @@ export default function AuthPage() {
         email,
         options: {
           emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-          },
         },
       });
 
@@ -44,6 +42,36 @@ export default function AuthPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSocialSignIn = async (provider: "google" | "github") => {
+    setSocialLoading(provider);
+    setErrorMsg(null);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+      }
+    } catch {
+      setErrorMsg(`Failed to connect with ${provider}. Please check OAuth settings in Supabase.`);
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleTelegramLogin = () => {
+    // Direct Telegram connection or instruction modal
+    setErrorMsg(null);
+    const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "CardSyncBot";
+    window.open(`https://t.me/${botUsername}?start=auth_${Date.now()}`, "_blank");
   };
 
   const isMissingEnvVars = !process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -111,67 +139,108 @@ export default function AuthPage() {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSignInWithMagicLink} className="space-y-4">
-            <div>
-              <label className="block text-[13px] font-medium text-[#86868B] mb-2 pl-1">
-                Your Full Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Ibrahim El Khalil"
-                className="w-full px-4 py-3.5 min-h-[50px] rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-[15px] text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
-              />
-            </div>
+          <div className="space-y-5">
+            {/* Social Logins */}
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => handleSocialSignIn("google")}
+                disabled={!!socialLoading || isLoading}
+                className="w-full py-3 px-4 rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.06] text-[#1D1D1F] font-medium text-xs flex items-center justify-center gap-2.5 transition shadow-2xs disabled:opacity-50"
+              >
+                {socialLoading === "google" ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#1D1D1F]" />
+                ) : (
+                  <GoogleIcon className="w-4 h-4" />
+                )}
+                <span>Continue with Google</span>
+              </button>
 
-            <div>
-              <label className="block text-[13px] font-medium text-[#86868B] mb-2 pl-1">
-                Email Address
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="w-full px-4 py-3.5 pl-11 min-h-[50px] rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-[15px] text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
-                />
-                <Mail className="w-5 h-5 text-[#86868B] absolute left-4" />
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSocialSignIn("github")}
+                  disabled={!!socialLoading || isLoading}
+                  className="py-2.5 px-3 rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.06] text-[#1D1D1F] font-medium text-xs flex items-center justify-center gap-2 transition shadow-2xs disabled:opacity-50"
+                >
+                  {socialLoading === "github" ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <GitHubIcon className="w-3.5 h-3.5" />
+                  )}
+                  <span>GitHub</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleTelegramLogin}
+                  disabled={!!socialLoading || isLoading}
+                  className="py-2.5 px-3 rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.06] text-[#1D1D1F] font-medium text-xs flex items-center justify-center gap-2 transition shadow-2xs disabled:opacity-50"
+                >
+                  <TelegramIcon className="w-3.5 h-3.5 text-[#24A1DE]" />
+                  <span>Telegram</span>
+                </button>
               </div>
             </div>
 
-            {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[13px] leading-tight">
-                {errorMsg}
-              </div>
-            )}
+            {/* Divider */}
+            <div className="relative flex items-center justify-center">
+              <div className="w-full border-t border-black/[0.08]" />
+              <span className="bg-white px-3 text-[11px] font-medium text-[#86868B] uppercase tracking-wider absolute">
+                or email link
+              </span>
+            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-4 px-4 min-h-[56px] mt-2 rounded-[20px] bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition disabled:opacity-60"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Sending Magic Link...</span>
-                </>
-              ) : (
-                <>
-                  <span>Continue with Email</span>
-                  <ArrowRight className="w-5 h-5" />
-                </>
+            {/* Magic Link Form */}
+            <form onSubmit={handleSignInWithMagicLink} className="space-y-4">
+              <div>
+                <label className="block text-[12px] font-medium text-[#86868B] mb-1.5 pl-1">
+                  Email Address
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@company.com"
+                    className="w-full px-4 py-3.5 pl-11 min-h-[48px] rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-[14px] text-[#1D1D1F] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                  />
+                  <Mail className="w-4 h-4 text-[#86868B] absolute left-4" />
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[12px] leading-tight">
+                  {errorMsg}
+                </div>
               )}
-            </button>
-          </form>
+
+              <button
+                type="submit"
+                disabled={isLoading || !!socialLoading}
+                className="w-full py-3.5 px-4 min-h-[50px] rounded-[20px] bg-[#0071E3] hover:bg-[#0077ED] active:scale-[0.98] text-white font-semibold text-[14px] flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition disabled:opacity-60"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Sending Magic Link...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Continue with Email</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         )}
 
         {/* Security Note */}
-        <div className="pt-3 flex items-center justify-center gap-2 text-[13px] text-[#86868B]">
+        <div className="pt-2 flex items-center justify-center gap-2 text-[12px] text-[#86868B]">
           <ShieldCheck className="w-4 h-4 text-[#34C759]" />
-          <span>Zero passwords • End-to-end encrypted link</span>
+          <span>Zero passwords • End-to-end encrypted</span>
         </div>
       </div>
     </main>

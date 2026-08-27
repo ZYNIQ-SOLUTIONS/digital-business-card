@@ -22,13 +22,17 @@ import {
   Smartphone,
   CheckCircle2,
   Plus,
-  Camera
+  Camera,
+  QrCode,
+  CreditCard
 } from "lucide-react";
 import { themes } from "@/lib/theme";
 import { ExchangeModal } from "@/components/exchange-modal";
+import { BookingModal } from "@/components/booking-modal";
 
 import {
   AppleIcon,
+  AppleWalletIcon,
   LinkedInIcon,
   WhatsAppIcon,
   TelegramIcon,
@@ -51,6 +55,7 @@ import {
   PinterestIcon,
   RedditIcon,
   SignalIcon,
+  VerifiedBadgeIcon,
 } from "@/components/icons";
 
 interface PublicCardClientProps {
@@ -130,6 +135,12 @@ export default function PublicCardClient({
   const [isWalletLoading, setIsWalletLoading] = useState(false);
   const [walletFeedback, setWalletFeedback] = useState<string | null>(null);
   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isAppleDevice, setIsAppleDevice] = useState(true);
+
+  React.useEffect(() => {
+    setIsAppleDevice(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent));
+  }, []);
 
   // Generate RFC vCard 3.0 String from dynamic card
   const vCardString = [
@@ -279,59 +290,36 @@ export default function PublicCardClient({
       case "signal":
         return SignalIcon;
       default:
-        return Globe;
+        return Globe; // generic fallback for custom links
     }
   };
 
   return (
-    <main className={`min-h-screen ${t.bg} ${t.textMain} flex flex-col items-center justify-between p-3.5 sm:p-6 md:p-10 relative selection:${t.accentBg} selection:text-white font-sans`}>
-      
-      {/* Apple-style Top Ambient Background Glow */}
-      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-80 bg-gradient-to-b ${t.gradient} to-transparent pointer-events-none blur-3xl`} />
+    <div className={`min-h-screen ${t.bg} selection:bg-black selection:text-white flex flex-col font-sans relative`}>
+      <div className={`fixed inset-0 ${t.gradient} opacity-50 pointer-events-none`} />
+      <div className={`fixed inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none mix-blend-overlay`} />
 
-      {/* Top Floating Header */}
-      <header className="w-full max-w-md flex items-center justify-between z-10 pt-2 pb-4">
-        <div className={`flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl border ${t.pillBorder} shadow-sm`}>
-          <div className="w-2 h-2 rounded-full bg-[#34C759] shadow-[0_0_8px_rgba(52,199,89,0.6)]" />
-          <span className={`text-[13px] font-semibold tracking-tight ${t.textSecondary} uppercase`}>
-            Official Smart Card
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/auth"
-            className={`flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl ${t.pillHover} text-[15px] font-semibold ${t.textMain} border ${t.pillBorder} shadow-sm active:scale-95 transition`}
-          >
-            <Plus className={`w-4 h-4 ${t.accent}`} />
-            <span>Create Mine</span>
-          </Link>
-
-          <button
-            onClick={handleShare}
-            className={`flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl ${t.pillHover} active:scale-95 transition-all shadow-sm border ${t.pillBorder} ${t.textMain}`}
-            aria-label="Share Contact"
-            title="Share Contact"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
+      <header className="w-full max-w-md mx-auto h-8 z-20 sticky top-4" />
 
       {/* Main Apple-style Card */}
+
       <section className={`w-full max-w-md ${t.cardBg} backdrop-blur-2xl border ${t.border} rounded-[32px] p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-5 z-10 my-auto transition-all duration-300`}>
         
         {/* Profile Avatar & Badge */}
-        <div className="relative group">
-          <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full ${t.avatarBg} border-[3px] ${t.avatarBorder} shadow-[0_8px_24px_rgba(0,0,0,0.15)] flex items-center justify-center relative overflow-hidden`}>
-            <span className={`text-3xl sm:text-4xl font-semibold tracking-tighter ${t.textMain}`}>
-              {card.avatar_initials || "IK"}
-            </span>
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-500/10 pointer-events-none" />
+        <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 ease-out mt-2">
+          <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[2.5rem] ${t.avatarBg} border-4 ${t.avatarBorder} shadow-[0_16px_40px_rgba(0,0,0,0.15)] flex items-center justify-center relative overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]`}>
+            {card.profile_image_url ? (
+              <img src={card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+            ) : (
+              <span className={`text-4xl sm:text-5xl font-bold tracking-tighter ${t.textMain}`}>
+                {card.avatar_initials || "IK"}
+              </span>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           
-          <div className={`absolute bottom-0 right-0 w-8 h-8 rounded-full ${t.accentBg} text-white flex items-center justify-center shadow-md border-2 ${t.avatarBorder}`}>
-            <Sparkles className="w-3.5 h-3.5 fill-white" />
+          <div className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl ${t.accentBg} text-white flex items-center justify-center shadow-lg border-4 ${t.cardBg} group-hover:rotate-12 group-hover:scale-110 transition-all duration-500`}>
+            <Sparkles className="w-4 h-4 fill-white animate-pulse" />
           </div>
         </div>
 
@@ -341,7 +329,13 @@ export default function PublicCardClient({
             <h1 className={`text-2xl sm:text-[28px] font-semibold tracking-tight ${t.textMain}`}>
               {card.full_name}
             </h1>
-            <ShieldCheck className={`w-5 h-5 ${t.accent}`} />
+            {card.is_verified ? (
+              <span title="AI Verified Identity • 100% Authentic Profile">
+                <VerifiedBadgeIcon className="w-5 h-5 text-green-500 shrink-0 drop-shadow-2xs" />
+              </span>
+            ) : (
+              <ShieldCheck className={`w-5 h-5 ${t.accent}`} />
+            )}
           </div>
 
           <p className={`text-sm font-medium ${t.accent} tracking-normal`}>
@@ -355,47 +349,25 @@ export default function PublicCardClient({
         </div>
 
         {/* Apple Segmented Control Navigation Tabs */}
-        <nav className={`w-full ${t.tabBg} p-1 rounded-2xl flex items-center gap-1 text-[13px] font-medium border ${t.pillBorder}`}>
-          <button
-            onClick={() => setActiveTab("card")}
-            className={`flex-1 min-h-[44px] rounded-xl transition-all ${
-              activeTab === "card"
-                ? `${t.tabActiveBg} ${t.tabActiveText}`
-                : `${t.tabInactiveText}`
-            }`}
-          >
-            Card &amp; QR
-          </button>
-          <button
-            onClick={() => setActiveTab("about")}
-            className={`flex-1 min-h-[44px] rounded-xl transition-all ${
-              activeTab === "about"
-                ? `${t.tabActiveBg} ${t.tabActiveText}`
-                : `${t.tabInactiveText}`
-            }`}
-          >
-            Bio &amp; Skills
-          </button>
-          <button
-            onClick={() => setActiveTab("contact")}
-            className={`flex-1 min-h-[44px] rounded-xl transition-all ${
-              activeTab === "contact"
-                ? `${t.tabActiveBg} ${t.tabActiveText}`
-                : `${t.tabInactiveText}`
-            }`}
-          >
-            Office
-          </button>
-          <button
-            onClick={() => setActiveTab("nfc")}
-            className={`flex-1 min-h-[44px] rounded-xl transition-all ${
-              activeTab === "nfc"
-                ? `${t.tabActiveBg} ${t.tabActiveText}`
-                : `${t.tabInactiveText}`
-            }`}
-          >
-            Share
-          </button>
+        <nav className={`w-full ${t.tabBg} p-1.5 rounded-2xl flex items-center gap-1 text-[13px] font-medium border ${t.pillBorder} relative shadow-inner z-10`}>
+          {([
+            { id: "card", label: "Card & QR" },
+            { id: "about", label: "Bio & Skills" },
+            { id: "contact", label: "Office" },
+            { id: "nfc", label: "Share" }
+          ] as const).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 min-h-[44px] rounded-xl relative transition-all duration-300 ease-out flex items-center justify-center ${
+                activeTab === tab.id
+                  ? `${t.tabActiveBg} ${t.tabActiveText} scale-100 shadow-sm`
+                  : `${t.tabInactiveText} hover:bg-black/5 dark:hover:bg-white/5 scale-95 hover:scale-100`
+              }`}
+            >
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          ))}
         </nav>
 
         {/* TAB 1: CARD & QR CODE */}
@@ -435,17 +407,24 @@ export default function PublicCardClient({
                 <span className={`text-xs font-medium ${t.textMain}`}>Web</span>
               </a>
 
-              <a
-                href={card.booking_url || "https://calendly.com"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.pillBg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
+              <button
+                type="button"
+                onClick={() => {
+                  if (card.booking_enabled !== false) {
+                    setIsBookingModalOpen(true);
+                  } else if (card.booking_url) {
+                    window.open(card.booking_url, "_blank");
+                  } else {
+                    setIsBookingModalOpen(true);
+                  }
+                }}
+                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.pillBg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder} cursor-pointer`}
               >
                 <div className={`w-10 h-10 rounded-full ${t.iconCircleBg} shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition`}>
                   <Calendar className="w-4 h-4 text-[#FF9500]" />
                 </div>
                 <span className={`text-xs font-medium ${t.textMain}`}>Meet</span>
-              </a>
+              </button>
             </div>
 
             {/* Social Media Channels */}
@@ -509,24 +488,26 @@ export default function PublicCardClient({
               <button
                 onClick={handleDownloadWalletPass}
                 disabled={isWalletLoading}
-                className="w-full py-4 px-5 min-h-[56px] rounded-[20px] bg-black hover:bg-neutral-900 text-white font-medium flex items-center justify-between active:scale-[0.98] transition-all shadow-[0_8px_20px_rgba(0,0,0,0.15)] disabled:opacity-60 group"
+                className="w-full py-4 px-5 min-h-[60px] rounded-[24px] bg-black/90 hover:bg-black text-white font-medium flex items-center justify-between hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] disabled:opacity-60 group border border-white/10 relative overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-sm flex items-center justify-center">
-                    <div className="w-full h-full bg-black/40 rounded-[10px] flex items-center justify-center">
-                      <AppleIcon className="w-4 h-4 fill-white" />
+                {/* subtle shine effect */}
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className={`w-10 h-10 rounded-2xl ${isAppleDevice ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500' : 'bg-neutral-800'} p-[1px] shadow-sm flex items-center justify-center group-hover:rotate-3 transition-transform duration-300`}>
+                    <div className="w-full h-full bg-black/40 rounded-[15px] flex items-center justify-center backdrop-blur-sm">
+                      {isAppleDevice ? <AppleIcon className="w-4.5 h-4.5 fill-white drop-shadow-sm" /> : <CreditCard className="w-4.5 h-4.5 text-white drop-shadow-sm" />}
                     </div>
                   </div>
                   <div className="text-left">
-                    <span className="block text-[15px] font-semibold leading-tight">
-                      {isWalletLoading ? "Generating Pass..." : "Add to Apple Wallet"}
+                    <span className="block text-[15px] font-semibold leading-tight tracking-wide">
+                      {isWalletLoading ? "Generating Pass..." : (isAppleDevice ? "Add to Apple Wallet" : "Add to Wallet")}
                     </span>
-                    <span className="block text-[12px] text-neutral-400 font-normal mt-0.5">
-                      Store on iPhone &amp; Apple Watch
+                    <span className="block text-[12px] text-neutral-400 font-medium mt-0.5 tracking-wide">
+                      {isAppleDevice ? "Store on iPhone & Watch" : "Save as digital pass"}
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:translate-x-1 group-hover:text-white transition-all relative z-10" />
               </button>
 
               {/* Native VCF Download / Add Contact Action */}
@@ -633,6 +614,24 @@ export default function PublicCardClient({
                   {copiedKey === "email" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className={`w-3 h-3 ${t.textSecondary}`} />}
                 </button>
               </div>
+
+              <div className={`h-[1px] ${t.divider} w-full`} />
+
+              {/* Direct Booking Schedule Trigger */}
+              <button
+                type="button"
+                onClick={() => setIsBookingModalOpen(true)}
+                className={`w-full py-2 px-2 ${t.pillHover} rounded-lg flex items-center justify-between transition cursor-pointer text-left`}
+              >
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#FF9500]" />
+                  <div>
+                    <span className={`font-semibold ${t.textMain} block leading-tight`}>{card.booking_title || "Schedule Consultation"}</span>
+                    <span className={`text-[10px] ${t.textSecondary}`}>{card.booking_slot_duration || 30} mins • Pick a date &amp; time</span>
+                  </div>
+                </div>
+                <ChevronRight className={`w-4 h-4 ${t.textSecondary}`} />
+              </button>
             </div>
           </div>
         )}
@@ -666,26 +665,43 @@ export default function PublicCardClient({
       </section>
 
       {/* Share Info Back Floating CTA */}
-      <div className="w-full max-w-md z-20 mt-6 mb-2 flex justify-center">
+      <div className="fixed bottom-6 right-6 z-40">
         <button
           onClick={() => setIsExchangeModalOpen(true)}
-          className={`px-6 py-4 min-h-[56px] rounded-[24px] bg-white border ${t.border} shadow-[0_8px_30px_rgba(0,0,0,0.08)] flex items-center gap-3 active:scale-95 transition-transform group hover:bg-neutral-50`}
+          className={`w-16 h-16 rounded-full ${t.accentBg} ${t.accentHover} text-white shadow-2xl active:scale-[0.98] hover:scale-105 transition-all flex items-center justify-center`}
+          title="Share Your Info Back"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
-            <Camera className="w-5 h-5 text-white" />
-          </div>
-          <div className="text-left">
-            <p className={`text-[15px] font-bold ${t.textMain} leading-tight`}>Share Your Info Back</p>
-            <p className={`text-[12px] font-medium ${t.textSecondary}`}>Scan physical card or type manually</p>
-          </div>
+          <QrCode className="w-7 h-7" />
         </button>
       </div>
 
+      <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3 pb-8 pt-6 z-20">
+        <Link
+          href="/auth"
+          className={`w-full max-w-[90%] py-4 rounded-2xl ${t.pillBg} ${t.pillHover} text-[15px] font-semibold ${t.textMain} border ${t.pillBorder} shadow-sm active:scale-95 transition text-center flex items-center justify-center gap-2`}
+        >
+          <Plus className={`w-4 h-4 ${t.accent}`} />
+          <span>Create My Smart Card</span>
+        </Link>
+        <button
+          onClick={handleShare}
+          className={`w-full max-w-[90%] py-4 rounded-2xl ${t.pillBg} ${t.pillHover} text-[15px] font-semibold ${t.textMain} border ${t.pillBorder} shadow-sm active:scale-95 transition text-center flex items-center justify-center gap-2`}
+        >
+          <Share2 className="w-4 h-4" />
+          <span>Share This Contact</span>
+        </button>
+      </div>
       <ExchangeModal 
         isOpen={isExchangeModalOpen} 
         onClose={() => setIsExchangeModalOpen(false)} 
         cardOwnerName={card.full_name} 
         cardId={card.id || slug} 
+      />
+
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        card={card}
       />
 
       {/* Apple-style Minimal Footer */}
@@ -694,6 +710,6 @@ export default function PublicCardClient({
           Designed for iOS &amp; Modern Web • Universal Digital Business Card
         </p>
       </footer>
-    </main>
+    </div>
   );
 }

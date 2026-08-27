@@ -173,15 +173,23 @@ create policy "Avatar images are publicly accessible."
   on storage.objects for select
   using (bucket_id = 'avatars');
 
-drop policy if exists "Authenticated users can upload avatar images." on storage.objects;
-create policy "Authenticated users can upload avatar images."
-  on storage.objects for insert
-  with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
-
 drop policy if exists "Authenticated users can update their avatar images." on storage.objects;
 create policy "Authenticated users can update their avatar images."
   on storage.objects for update
-  using (bucket_id = 'avatars' and auth.role() = 'authenticated');
+  using (
+    bucket_id = 'avatars'
+    and auth.role() = 'authenticated'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "Authenticated users can upload avatar images." on storage.objects;
+create policy "Authenticated users can upload avatar images."
+  on storage.objects for insert
+  with check (
+    bucket_id = 'avatars'
+    and auth.role() = 'authenticated'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 -- =============================================================================
 -- 5. INTELLIGENT NETWORKING PASS UPDATES
@@ -251,9 +259,86 @@ create table if not exists public.organization_members (
   unique(org_id, user_id)
 );
 
+-- Enable Row Level Security on Enterprise Tables
+alter table public.organizations enable row level security;
+alter table public.organization_members enable row level security;
+
+drop policy if exists "Organization members can view their organization" on public.organizations;
+create policy "Organization members can view their organization"
+  on public.organizations for select
+  using (
+    exists (
+      select 1 from public.organization_members
+      where organization_members.org_id = organizations.id
+        and organization_members.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Organization admins can update organization profile" on public.organizations;
+create policy "Organization admins can update organization profile"
+  on public.organizations for update
+  using (
+    exists (
+      select 1 from public.organization_members
+      where organization_members.org_id = organizations.id
+        and organization_members.user_id = auth.uid()
+        and organization_members.role = 'admin'
+    )
+  );
+
+drop policy if exists "Members can view fellow organization members" on public.organization_members;
+create policy "Members can view fellow organization members"
+  on public.organization_members for select
+  using (
+    exists (
+      select 1 from public.organization_members as m
+      where m.org_id = organization_members.org_id
+        and m.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Admins can manage organization members" on public.organization_members;
+create policy "Admins can manage organization members"
+  on public.organization_members for all
+  using (
+    exists (
+      select 1 from public.organization_members as m
+      where m.org_id = organization_members.org_id
+        and m.user_id = auth.uid()
+        and m.role = 'admin'
+    )
+  );
+
+-- Create Collections Table
+create table if not exists public.collections (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  name text not null,
+  color text default '#0071E3',
+  created_at timestamptz default now() not null
+);
+
+alter table public.collections enable row level security;
+create policy "Users can view their own collections." on public.collections for select using (auth.uid() = user_id);
+create policy "Users can insert their own collections." on public.collections for insert with check (auth.uid() = user_id);
+create policy "Users can update their own collections." on public.collections for update using (auth.uid() = user_id);
+create policy "Users can delete their own collections." on public.collections for delete using (auth.uid() = user_id);
+
+-- Add collection relation to connections
+alter table public.connections add column if not exists collection_id uuid references public.collections(id) on delete set null;
+
 -- Add org_id to cards to link enterprise passes
 alter table public.cards 
-  add column if not exists org_id uuid references public.organizations(id) on delete set null;
+  add column if not exists org_id uuid references public.organizations(id) on delete set null,
+  add column if not exists is_verified boolean default false not null,
+  add column if not exists verified_at timestamptz,
+  add column if not exists verification_badge text default 'ai_verified_executive',
+  add column if not exists booking_enabled boolean default true not null,
+  add column if not exists booking_title text default '30-Min Strategy Consultation',
+  add column if not exists booking_days text[] default '{"Monday","Tuesday","Wednesday","Thursday","Friday"}'::text[],
+  add column if not exists booking_start_time text default '09:00',
+  add column if not exists booking_end_time text default '17:00',
+  add column if not exists booking_slot_duration int default 30;
 
 -- Backfill all existing auth.users into public.profiles
 insert into public.profiles (id, email, full_name, avatar_url)
@@ -265,3 +350,76 @@ select
 from auth.users
 on conflict (id) do nothing;
 
+-- =============================================================================
+-- SECURITY: Protect verification columns from client-side tampering
+-- =============================================================================
+create or replace function public.protect_verification_columns()
+returns trigger as $$
+begin
+  if (new.is_verified is distinct from old.is_verified or
+      new.verification_badge is distinct from old.verification_badge or
+      new.verified_at is distinct from old.verified_at) then
+    if current_setting('role') != 'service_role' then
+      new.is_verified := old.is_verified;
+      new.verification_badge := old.verification_badge;
+      new.verified_at := old.verified_at;
+    end if;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists tr_protect_card_verification on public.cards;
+create trigger tr_protect_card_verification
+  before update on public.cards
+  for each row execute function public.protect_verification_columns();
+
+-- =============================================================================
+-- SECURITY: Public lead capture RPC function (SECURITY DEFINER)
+-- =============================================================================
+create or replace function public.submit_public_lead(
+  p_card_id uuid,
+  p_name text,
+  p_email text,
+  p_phone text default null,
+  p_company text default null,
+  p_title text default null,
+  p_meeting_date text default null,
+  p_meeting_time text default null,
+  p_notes text default null
+) returns jsonb as $$
+declare
+  v_owner_id uuid;
+  v_conn_id uuid;
+  v_location text;
+  v_draft text;
+begin
+  -- Validate target card is published
+  select user_id into v_owner_id from public.cards
+  where id = p_card_id and is_published = true;
+
+  if v_owner_id is null then
+    raise exception 'Card not found or not published';
+  end if;
+
+  if p_meeting_date is not null and p_meeting_time is not null then
+    v_location := 'Digital Calendar Booking';
+    v_draft := 'Meeting scheduled for ' || p_meeting_date || ' at ' || p_meeting_time || '. Notes: ' || coalesce(p_notes, 'None');
+  else
+    v_location := 'Public Card Exchange';
+    v_draft := 'Met via digital business card exchange.';
+  end if;
+
+  insert into public.connections (
+    user_id, card_id, contact_name, contact_email, contact_phone,
+    contact_company, contact_title, met_at_location, ai_drafted_message, status
+  ) values (
+    v_owner_id, p_card_id, p_name, p_email, p_phone,
+    p_company, p_title, v_location, v_draft, 'pending'
+  ) returning id into v_conn_id;
+
+  return jsonb_build_object('success', true, 'connection_id', v_conn_id);
+end;
+$$ language plpgsql security definer;
+
+grant execute on function public.submit_public_lead to anon, authenticated;

@@ -22,16 +22,21 @@ import {
   ShieldCheck,
   Building2,
   Share2,
-  Calendar
+  Calendar,
+  Camera,
+  X,
+  Plus
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { 
   AppleIcon,
-  SocialIcon
+  SocialIcon,
+  VerifiedBadgeIcon
 } from "@/components/icons";
 import { PhoneInput } from "@/components/phone-input";
 import { AiBioModal } from "@/components/ai-bio-modal";
+import { VerifyModal } from "@/components/verify-modal";
 import { themes, themeList } from "@/lib/theme";
 
 const ALL_AVAILABLE_SOCIALS = [
@@ -71,6 +76,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBioAiOpen, setIsBioAiOpen] = useState(false);
+  const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
   // Card Form State
   const [card, setCard] = useState<any>({
@@ -82,12 +88,19 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     bio: "",
     avatar_initials: "",
     theme: "apple-light",
+    is_verified: false,
     phone_primary: "",
     phone_secondary: "",
     email_work: "",
     website_primary: "",
     portfolio_url: "",
     booking_url: "",
+    booking_enabled: true,
+    booking_title: "30-Min Strategy Consultation",
+    booking_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    booking_start_time: "09:00",
+    booking_end_time: "17:00",
+    booking_slot_duration: 30,
     skills: [] as string[],
     years_experience: "",
     industry: "",
@@ -196,34 +209,34 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   return (
     <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs text-[#86868B] hover:text-[#1D1D1F] font-medium transition"
+          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 font-medium transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Dashboard</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Link
             href={`/${card.slug}`}
             target="_blank"
-            className="px-3.5 py-2 rounded-2xl bg-white border border-black/[0.08] text-xs font-semibold text-[#1D1D1F] hover:bg-neutral-50 flex items-center gap-1 shadow-xs transition"
+            className="px-4 py-2 rounded-md bg-white border border-neutral-200 text-sm font-medium text-neutral-900 hover:bg-neutral-50 flex items-center gap-2 shadow-sm transition-colors focus:outline-none"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-4 h-4" />
             <span>Preview Live</span>
           </Link>
 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] active:scale-95 text-white text-xs font-semibold flex items-center gap-1.5 shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition disabled:opacity-60"
+            className="px-5 py-2 rounded-md bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium flex items-center gap-2 shadow-sm transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none disabled:opacity-60"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : saveSuccess ? (
-              <Check className="w-4 h-4 text-green-300" />
+              <Check className="w-4 h-4 text-green-400" />
             ) : (
               <Save className="w-4 h-4" />
             )}
@@ -246,9 +259,26 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           
           {/* Section 1: Basic Identity */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <h2 className="text-sm font-semibold text-[#1D1D1F] border-b pb-2">
-              1. Profile Identity
-            </h2>
+            <div className="flex items-center justify-between border-b pb-2">
+              <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                1. Profile Identity
+              </h2>
+              {card.is_verified ? (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200/80 text-green-700 text-[11px] font-semibold">
+                  <VerifiedBadgeIcon className="w-3.5 h-3.5 text-green-500" />
+                  <span>AI Verified Account</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsVerifyOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Verify with AI Camera</span>
+                </button>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -321,7 +351,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                 value={card.bio}
                 onChange={(e) => setCard({ ...card, bio: e.target.value })}
                 placeholder="Brief executive summary highlighting your role, expertise, and leadership focus..."
-                className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
               />
             </div>
           </div>
@@ -422,7 +452,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Booking / Meeting Link</label>
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">External Booking Link (Optional)</label>
                 <input
                   type="text"
                   value={card.booking_url || ""}
@@ -434,11 +464,121 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             </div>
           </div>
 
-          {/* Section 4: Social Media Links */}
+          {/* Section 4: Meeting & Calendar Booking Schedule */}
+          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#0071E3]" />
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  4. Meeting &amp; Calendar Booking Schedule
+                </h2>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={card.booking_enabled ?? true}
+                  onChange={(e) => setCard({ ...card, booking_enabled: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0071E3]" />
+              </label>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                  Meeting Topic / Title
+                </label>
+                <input
+                  type="text"
+                  value={card.booking_title || "30-Min Strategy Consultation"}
+                  onChange={(e) => setCard({ ...card, booking_title: e.target.value })}
+                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20"
+                />
+              </div>
+
+              {/* Available Days Checkboxes */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
+                  Available Meeting Days
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
+                    const daysArr = card.booking_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+                    const isChecked = daysArr.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          const updated = isChecked
+                            ? daysArr.filter((d: string) => d !== day)
+                            : [...daysArr, day];
+                          setCard({ ...card, booking_days: updated });
+                        }}
+                        className={`p-2 rounded-xl text-xs font-medium border text-center transition ${
+                          isChecked
+                            ? "border-[#0071E3] bg-blue-50 text-[#0071E3] font-semibold"
+                            : "border-black/[0.05] bg-[#F5F5F7] text-neutral-600 hover:border-black/[0.15]"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Working Hours & Duration */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={card.booking_start_time || "09:00"}
+                    onChange={(e) => setCard({ ...card, booking_start_time: e.target.value })}
+                    className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={card.booking_end_time || "17:00"}
+                    onChange={(e) => setCard({ ...card, booking_end_time: e.target.value })}
+                    className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                    Duration
+                  </label>
+                  <select
+                    value={card.booking_slot_duration || 30}
+                    onChange={(e) => setCard({ ...card, booking_slot_duration: Number(e.target.value) })}
+                    className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  >
+                    <option value={15}>15 Minutes</option>
+                    <option value={30}>30 Minutes</option>
+                    <option value={45}>45 Minutes</option>
+                    <option value={60}>60 Minutes</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: Social Media Links */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
               <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                4. Connected Social Networks
+                5. Connected Social Networks
               </h2>
               <span className="text-xs text-neutral-400 font-mono">
                 {card.socials.filter((s: any) => s.url).length} connected
@@ -448,22 +588,75 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {card.socials.map((social: any) => (
                 <div key={social.id} className="space-y-1">
-                  <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">
-                    <span className="w-4 h-4 text-neutral-600 flex items-center justify-center">
-                      <SocialIcon id={social.id} className="w-3.5 h-3.5" />
-                    </span>
-                    <span>{social.name}</span>
-                  </label>
+                  {!social.isCustom ? (
+                    <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">
+                      <span className="w-4 h-4 text-neutral-600 flex items-center justify-center">
+                        <SocialIcon id={social.id} className="w-3.5 h-3.5" />
+                      </span>
+                      <span>{social.name}</span>
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={social.name}
+                        onChange={(e) => {
+                          setCard((prev: any) => ({
+                            ...prev,
+                            socials: prev.socials.map((s: any) =>
+                              s.id === social.id ? { ...s, name: e.target.value } : s
+                            ),
+                          }));
+                        }}
+                        placeholder="Link Title"
+                        className="flex-1 text-[12px] font-medium text-neutral-700 bg-transparent border-b border-black/[0.1] focus:outline-none focus:border-[#0071E3] px-1 py-0.5"
+                      />
+                      <button
+                        onClick={() => {
+                          setCard((prev: any) => ({
+                            ...prev,
+                            socials: prev.socials.filter((s: any) => s.id !== social.id),
+                          }));
+                        }}
+                        className="text-red-500 hover:bg-red-50 p-1 rounded-md"
+                        title="Remove Link"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
                   <input
                     type="text"
                     value={social.url || ""}
                     onChange={(e) => updateSocialUrl(social.id, e.target.value)}
-                    placeholder={`https://${social.id}.com/...`}
+                    placeholder={social.isCustom ? "https://..." : `https://${social.id}.com/...`}
                     className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
                   />
                 </div>
               ))}
             </div>
+
+            <button
+              onClick={() => {
+                setCard((prev: any) => ({
+                  ...prev,
+                  socials: [
+                    ...prev.socials,
+                    {
+                      id: "custom_" + Date.now(),
+                      name: "Other Link",
+                      url: "",
+                      isCustom: true,
+                      active: true
+                    }
+                  ]
+                }));
+              }}
+              className="w-full mt-4 py-2 border-2 border-dashed border-black/[0.1] hover:border-[#0071E3] hover:text-[#0071E3] text-neutral-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
+            >
+              <Plus className="w-4 h-4" />
+              Add Custom Link
+            </button>
           </div>
         </div>
 
@@ -497,7 +690,11 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     <h3 className={`text-xl font-bold tracking-tight ${pt.textMain}`}>
                       {card.full_name || "Your Name"}
                     </h3>
-                    <ShieldCheck className={`w-4 h-4 ${pt.accent}`} />
+                    {card.is_verified ? (
+                      <VerifiedBadgeIcon className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <ShieldCheck className={`w-4 h-4 ${pt.accent}`} />
+                    )}
                   </div>
                   <p className={`text-xs font-semibold ${pt.accent}`}>
                     {card.title || "Job Title"}
@@ -584,6 +781,17 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           bio: card.bio,
           skills: card.skills,
         }}
+      />
+
+      {/* AI Identity Camera Verification Modal */}
+      <VerifyModal
+        isOpen={isVerifyOpen}
+        onClose={() => setIsVerifyOpen(false)}
+        onVerified={(result) => {
+          setCard({ ...card, is_verified: result.verified });
+        }}
+        cardId={id}
+        fullName={card.full_name}
       />
     </div>
   );

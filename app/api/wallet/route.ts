@@ -20,13 +20,23 @@ export async function GET(request: Request) {
     };
 
     if (cardIdOrSlug) {
+      // Validate input to prevent PostgREST filter injection
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cardIdOrSlug);
+      const isSlug = /^[a-z0-9][a-z0-9-_]{1,98}[a-z0-9]$/i.test(cardIdOrSlug);
+
+      if (!isUUID && !isSlug) {
+        return NextResponse.json({ error: "Invalid card identifier format" }, { status: 400 });
+      }
+
       try {
         const supabase = await createClient();
-        const { data: fetchedCard } = await supabase
-          .from("cards")
-          .select("*")
-          .or(`id.eq.${cardIdOrSlug},slug.eq.${cardIdOrSlug}`)
-          .single();
+        let query = supabase.from("cards").select("*");
+        if (isUUID) {
+          query = query.eq("id", cardIdOrSlug);
+        } else {
+          query = query.eq("slug", cardIdOrSlug);
+        }
+        const { data: fetchedCard } = await query.single();
 
         if (fetchedCard) {
           cardData = fetchedCard;

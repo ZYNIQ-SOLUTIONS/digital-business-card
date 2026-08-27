@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  // Note: next is sanitized before use below
 
   if (code) {
     const supabase = await createClient();
@@ -27,7 +28,12 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // Sanitize redirect to prevent open redirect attacks
+      let safeNext = "/dashboard";
+      if (next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")) {
+        safeNext = next;
+      }
+      return NextResponse.redirect(`${origin}${safeNext}`);
     }
   }
 

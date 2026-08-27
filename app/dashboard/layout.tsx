@@ -28,33 +28,33 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-[#0071E3] selection:text-white">
+    <div className="min-h-screen bg-neutral-50/50 text-neutral-900 flex flex-col font-sans selection:bg-neutral-900 selection:text-white">
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-black/[0.06]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-40 w-full bg-white/70 backdrop-blur-md border-b border-neutral-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-3 group min-h-[44px]">
+            <Link href="/dashboard" className="flex items-center gap-2 group min-h-[40px]">
               <div className="logo-sync-container relative">
-                <svg width="28" height="28" viewBox="0 0 200 200" className="logo-sync">
+                <svg width="24" height="24" viewBox="0 0 200 200" className="logo-sync">
                   <path className="half half-top" d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeLinecap="round"/>
                   <path className="half half-bot" d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#ec4899" strokeWidth="12" strokeLinecap="round"/>
-                  <circle className="core-node" cx="100" cy="100" r="15" fill="#1D1D1F"/>
+                  <circle className="core-node" cx="100" cy="100" r="15" fill="#171717"/>
                 </svg>
               </div>
-              <span className="font-display text-[17px] font-semibold tracking-tight text-[#1D1D1F] hidden sm:block">
+              <span className="font-display text-[15px] font-semibold tracking-tight text-neutral-900 hidden sm:block">
                 IZN
               </span>
             </Link>
           </div>
 
           {/* Navigation Items */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <Link
               href="/dashboard"
-              className={`px-4 py-2 min-h-[44px] flex items-center rounded-full text-[15px] font-medium transition ${
+              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
                 pathname === "/dashboard"
-                  ? "bg-black text-white"
-                  : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100/50"
               }`}
             >
               My Cards
@@ -62,10 +62,10 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard/connections"
-              className={`px-4 py-2 min-h-[44px] flex items-center rounded-full text-[15px] font-medium transition hidden md:flex ${
+              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors hidden md:flex ${
                 pathname === "/dashboard/connections"
-                  ? "bg-black text-white"
-                  : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100/50"
               }`}
             >
               Connections
@@ -73,18 +73,20 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard/enterprise"
-              className={`px-4 py-2 min-h-[44px] flex items-center rounded-full text-[15px] font-medium transition hidden md:flex ${
+              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors hidden md:flex ${
                 pathname === "/dashboard/enterprise"
-                  ? "bg-black text-white"
-                  : "text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04]"
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100/50"
               }`}
             >
               Enterprise
             </Link>
 
+            <div className="w-[1px] h-4 bg-neutral-200 mx-1 hidden sm:block" />
+
             <Link
               href="/dashboard/cards/new"
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-[15px] font-medium shadow-sm active:scale-95 transition"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-md bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium shadow-sm transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none"
             >
               <Plus className="w-4 h-4" />
               <span>New Card</span>
@@ -93,10 +95,10 @@ export default function DashboardLayout({
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-[#86868B] hover:text-red-600 hover:bg-red-50 transition"
+              className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md text-neutral-500 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none"
               title="Sign Out"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>

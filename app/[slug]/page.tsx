@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: PublicCardPageProps): Promise
 
   const { data: card } = await supabase
     .from("cards")
-    .select("full_name, title, company, tagline")
+    .select("full_name, title, company, tagline, bio, avatar_url")
     .eq("slug", slug)
     .eq("is_published", true)
     .single();
@@ -25,12 +25,36 @@ export async function generateMetadata({ params }: PublicCardPageProps): Promise
     };
   }
 
+  const ogImageUrl = card.avatar_url
+    ? card.avatar_url
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(card.full_name || 'Card')}&background=0071E3&color=fff&size=400&bold=true&format=svg`;
+
+  const cardUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://d-b-c.netlify.app'}/${slug}`;
+
   return {
-    title: `${card.full_name} — ${card.title} | ${card.company}`,
-    description: card.tagline || `Contact card for ${card.full_name} at ${card.company}`,
+    title: `${card.full_name} — ${card.title} at ${card.company}`,
+    description: card.tagline || card.bio || `Connect with ${card.full_name}, ${card.title} at ${card.company}.`,
+    alternates: {
+      canonical: cardUrl,
+    },
     openGraph: {
+      type: "profile",
+      url: cardUrl,
       title: `${card.full_name} — ${card.title}`,
-      description: card.tagline || `Contact card for ${card.full_name} at ${card.company}`,
+      description: card.tagline || card.bio || `${card.title} at ${card.company}`,
+      images: [{
+        url: ogImageUrl,
+        width: 400,
+        height: 400,
+        alt: `${card.full_name} profile photo`,
+      }],
+      siteName: "ZYNIQ Digital Business Cards",
+    },
+    twitter: {
+      card: "summary",
+      title: `${card.full_name} — ${card.title}`,
+      description: card.tagline || card.bio || `${card.title} at ${card.company}`,
+      images: [ogImageUrl],
     },
   };
 }
