@@ -32,6 +32,7 @@ import {
 } from "@/components/icons";
 import { PhoneInput } from "@/components/phone-input";
 import { AiBioModal } from "@/components/ai-bio-modal";
+import { themes, themeList } from "@/lib/theme";
 
 const ALL_AVAILABLE_SOCIALS = [
   { id: "linkedin", name: "LinkedIn", url: "", active: true },
@@ -80,6 +81,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     tagline: "",
     bio: "",
     avatar_initials: "",
+    theme: "apple-light",
     phone_primary: "",
     phone_secondary: "",
     email_work: "",
@@ -324,10 +326,67 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             </div>
           </div>
 
-          {/* Section 2: Contact Information */}
+          {/* Section 2: Card Theme & Aesthetic */}
+          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                2. Visual Theme &amp; Color Palette
+              </h2>
+              <span className="text-xs text-neutral-400 font-mono">
+                {themeList.find(t => t.id === card.theme)?.name || "Apple Light"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {themeList.map((th) => {
+                const isSelected = (card.theme || "apple-light") === th.id;
+                return (
+                  <button
+                    key={th.id}
+                    type="button"
+                    onClick={() => setCard({ ...card, theme: th.id })}
+                    className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between min-h-[90px] ${
+                      isSelected
+                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/20 shadow-xs"
+                        : "border-black/[0.06] hover:border-black/[0.15] bg-[#FBFBFD]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-4 h-4 rounded-full border border-black/10 shadow-2xs shrink-0"
+                          style={{ backgroundColor: th.previewBg }}
+                        />
+                        <div
+                          className="w-3 h-3 rounded-full shadow-2xs shrink-0"
+                          style={{ backgroundColor: th.previewAccent }}
+                        />
+                      </div>
+                      {isSelected && (
+                        <div className="w-4 h-4 rounded-full bg-[#0071E3] text-white flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2">
+                      <span className="block text-[11px] font-semibold text-[#1D1D1F] leading-tight">
+                        {th.name}
+                      </span>
+                      <span className="block text-[9px] text-[#86868B] truncate mt-0.5">
+                        {th.isDark ? "Dark OLED" : "Light Frost"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 3: Contact Information */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
             <h2 className="text-sm font-semibold text-[#1D1D1F] border-b pb-2">
-              2. Contact &amp; Links
+              3. Contact &amp; Links
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -375,11 +434,11 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             </div>
           </div>
 
-          {/* Section 3: Social Media Links */}
+          {/* Section 4: Social Media Links */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
               <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                3. Connected Social Networks
+                4. Connected Social Networks
               </h2>
               <span className="text-xs text-neutral-400 font-mono">
                 {card.socials.filter((s: any) => s.url).length} connected
@@ -409,93 +468,106 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         </div>
 
         {/* RIGHT COLUMN: REAL-TIME APPLE LIVE PREVIEW */}
-        <div className="lg:col-span-5 sticky top-20">
-          <div className="text-center pb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
-              Real-Time Mobile Card Preview
-            </span>
-          </div>
+        {(() => {
+          const pt = themes[card.theme || "apple-light"] || themes["apple-light"];
+          return (
+            <div className="lg:col-span-5 sticky top-20">
+              <div className="text-center pb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
+                  Real-Time Mobile Card Preview ({pt.name})
+                </span>
+              </div>
 
-          {/* Device Mockup Wrapper */}
-          <div className="w-full max-w-sm mx-auto bg-white/90 backdrop-blur-2xl border border-black/[0.08] rounded-[32px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.06)] flex flex-col items-center space-y-5">
-            
-            {/* Avatar Initials */}
-            <div className="w-20 h-20 rounded-full bg-gradient-to-b from-neutral-100 to-neutral-200 border-2 border-white shadow-md flex items-center justify-center relative overflow-hidden">
-              <span className="text-2xl font-semibold tracking-tighter text-[#1D1D1F]">
-                {card.avatar_initials || "IK"}
-              </span>
-              <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#0071E3] text-white flex items-center justify-center shadow-xs">
-                <Sparkles className="w-3 h-3 fill-white" />
-              </div>
-            </div>
-
-            {/* Name & Title */}
-            <div className="text-center space-y-0.5">
-              <div className="flex items-center justify-center gap-1">
-                <h3 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
-                  {card.full_name || "Your Name"}
-                </h3>
-                <ShieldCheck className="w-4 h-4 text-[#0071E3]" />
-              </div>
-              <p className="text-xs font-semibold text-[#0071E3]">
-                {card.title || "Job Title"}
-              </p>
-              <p className="text-[11px] text-[#86868B]">
-                {card.company || "Company Name"}
-              </p>
-            </div>
-
-            {/* Quick Actions 4-Grid */}
-            <div className="w-full grid grid-cols-4 gap-1.5">
-              <div className="flex flex-col items-center p-2 rounded-xl bg-[#F5F5F7] text-center">
-                <Phone className="w-3.5 h-3.5 text-[#34C759] mb-1" />
-                <span className="text-[10px] font-medium">Call</span>
-              </div>
-              <div className="flex flex-col items-center p-2 rounded-xl bg-[#F5F5F7] text-center">
-                <Mail className="w-3.5 h-3.5 text-[#0071E3] mb-1" />
-                <span className="text-[10px] font-medium">Email</span>
-              </div>
-              <div className="flex flex-col items-center p-2 rounded-xl bg-[#F5F5F7] text-center">
-                <Globe className="w-3.5 h-3.5 text-[#5856D6] mb-1" />
-                <span className="text-[10px] font-medium">Web</span>
-              </div>
-              <div className="flex flex-col items-center p-2 rounded-xl bg-[#F5F5F7] text-center">
-                <Calendar className="w-3.5 h-3.5 text-[#FF9500] mb-1" />
-                <span className="text-[10px] font-medium">Meet</span>
-              </div>
-            </div>
-
-            {/* QR Mockup */}
-            <div className="w-full bg-[#F5F5F7] rounded-2xl p-3 flex flex-col items-center border border-black/[0.04]">
-              <div className="bg-white p-2 rounded-xl shadow-xs">
-                <QRCodeSVG
-                  value={`https://card.app/${card.slug || "demo"}`}
-                  size={120}
-                  level="Q"
-                  className="w-28 h-28"
-                />
-              </div>
-              <span className="text-[10px] text-[#86868B] pt-2 font-mono">
-                /{card.slug || "slug"}
-              </span>
-            </div>
-
-            {/* CTA Pill Buttons */}
-            <div className="w-full space-y-2">
-              <div className="w-full py-2.5 px-3 rounded-xl bg-black text-white text-[11px] font-medium flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <AppleIcon className="w-3.5 h-3.5 fill-white" />
-                  <span>Add to Apple Wallet</span>
+              {/* Device Mockup Wrapper */}
+              <div className={`w-full max-w-sm mx-auto ${pt.cardBg} border ${pt.border} rounded-[32px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-5 transition-all duration-300`}>
+                
+                {/* Avatar Initials */}
+                <div className={`w-20 h-20 rounded-full ${pt.avatarBg} border-2 ${pt.avatarBorder} shadow-md flex items-center justify-center relative overflow-hidden`}>
+                  <span className={`text-2xl font-semibold tracking-tighter ${pt.textMain}`}>
+                    {card.avatar_initials || "IK"}
+                  </span>
+                  <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full ${pt.accentBg} text-white flex items-center justify-center shadow-xs border ${pt.avatarBorder}`}>
+                    <Sparkles className="w-3 h-3 fill-white" />
+                  </div>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </div>
-              <div className="w-full py-2.5 px-3 rounded-xl bg-[#0071E3] text-white text-[11px] font-medium text-center">
-                Save Contact Card (.vcf)
+
+                {/* Name & Title */}
+                <div className="text-center space-y-0.5">
+                  <div className="flex items-center justify-center gap-1">
+                    <h3 className={`text-xl font-bold tracking-tight ${pt.textMain}`}>
+                      {card.full_name || "Your Name"}
+                    </h3>
+                    <ShieldCheck className={`w-4 h-4 ${pt.accent}`} />
+                  </div>
+                  <p className={`text-xs font-semibold ${pt.accent}`}>
+                    {card.title || "Job Title"}
+                  </p>
+                  <p className={`text-[11px] ${pt.textSecondary}`}>
+                    {card.company || "Company Name"}
+                  </p>
+                </div>
+
+                {/* Quick Actions 4-Grid */}
+                <div className="w-full grid grid-cols-4 gap-1.5">
+                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
+                      <Phone className="w-3.5 h-3.5 text-[#34C759]" />
+                    </div>
+                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Call</span>
+                  </div>
+                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
+                      <Mail className={`w-3.5 h-3.5 ${pt.accent}`} />
+                    </div>
+                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Email</span>
+                  </div>
+                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
+                      <Globe className="w-3.5 h-3.5 text-[#5856D6]" />
+                    </div>
+                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Web</span>
+                  </div>
+                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
+                      <Calendar className="w-3.5 h-3.5 text-[#FF9500]" />
+                    </div>
+                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Meet</span>
+                  </div>
+                </div>
+
+                {/* QR Mockup */}
+                <div className={`w-full ${pt.qrContainerBg} rounded-2xl p-3 flex flex-col items-center border ${pt.pillBorder}`}>
+                  <div className="bg-white p-2 rounded-xl shadow-xs">
+                    <QRCodeSVG
+                      value={`https://card.app/${card.slug || "demo"}`}
+                      size={120}
+                      level="Q"
+                      className="w-28 h-28"
+                    />
+                  </div>
+                  <span className={`text-[10px] ${pt.textSecondary} pt-2 font-mono`}>
+                    /{card.slug || "slug"}
+                  </span>
+                </div>
+
+                {/* CTA Pill Buttons */}
+                <div className="w-full space-y-2">
+                  <div className="w-full py-2.5 px-3 rounded-xl bg-black text-white text-[11px] font-medium flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <AppleIcon className="w-3.5 h-3.5 fill-white" />
+                      <span>Add to Apple Wallet</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                  <div className={`w-full py-2.5 px-3 rounded-xl ${pt.accentBg} text-white text-[11px] font-medium text-center shadow-xs`}>
+                    Save Contact Card (.vcf)
+                  </div>
+                </div>
+
               </div>
             </div>
-
-          </div>
-        </div>
+          );
+        })()}
 
       </div>
 

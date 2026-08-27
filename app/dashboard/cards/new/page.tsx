@@ -5,7 +5,8 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, Sparkles, ArrowRight, Loader2, Check } from "lucide-react";
+import { themeList } from "@/lib/theme";
 
 export default function NewCardPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function NewCardPage() {
     title: "",
     company: "",
     slug: "",
+    theme: "apple-light",
     phonePrimary: "",
     emailWork: "",
     websitePrimary: "https://",
@@ -74,7 +76,7 @@ export default function NewCardPage() {
         user_id: user.id,
         slug: formData.slug || `card-${Date.now().toString(36)}`,
         is_published: true,
-        theme: "apple-light",
+        theme: formData.theme || "apple-light",
         full_name: formData.fullName,
         avatar_initials: avatarInitials,
         title: formData.title,
@@ -201,19 +203,42 @@ export default function NewCardPage() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-              Custom Card URL Slug *
+            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
+              Choose Initial Theme
             </label>
-            <div className="flex items-center rounded-xl bg-[#F5F5F7] border border-black/[0.05] px-3 py-1">
-              <span className="text-[#86868B] font-mono select-none">/</span>
-              <input
-                type="text"
-                required
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })}
-                placeholder="card-slug"
-                className="w-full py-2 bg-transparent font-mono focus:outline-none"
-              />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {themeList.map((th) => {
+                const isSelected = formData.theme === th.id;
+                return (
+                  <button
+                    key={th.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, theme: th.id })}
+                    className={`p-2.5 rounded-xl text-left border transition-all relative flex flex-col justify-between min-h-[64px] ${
+                      isSelected
+                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/30"
+                        : "border-black/[0.05] hover:border-black/[0.12] bg-[#F5F5F7]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-2xs shrink-0"
+                          style={{ backgroundColor: th.previewBg }}
+                        />
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shadow-2xs shrink-0"
+                          style={{ backgroundColor: th.previewAccent }}
+                        />
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3]" />}
+                    </div>
+                    <span className="block text-[11px] font-medium text-[#1D1D1F] truncate mt-1">
+                      {th.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -7,10 +7,12 @@ import {
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
-  Loader2 
+  Loader2,
+  Check
 } from "lucide-react";
 import { PhoneInput } from "@/components/phone-input";
 import { AiBioModal } from "@/components/ai-bio-modal";
+import { themeList } from "@/lib/theme";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function OnboardingPage() {
     title: "",
     company: "",
     slug: "",
+    theme: "apple-light",
     phonePrimary: "",
     emailWork: "",
     websitePrimary: "https://",
@@ -105,7 +108,7 @@ export default function OnboardingPage() {
         user_id: user.id,
         slug: formData.slug || `card-${Date.now().toString(36)}`,
         is_published: true,
-        theme: "apple-light",
+        theme: formData.theme || "apple-light",
         full_name: formData.fullName || "My Digital Card",
         avatar_initials: avatarInitials,
         title: formData.title || "Founder / Executive",
@@ -383,6 +386,46 @@ export default function OnboardingPage() {
                 placeholder="Share a brief overview of your background, achievements, or mission..."
                 className="w-full px-3.5 py-2.5 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
               />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1.5 pl-1">
+                Visual Theme Style
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {themeList.map((th) => {
+                  const isSelected = formData.theme === th.id;
+                  return (
+                    <button
+                      key={th.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, theme: th.id })}
+                      className={`p-2.5 rounded-xl text-left border transition-all relative flex flex-col justify-between min-h-[64px] ${
+                        isSelected
+                          ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/30"
+                          : "border-black/[0.05] hover:border-black/[0.12] bg-[#F5F5F7]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-2xs shrink-0"
+                            style={{ backgroundColor: th.previewBg }}
+                          />
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shadow-2xs shrink-0"
+                            style={{ backgroundColor: th.previewAccent }}
+                          />
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3]" />}
+                      </div>
+                      <span className="block text-[11px] font-medium text-[#1D1D1F] truncate mt-1">
+                        {th.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="p-4 rounded-2xl bg-green-50 border border-green-200/80 flex items-start gap-2.5 text-xs text-green-900">

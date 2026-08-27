@@ -301,7 +301,7 @@ export default function PublicCardClient({
         <div className="flex items-center gap-2">
           <Link
             href="/auth"
-            className={`flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl hover:bg-white text-[15px] font-semibold ${t.textMain} border ${t.pillBorder} shadow-sm active:scale-95 transition`}
+            className={`flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl ${t.pillHover} text-[15px] font-semibold ${t.textMain} border ${t.pillBorder} shadow-sm active:scale-95 transition`}
           >
             <Plus className={`w-4 h-4 ${t.accent}`} />
             <span>Create Mine</span>
@@ -309,7 +309,7 @@ export default function PublicCardClient({
 
           <button
             onClick={handleShare}
-            className={`flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl hover:bg-white active:scale-95 transition-all shadow-sm border ${t.pillBorder} ${t.textMain}`}
+            className={`flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full ${t.headerBg} backdrop-blur-2xl ${t.pillHover} active:scale-95 transition-all shadow-sm border ${t.pillBorder} ${t.textMain}`}
             aria-label="Share Contact"
             title="Share Contact"
           >
@@ -319,18 +319,18 @@ export default function PublicCardClient({
       </header>
 
       {/* Main Apple-style Card */}
-      <section className={`w-full max-w-md ${t.cardBg} backdrop-blur-2xl border ${t.border} rounded-[32px] p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.06)] flex flex-col items-center space-y-5 z-10 my-auto transition-all duration-300`}>
+      <section className={`w-full max-w-md ${t.cardBg} backdrop-blur-2xl border ${t.border} rounded-[32px] p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-5 z-10 my-auto transition-all duration-300`}>
         
         {/* Profile Avatar & Badge */}
         <div className="relative group">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-b from-neutral-100 via-neutral-50 to-neutral-200 border-[3px] border-white shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex items-center justify-center relative overflow-hidden">
+          <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full ${t.avatarBg} border-[3px] ${t.avatarBorder} shadow-[0_8px_24px_rgba(0,0,0,0.15)] flex items-center justify-center relative overflow-hidden`}>
             <span className={`text-3xl sm:text-4xl font-semibold tracking-tighter ${t.textMain}`}>
               {card.avatar_initials || "IK"}
             </span>
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-500/10 pointer-events-none" />
           </div>
           
-          <div className={`absolute bottom-0 right-0 w-8 h-8 rounded-full ${t.accentBg} text-white flex items-center justify-center shadow-md border-2 border-white`}>
+          <div className={`absolute bottom-0 right-0 w-8 h-8 rounded-full ${t.accentBg} text-white flex items-center justify-center shadow-md border-2 ${t.avatarBorder}`}>
             <Sparkles className="w-3.5 h-3.5 fill-white" />
           </div>
         </div>
@@ -360,8 +360,8 @@ export default function PublicCardClient({
             onClick={() => setActiveTab("card")}
             className={`flex-1 min-h-[44px] rounded-xl transition-all ${
               activeTab === "card"
-                ? "bg-white ${t.textMain} shadow-sm font-semibold"
-                : "${t.textSecondary} hover:${t.textMain}"
+                ? `${t.tabActiveBg} ${t.tabActiveText}`
+                : `${t.tabInactiveText}`
             }`}
           >
             Card &amp; QR
@@ -370,8 +370,8 @@ export default function PublicCardClient({
             onClick={() => setActiveTab("about")}
             className={`flex-1 min-h-[44px] rounded-xl transition-all ${
               activeTab === "about"
-                ? "bg-white ${t.textMain} shadow-sm font-semibold"
-                : "${t.textSecondary} hover:${t.textMain}"
+                ? `${t.tabActiveBg} ${t.tabActiveText}`
+                : `${t.tabInactiveText}`
             }`}
           >
             Bio &amp; Skills
@@ -380,8 +380,8 @@ export default function PublicCardClient({
             onClick={() => setActiveTab("contact")}
             className={`flex-1 min-h-[44px] rounded-xl transition-all ${
               activeTab === "contact"
-                ? "bg-white ${t.textMain} shadow-sm font-semibold"
-                : "${t.textSecondary} hover:${t.textMain}"
+                ? `${t.tabActiveBg} ${t.tabActiveText}`
+                : `${t.tabInactiveText}`
             }`}
           >
             Office
@@ -390,8 +390,8 @@ export default function PublicCardClient({
             onClick={() => setActiveTab("nfc")}
             className={`flex-1 min-h-[44px] rounded-xl transition-all ${
               activeTab === "nfc"
-                ? "bg-white ${t.textMain} shadow-sm font-semibold"
-                : "${t.textSecondary} hover:${t.textMain}"
+                ? `${t.tabActiveBg} ${t.tabActiveText}`
+                : `${t.tabInactiveText}`
             }`}
           >
             Share
@@ -405,9 +405,9 @@ export default function PublicCardClient({
             <div className="w-full grid grid-cols-4 gap-2">
               <a
                 href={`tel:${card.phone_primary}`}
-                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.bg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
+                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.pillBg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
               >
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition">
+                <div className={`w-10 h-10 rounded-full ${t.iconCircleBg} shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition`}>
                   <Phone className="w-4 h-4 text-[#34C759]" />
                 </div>
                 <span className={`text-xs font-medium ${t.textMain}`}>Call</span>
@@ -415,9 +415,9 @@ export default function PublicCardClient({
 
               <a
                 href={`mailto:${card.email_work}`}
-                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.bg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
+                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.pillBg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
               >
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition">
+                <div className={`w-10 h-10 rounded-full ${t.iconCircleBg} shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition`}>
                   <Mail className={`w-4 h-4 ${t.accent}`} />
                 </div>
                 <span className={`text-xs font-medium ${t.textMain}`}>Email</span>
@@ -427,9 +427,9 @@ export default function PublicCardClient({
                 href={card.website_primary}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.bg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
+                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.pillBg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
               >
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition">
+                <div className={`w-10 h-10 rounded-full ${t.iconCircleBg} shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition`}>
                   <Globe className="w-4 h-4 text-[#5856D6]" />
                 </div>
                 <span className={`text-xs font-medium ${t.textMain}`}>Web</span>
@@ -439,9 +439,9 @@ export default function PublicCardClient({
                 href={card.booking_url || "https://calendly.com"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.bg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
+                className={`flex flex-col items-center justify-center p-3 min-h-[64px] rounded-2xl ${t.pillBg} ${t.pillHover} active:scale-95 transition-all text-center group border ${t.pillBorder}`}
               >
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition">
+                <div className={`w-10 h-10 rounded-full ${t.iconCircleBg} shadow-sm flex items-center justify-center mb-1 group-hover:scale-105 transition`}>
                   <Calendar className="w-4 h-4 text-[#FF9500]" />
                 </div>
                 <span className={`text-xs font-medium ${t.textMain}`}>Meet</span>
@@ -470,7 +470,7 @@ export default function PublicCardClient({
                           rel="noopener noreferrer"
                           aria-label={social.name}
                           title={social.name}
-                          className={`flex flex-col items-center justify-center p-3 min-h-[56px] rounded-2xl ${t.bg} hover:bg-white hover:shadow-sm border ${t.pillBorder} ${t.textSecondary} hover:${t.textMain} active:scale-95 transition-all group`}
+                          className={`flex flex-col items-center justify-center p-3 min-h-[56px] rounded-2xl ${t.pillBg} ${t.pillHover} border ${t.pillBorder} ${t.textSecondary} hover:${t.textMain} active:scale-95 transition-all group`}
                         >
                           <Icon className="w-5 h-5 mb-1.5 transition-transform group-hover:scale-110" />
                           <span className={`text-[11px] font-medium tracking-tight ${t.textMain} truncate max-w-full`}>
@@ -484,8 +484,8 @@ export default function PublicCardClient({
             )}
 
             {/* Dynamic vCard QR Code Card */}
-            <div className={`w-full ${t.bg} border ${t.pillBorder} rounded-[32px] p-5 sm:p-6 flex flex-col items-center shadow-inner relative`}>
-              <div className={`bg-white p-4 rounded-[24px] shadow-[0_4px_16px_rgba(0,0,0,0.06)] border ${t.pillBorder}`}>
+            <div className={`w-full ${t.qrContainerBg} border ${t.pillBorder} rounded-[32px] p-5 sm:p-6 flex flex-col items-center shadow-inner relative`}>
+              <div className="bg-white p-4 rounded-[24px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] border border-black/[0.05]">
                 <QRCodeSVG
                   value={vCardString}
                   size={180}
@@ -498,7 +498,7 @@ export default function PublicCardClient({
               </div>
 
               <div className="mt-4 text-center">
-                <p className={`text-[15px] font-medium ${t.textMain}`}>Scan to Save Contact Card</p>
+                <p className={`text-[15px] font-semibold ${t.textMain}`}>Scan to Save Contact Card</p>
                 <p className={`text-[13px] ${t.textSecondary} mt-1`}>Compatible with iOS &amp; Android Address Books</p>
               </div>
             </div>
@@ -561,7 +561,7 @@ export default function PublicCardClient({
         {activeTab === "about" && (
           <div className="w-full space-y-4 animate-in fade-in-50 duration-200 text-left">
             {card.bio && (
-              <div className={`${t.bg} rounded-2xl p-4 border ${t.pillBorder} space-y-2`}>
+              <div className={`${t.pillBg} rounded-2xl p-4 border ${t.pillBorder} space-y-2`}>
                 <span className={`text-[11px] font-semibold uppercase ${t.textSecondary} tracking-wider block`}>
                   Executive Bio
                 </span>
@@ -572,7 +572,7 @@ export default function PublicCardClient({
             )}
 
             {Array.isArray(card.skills) && card.skills.length > 0 && (
-              <div className={`${t.bg} rounded-2xl p-4 border ${t.pillBorder} space-y-2.5`}>
+              <div className={`${t.pillBg} rounded-2xl p-4 border ${t.pillBorder} space-y-2.5`}>
                 <span className={`text-[11px] font-semibold uppercase ${t.textSecondary} tracking-wider block`}>
                   Core Competencies &amp; Skills
                 </span>
@@ -580,7 +580,7 @@ export default function PublicCardClient({
                   {card.skills.map((skill: string) => (
                     <span
                       key={skill}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white border ${t.border} ${t.textMain} shadow-2xs`}
+                      className={`text-[11px] font-medium px-2.5 py-1 rounded-lg ${t.iconCircleBg} border ${t.pillBorder} ${t.textMain} shadow-2xs`}
                     >
                       {skill}
                     </span>
@@ -595,7 +595,7 @@ export default function PublicCardClient({
         {activeTab === "contact" && (
           <div className="w-full space-y-3 animate-in fade-in-50 duration-200 text-left">
             {card.office_address && card.office_address.street && (
-              <div className={`${t.bg} rounded-2xl p-4 border ${t.pillBorder} space-y-2`}>
+              <div className={`${t.pillBg} rounded-2xl p-4 border ${t.pillBorder} space-y-2`}>
                 <div className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase ${t.textSecondary} tracking-wider`}>
                   <MapPin className={`w-3.5 h-3.5 ${t.accent}`} />
                   <span>Office Address</span>
@@ -609,8 +609,8 @@ export default function PublicCardClient({
             )}
 
             {/* Direct Quick Copy Rows */}
-            <div className={`${t.bg} rounded-2xl p-3 border ${t.pillBorder} space-y-2 text-xs`}>
-              <div className="flex items-center justify-between py-1.5 px-2 hover:bg-black/[0.02] rounded-lg transition">
+            <div className={`${t.pillBg} rounded-2xl p-3 border ${t.pillBorder} space-y-2 text-xs`}>
+              <div className={`flex items-center justify-between py-1.5 px-2 ${t.pillHover} rounded-lg transition`}>
                 <span className={`${t.textSecondary}`}>Primary Phone</span>
                 <button
                   onClick={() => handleCopyText(card.phone_primary, "phone")}
@@ -621,9 +621,9 @@ export default function PublicCardClient({
                 </button>
               </div>
 
-              <div className="h-[1px] bg-black/[0.04] w-full" />
+              <div className={`h-[1px] ${t.divider} w-full`} />
 
-              <div className="flex items-center justify-between py-1.5 px-2 hover:bg-black/[0.02] rounded-lg transition">
+              <div className={`flex items-center justify-between py-1.5 px-2 ${t.pillHover} rounded-lg transition`}>
                 <span className={`${t.textSecondary}`}>Work Email</span>
                 <button
                   onClick={() => handleCopyText(card.email_work, "email")}
@@ -640,7 +640,7 @@ export default function PublicCardClient({
         {/* TAB 4: NFC & SHARE */}
         {activeTab === "nfc" && (
           <div className="w-full space-y-3.5 animate-in fade-in-50 duration-200 text-left">
-            <div className="bg-gradient-to-br from-[#0071E3]/10 via-[#5856D6]/5 to-transparent rounded-2xl p-4 border border-[#0071E3]/20 space-y-2">
+            <div className={`bg-gradient-to-br ${t.gradient} to-transparent rounded-2xl p-4 border ${t.pillBorder} space-y-2`}>
               <div className="flex items-center gap-2">
                 <Smartphone className={`w-4 h-4 ${t.accent}`} />
                 <span className={`text-xs font-semibold ${t.textMain}`}>
@@ -650,11 +650,11 @@ export default function PublicCardClient({
               <p className={`text-xs ${t.textSecondary} leading-relaxed`}>
                 Compatible with any physical NFC smart card. Write this URL:
               </p>
-              <div className={`bg-white p-2.5 rounded-xl border ${t.border} text-xs font-mono ${t.textMain} flex items-center justify-between`}>
+              <div className={`${t.pillBg} p-2.5 rounded-xl border ${t.pillBorder} text-xs font-mono ${t.textMain} flex items-center justify-between`}>
                 <span className="truncate pr-2">{typeof window !== "undefined" ? window.location.href : ""}</span>
                 <button
                   onClick={() => handleCopyText(typeof window !== "undefined" ? window.location.href : "", "nfcUrl")}
-                  className={`${t.accent} font-sans font-semibold text-[11px] shrink-0`}
+                  className={`${t.accent} font-sans font-semibold text-[11px] shrink-0 hover:underline`}
                 >
                   {copiedKey === "nfcUrl" ? "Copied" : "Copy URL"}
                 </button>

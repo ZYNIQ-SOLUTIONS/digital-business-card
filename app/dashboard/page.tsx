@@ -290,11 +290,16 @@ export default function DashboardPage() {
                   value={card.theme || "apple-light"}
                   onChange={(e) => handleChangeTheme(card.id, e.target.value)}
                   className="px-2 py-1.5 rounded-xl text-xs font-medium bg-[#F5F5F7] border border-black/[0.04] text-[#1D1D1F] hover:bg-[#E8E8ED] transition focus:outline-none"
+                  title="Card Theme"
                 >
-                  <option value="apple-light">Apple Light</option>
-                  <option value="apple-dark">Apple Dark</option>
-                  <option value="midnight-glass">Midnight Glass</option>
-                  <option value="sync-sphere">Sync Sphere</option>
+                  <option value="apple-light">🍏 Apple Light</option>
+                  <option value="apple-dark">🌑 Apple Dark</option>
+                  <option value="obsidian-gold">✨ Obsidian Gold</option>
+                  <option value="emerald-forest">🌲 Emerald Forest</option>
+                  <option value="cosmic-nebula">🌌 Cosmic Nebula</option>
+                  <option value="titanium-slate">🌪️ Titanium Slate</option>
+                  <option value="terracotta-warmth">🏺 Terracotta Warmth</option>
+                  <option value="nordic-polar">❄️ Nordic Polar</option>
                 </select>
 
                 <button
