@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Camera, X, Loader2, CheckCircle2 } from "lucide-react";
+import { PhoneInput } from "@/components/phone-input";
 
 export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOpen: boolean; onClose: () => void; cardOwnerName: string; cardId: string }) {
   const [mode, setMode] = useState<"choose" | "camera" | "manual" | "success">("choose");
@@ -97,12 +98,12 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <h3 className="text-[20px] font-semibold text-[#1D1D1F]">Your Details</h3>
             <div className="space-y-3">
-              <input required type="text" placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05]" />
-              <input required type="email" placeholder="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05]" />
-              <input type="text" placeholder="Phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05]" />
+              <input required type="text" placeholder="Full Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none" />
+              <input required type="email" placeholder="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none" />
+              <PhoneInput value={formData.phone} onChange={val => setFormData({...formData, phone: val})} placeholder="Phone number" />
               <div className="flex gap-2">
-                <input type="text" placeholder="Company" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-1/2 p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05]" />
-                <input type="text" placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-1/2 p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05]" />
+                <input type="text" placeholder="Company" value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-1/2 p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none" />
+                <input type="text" placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-1/2 p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none" />
               </div>
             </div>
             <button type="submit" disabled={isLoading} className="w-full p-4 rounded-2xl bg-black text-white font-semibold flex justify-center items-center gap-2 mt-4">

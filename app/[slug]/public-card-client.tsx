@@ -28,6 +28,7 @@ import { themes } from "@/lib/theme";
 import { ExchangeModal } from "@/components/exchange-modal";
 
 import {
+  AppleIcon,
   LinkedInIcon,
   WhatsAppIcon,
   TelegramIcon,
@@ -38,6 +39,18 @@ import {
   DiscordIcon,
   CalendlyIcon,
   MediumIcon,
+  TikTokIcon,
+  ThreadsIcon,
+  FacebookIcon,
+  SnapchatIcon,
+  SpotifyIcon,
+  TwitchIcon,
+  BehanceIcon,
+  DribbbleIcon,
+  SubstackIcon,
+  PinterestIcon,
+  RedditIcon,
+  SignalIcon,
 } from "@/components/icons";
 
 interface PublicCardClientProps {
@@ -219,7 +232,7 @@ export default function PublicCardClient({
   };
 
   const getSocialIcon = (id: string) => {
-    switch (id) {
+    switch (id?.toLowerCase()) {
       case "linkedin":
         return LinkedInIcon;
       case "whatsapp":
@@ -227,6 +240,7 @@ export default function PublicCardClient({
       case "telegram":
         return TelegramIcon;
       case "x":
+      case "twitter":
         return XIcon;
       case "github":
         return GitHubIcon;
@@ -240,6 +254,30 @@ export default function PublicCardClient({
         return CalendlyIcon;
       case "medium":
         return MediumIcon;
+      case "tiktok":
+        return TikTokIcon;
+      case "threads":
+        return ThreadsIcon;
+      case "facebook":
+        return FacebookIcon;
+      case "snapchat":
+        return SnapchatIcon;
+      case "spotify":
+        return SpotifyIcon;
+      case "twitch":
+        return TwitchIcon;
+      case "behance":
+        return BehanceIcon;
+      case "dribbble":
+        return DribbbleIcon;
+      case "substack":
+        return SubstackIcon;
+      case "pinterest":
+        return PinterestIcon;
+      case "reddit":
+        return RedditIcon;
+      case "signal":
+        return SignalIcon;
       default:
         return Globe;
     }
@@ -475,8 +513,8 @@ export default function PublicCardClient({
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-sm flex items-center justify-center">
-                    <div className="w-full h-full bg-black/40 rounded-[10px] flex items-center justify-center text-[13px] font-bold">
-                      
+                    <div className="w-full h-full bg-black/40 rounded-[10px] flex items-center justify-center">
+                      <AppleIcon className="w-4 h-4 fill-white" />
                     </div>
                   </div>
                   <div className="text-left">

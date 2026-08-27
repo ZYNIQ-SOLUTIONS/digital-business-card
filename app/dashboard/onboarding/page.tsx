@@ -9,6 +9,8 @@ import {
   CheckCircle2, 
   Loader2 
 } from "lucide-react";
+import { PhoneInput } from "@/components/phone-input";
+import { AiBioModal } from "@/components/ai-bio-modal";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isBioAiOpen, setIsBioAiOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -264,20 +267,16 @@ export default function OnboardingPage() {
           <div className="space-y-4 animate-in fade-in duration-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1 pl-1">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
+                <PhoneInput
+                  label="Phone Number"
                   value={formData.phonePrimary}
-                  onChange={(e) => setFormData({ ...formData, phonePrimary: e.target.value })}
-                  placeholder="+1 (555) 019-2834"
-                  className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white"
+                  onChange={(val) => setFormData({ ...formData, phonePrimary: val })}
+                  placeholder="555 019 2834"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1 pl-1">
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5 pl-1">
                   Work Email
                 </label>
                 <input
@@ -285,13 +284,13 @@ export default function OnboardingPage() {
                   value={formData.emailWork}
                   onChange={(e) => setFormData({ ...formData, emailWork: e.target.value })}
                   placeholder="ibrahim@company.com"
-                  className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white"
+                  className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1 pl-1">
+              <label className="block text-[13px] font-medium text-neutral-600 mb-1.5 pl-1">
                 Website
               </label>
               <input
@@ -299,26 +298,22 @@ export default function OnboardingPage() {
                 value={formData.websitePrimary}
                 onChange={(e) => setFormData({ ...formData, websitePrimary: e.target.value })}
                 placeholder="https://zyniq.solutions"
-                className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white"
+                className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1 pl-1">
-                  WhatsApp Number
-                </label>
-                <input
-                  type="text"
+                <PhoneInput
+                  label="WhatsApp Number"
                   value={formData.whatsapp}
-                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  placeholder="e.g. +15550192834"
-                  className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white"
+                  onChange={(val) => setFormData({ ...formData, whatsapp: val })}
+                  placeholder="555 019 2834"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1 pl-1">
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5 pl-1">
                   LinkedIn Username / URL
                 </label>
                 <input
@@ -326,7 +321,7 @@ export default function OnboardingPage() {
                   value={formData.linkedin}
                   onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
                   placeholder="e.g. ibrahim-el-khalil"
-                  className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white"
+                  className="w-full px-3.5 py-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
                 />
               </div>
             </div>
@@ -368,15 +363,25 @@ export default function OnboardingPage() {
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider mb-1 pl-1">
-                Executive Bio (Optional)
-              </label>
+              <div className="flex items-center justify-between mb-1 pl-1">
+                <label className="block text-[11px] font-semibold text-[#86868B] uppercase tracking-wider">
+                  Executive Bio (Optional)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsBioAiOpen(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Enhance with AI</span>
+                </button>
+              </div>
               <textarea
                 rows={3}
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Share a brief overview of your background, achievements, or mission..."
-                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white"
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
               />
             </div>
 
@@ -418,6 +423,20 @@ export default function OnboardingPage() {
           </div>
         )}
       </div>
+
+      {/* AI Bio Modal */}
+      <AiBioModal
+        isOpen={isBioAiOpen}
+        onClose={() => setIsBioAiOpen(false)}
+        onApply={(enhancedBio) => setFormData({ ...formData, bio: enhancedBio })}
+        context={{
+          fullName: formData.fullName,
+          title: formData.title,
+          company: formData.company,
+          tagline: formData.tagline,
+          bio: formData.bio,
+        }}
+      />
     </div>
   );
 }

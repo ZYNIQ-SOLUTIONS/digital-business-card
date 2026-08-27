@@ -27,17 +27,34 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 
 import { 
-  LinkedInIcon, 
-  WhatsAppIcon, 
-  TelegramIcon, 
-  InstagramIcon, 
-  XIcon, 
-  GitHubIcon, 
-  YouTubeIcon, 
-  DiscordIcon, 
-  CalendlyIcon, 
-  MediumIcon 
+  AppleIcon,
+  SocialIcon
 } from "@/components/icons";
+import { PhoneInput } from "@/components/phone-input";
+import { AiBioModal } from "@/components/ai-bio-modal";
+
+const ALL_AVAILABLE_SOCIALS = [
+  { id: "linkedin", name: "LinkedIn", url: "", active: true },
+  { id: "whatsapp", name: "WhatsApp", url: "", active: true },
+  { id: "telegram", name: "Telegram", url: "", active: true },
+  { id: "x", name: "X (Twitter)", url: "", active: true },
+  { id: "github", name: "GitHub", url: "", active: true },
+  { id: "instagram", name: "Instagram", url: "", active: true },
+  { id: "tiktok", name: "TikTok", url: "", active: true },
+  { id: "threads", name: "Threads", url: "", active: true },
+  { id: "facebook", name: "Facebook", url: "", active: false },
+  { id: "spotify", name: "Spotify", url: "", active: false },
+  { id: "youtube", name: "YouTube", url: "", active: true },
+  { id: "discord", name: "Discord", url: "", active: true },
+  { id: "calendly", name: "Calendly", url: "", active: true },
+  { id: "medium", name: "Medium", url: "", active: true },
+  { id: "behance", name: "Behance", url: "", active: false },
+  { id: "dribbble", name: "Dribbble", url: "", active: false },
+  { id: "substack", name: "Substack", url: "", active: false },
+  { id: "signal", name: "Signal", url: "", active: false },
+  { id: "pinterest", name: "Pinterest", url: "", active: false },
+  { id: "reddit", name: "Reddit", url: "", active: false },
+];
 
 interface CardEditPageProps {
   params: Promise<{ id: string }>;
@@ -52,6 +69,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isBioAiOpen, setIsBioAiOpen] = useState(false);
 
   // Card Form State
   const [card, setCard] = useState<any>({
@@ -80,18 +98,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       postalCode: "",
       country: "",
     },
-    socials: [
-      { id: "linkedin", name: "LinkedIn", url: "", active: true },
-      { id: "whatsapp", name: "WhatsApp", url: "", active: true },
-      { id: "telegram", name: "Telegram", url: "", active: true },
-      { id: "x", name: "X", url: "", active: true },
-      { id: "github", name: "GitHub", url: "", active: true },
-      { id: "instagram", name: "Instagram", url: "", active: true },
-      { id: "youtube", name: "YouTube", url: "", active: true },
-      { id: "discord", name: "Discord", url: "", active: true },
-      { id: "calendly", name: "Calendly", url: "", active: true },
-      { id: "medium", name: "Medium", url: "", active: true },
-    ],
+    socials: ALL_AVAILABLE_SOCIALS,
   });
 
   const [activeTab, setActiveTab] = useState<"card" | "about" | "contact">("card");
@@ -119,20 +126,12 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           postalCode: "",
           country: "",
         },
-        socials: Array.isArray(data.socials) && data.socials.length > 0
-          ? data.socials
-          : [
-              { id: "linkedin", name: "LinkedIn", url: "", active: true },
-              { id: "whatsapp", name: "WhatsApp", url: "", active: true },
-              { id: "telegram", name: "Telegram", url: "", active: true },
-              { id: "x", name: "X", url: "", active: true },
-              { id: "github", name: "GitHub", url: "", active: true },
-              { id: "instagram", name: "Instagram", url: "", active: true },
-              { id: "youtube", name: "YouTube", url: "", active: true },
-              { id: "discord", name: "Discord", url: "", active: true },
-              { id: "calendly", name: "Calendly", url: "", active: true },
-              { id: "medium", name: "Medium", url: "", active: true },
-            ],
+        socials: ALL_AVAILABLE_SOCIALS.map((defSocial) => {
+          const found = Array.isArray(data.socials)
+            ? data.socials.find((s: any) => s.id?.toLowerCase() === defSocial.id?.toLowerCase())
+            : null;
+          return found ? { ...defSocial, ...found, active: found.active ?? true } : defSocial;
+        }),
       });
     } else {
       setErrorMsg("Card not found or access denied.");
@@ -304,12 +303,23 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Executive Bio</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-semibold text-[#86868B] uppercase">Executive Bio</label>
+                <button
+                  type="button"
+                  onClick={() => setIsBioAiOpen(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Enhance with AI</span>
+                </button>
+              </div>
               <textarea
                 rows={3}
                 value={card.bio}
                 onChange={(e) => setCard({ ...card, bio: e.target.value })}
-                className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                placeholder="Brief executive summary highlighting your role, expertise, and leadership focus..."
+                className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
               />
             </div>
           </div>
@@ -320,47 +330,46 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               2. Contact &amp; Links
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Primary Phone</label>
-                <input
-                  type="text"
+                <PhoneInput
+                  label="Primary Phone"
                   value={card.phone_primary}
-                  onChange={(e) => setCard({ ...card, phone_primary: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  onChange={(val) => setCard({ ...card, phone_primary: val })}
+                  placeholder="555 019 2834"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Work Email</label>
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Work Email</label>
                 <input
                   type="email"
                   value={card.email_work}
                   onChange={(e) => setCard({ ...card, email_work: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Website URL</label>
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Website URL</label>
                 <input
                   type="text"
                   value={card.website_primary}
                   onChange={(e) => setCard({ ...card, website_primary: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Booking / Meeting Link</label>
+                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Booking / Meeting Link</label>
                 <input
                   type="text"
                   value={card.booking_url || ""}
                   onChange={(e) => setCard({ ...card, booking_url: e.target.value })}
                   placeholder="https://calendly.com/..."
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
                 />
               </div>
             </div>
@@ -368,22 +377,30 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
           {/* Section 3: Social Media Links */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <h2 className="text-sm font-semibold text-[#1D1D1F] border-b pb-2">
-              3. Connected Social Networks
-            </h2>
+            <div className="flex items-center justify-between border-b pb-2">
+              <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                3. Connected Social Networks
+              </h2>
+              <span className="text-xs text-neutral-400 font-mono">
+                {card.socials.filter((s: any) => s.url).length} connected
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {card.socials.map((social: any) => (
-                <div key={social.id}>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                    {social.name} URL / Username
+                <div key={social.id} className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">
+                    <span className="w-4 h-4 text-neutral-600 flex items-center justify-center">
+                      <SocialIcon id={social.id} className="w-3.5 h-3.5" />
+                    </span>
+                    <span>{social.name}</span>
                   </label>
                   <input
                     type="text"
                     value={social.url || ""}
                     onChange={(e) => updateSocialUrl(social.id, e.target.value)}
                     placeholder={`https://${social.id}.com/...`}
-                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
                   />
                 </div>
               ))}
@@ -466,7 +483,10 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             {/* CTA Pill Buttons */}
             <div className="w-full space-y-2">
               <div className="w-full py-2.5 px-3 rounded-xl bg-black text-white text-[11px] font-medium flex items-center justify-between">
-                <span> Add to Apple Wallet</span>
+                <div className="flex items-center gap-1.5">
+                  <AppleIcon className="w-3.5 h-3.5 fill-white" />
+                  <span>Add to Apple Wallet</span>
+                </div>
                 <ChevronRight className="w-3.5 h-3.5" />
               </div>
               <div className="w-full py-2.5 px-3 rounded-xl bg-[#0071E3] text-white text-[11px] font-medium text-center">
@@ -478,6 +498,21 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         </div>
 
       </div>
+
+      {/* AI Bio Enhancement Modal */}
+      <AiBioModal
+        isOpen={isBioAiOpen}
+        onClose={() => setIsBioAiOpen(false)}
+        onApply={(enhancedBio) => setCard({ ...card, bio: enhancedBio })}
+        context={{
+          fullName: card.full_name,
+          title: card.title,
+          company: card.company,
+          tagline: card.tagline,
+          bio: card.bio,
+          skills: card.skills,
+        }}
+      />
     </div>
   );
 }
