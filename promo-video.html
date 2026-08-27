@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IZN | Cinematic Promo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP for Premium Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Clash+Display:wght@600;700&family=Inter:wght@300;400;500&family=Space+Mono:wght@400&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050507; /* Void Black */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+            font-family: 'Clash Display', sans-serif;
+            background-image: radial-gradient(circle at center, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
+        }
+
+        /* SVG Base Styles (Glow added dynamically via GSAP later) */
+        #hero-logo {
+            overflow: visible;
+        }
+
+        /* Typography */
+        .brand-name {
+            font-size: 6rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            opacity: 0;
+            transform: translateY(30px);
+            background: linear-gradient(to right, #ffffff, #E2E8F0);
+            -webkit-background-clip: text;
+            color: transparent;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .pronunciation {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #94A3B8;
+            opacity: 0;
+            transform: translateY(15px);
+            margin-bottom: 2rem;
+            padding: 6px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
+        }
+
+        .slogan {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            opacity: 0;
+            transform: translateY(20px);
+            background: linear-gradient(to right, #8B5CF6, #EC4899, #0EA5E9);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .text-container {
+            position: absolute;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 190px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Logo Container -->
+    <div id="logo-container" class="relative z-10 w-72 h-72 flex items-center justify-center">
+        <!-- Your exact SVG structure -->
+        <svg id="hero-logo" class="w-48 h-48" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <!-- 
+                stroke-dasharray="189" is exactly the mathematical length of these half circles.
+                Starting with stroke-dashoffset="189" hides them so we can animate them drawing in.
+            -->
+            <path id="arc-top" d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#475569" stroke-width="12" stroke-linecap="round" stroke-dasharray="189" stroke-dashoffset="189"></path>
+            
+            <path id="arc-bot" d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#334155" stroke-width="12" stroke-linecap="round" stroke-dasharray="189" stroke-dashoffset="189"></path>
+            
+            <!-- Central Node starting scaled down to 0 -->
+            <circle id="core-node" cx="100" cy="100" r="12" fill="#64748b" transform="scale(0)" transform-origin="100px 100px"></circle>
+        </svg>
+    </div>
+
+    <!-- Text Reveal Container -->
+    <div class="text-container">
+        <div id="brand-name" class="brand-name">IZN</div>
+        <div id="pronunciation" class="pronunciation">Pronounced Aizen</div>
+        <div id="slogan" class="slogan">The Last Business Card You Will Ever Need.</div>
+    </div>
+
+    <script>
+        // Initiate GSAP Timeline
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+        // Step 1: The Core Node pulses into existence
+        tl.to("#core-node", { duration: 1, scale: 1, ease: "back.out(2)", delay: 0.3 })
+        
+        // Step 2: The dormant gray arcs draw themselves around the node
+          .to("#arc-top", { duration: 1.5, strokeDashoffset: 0, ease: "power2.inOut" }, "-=0.2")
+          .to("#arc-bot", { duration: 1.5, strokeDashoffset: 0, ease: "power2.inOut" }, "-=1.5")
+          
+        // Step 3: IGNITION! The logo transitions from gray to the vibrant brand colors & glows
+          .to("#arc-top", { duration: 0.8, stroke: "#8B5CF6", filter: "drop-shadow(0 0 15px rgba(139,92,246,0.8))" }, "-=0.5")
+          .to("#arc-bot", { duration: 0.8, stroke: "#EC4899", filter: "drop-shadow(0 0 15px rgba(236,72,153,0.8))" }, "-=0.8")
+          .to("#core-node", { duration: 0.8, fill: "#ffffff", filter: "drop-shadow(0 0 10px rgba(255,255,255,0.8))" }, "-=0.8")
+          
+        // Step 4: The fully lit logo spins rapidly like a data sync transfer
+          .to("#hero-logo", { duration: 2, rotation: 720, transformOrigin: "50% 50%", ease: "power2.inOut" }, "-=1")
+          
+        // Step 5: Logo scales down and shifts up to make room for text
+          .to("#hero-logo", { duration: 1.2, scale: 0.7, y: -90, ease: "expo.out" })
+          
+        // Step 6: IZN Brand Name fades and slides up
+          .to("#brand-name", { duration: 1, opacity: 1, y: 0 }, "-=1")
+          
+        // Step 7: Pronunciation pill drops in gently
+          .to("#pronunciation", { duration: 0.8, opacity: 1, y: 0 }, "-=0.7")
+          
+        // Step 8: The Slogan slowly reveals with a premium gradient glow
+          .to("#slogan", { duration: 1.5, opacity: 1, y: 0, ease: "power4.out" }, "-=0.5");
+    </script>
+</body>
+</html>
+

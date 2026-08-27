@@ -46,6 +46,8 @@ export default function AuthPage() {
     }
   };
 
+  const isMissingEnvVars = !process.env.NEXT_PUBLIC_SUPABASE_URL;
+
   return (
     <main className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center p-4 relative selection:bg-[#0071E3] selection:text-white font-sans">
       {/* Apple Subtle Glow */}
@@ -66,6 +68,12 @@ export default function AuthPage() {
       <div className="w-full max-w-sm bg-white/90 backdrop-blur-2xl border border-black/[0.08] rounded-[32px] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.06)] z-10 space-y-6">
         
         {/* App Emblem / Logo */}
+        {isMissingEnvVars && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-600 p-4 rounded-2xl mb-4 text-[14px]">
+            <strong>Configuration Error:</strong> Missing Supabase Environment Variables. 
+            Make sure NEXT_PUBLIC_SUPABASE_URL is set in Netlify and you have redeployed.
+          </div>
+        )}
         <div className="text-center space-y-2">
           <div className="logo-sync-container relative flex justify-center mb-4">
             <svg width="48" height="48" viewBox="0 0 200 200" className="logo-sync">
