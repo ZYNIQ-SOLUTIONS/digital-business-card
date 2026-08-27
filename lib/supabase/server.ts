@@ -44,3 +44,25 @@ export async function createClient() {
     },
   });
 }
+
+export function createAdminClient() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL;
+
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Missing Supabase URL or Service Role Key");
+  }
+
+  // Import locally to avoid issues
+  const { createClient } = require("@supabase/supabase-js");
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
