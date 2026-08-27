@@ -16,14 +16,17 @@ create table if not exists public.profiles (
 -- Enable RLS on profiles
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view their own profile." on public.profiles;
 create policy "Users can view their own profile." 
   on public.profiles for select 
   using (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile." on public.profiles;
 create policy "Users can update their own profile." 
   on public.profiles for update 
   using (auth.uid() = id);
 
+drop policy if exists "Users can insert their own profile." on public.profiles;
 create policy "Users can insert their own profile." 
   on public.profiles for insert 
   with check (auth.uid() = id);
@@ -96,6 +99,9 @@ create table if not exists public.cards (
   vcard_downloads_count int default 0 not null,
   wallet_downloads_count int default 0 not null,
   
+  active_mode text default 'default' not null,
+  geofence_locations jsonb default '[]'::jsonb,
+  
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );
@@ -103,27 +109,27 @@ create table if not exists public.cards (
 -- Enable RLS on cards
 alter table public.cards enable row level security;
 
--- Public can view any card that is published
+drop policy if exists "Public cards are viewable by anyone." on public.cards;
 create policy "Public cards are viewable by anyone." 
   on public.cards for select 
   using (is_published = true);
 
--- Owners can view all their cards (even drafts)
+drop policy if exists "Users can view all their own cards." on public.cards;
 create policy "Users can view all their own cards." 
   on public.cards for select 
   using (auth.uid() = user_id);
 
--- Owners can insert new cards
+drop policy if exists "Users can insert their own cards." on public.cards;
 create policy "Users can insert their own cards." 
   on public.cards for insert 
   with check (auth.uid() = user_id);
 
--- Owners can update their own cards
+drop policy if exists "Users can update their own cards." on public.cards;
 create policy "Users can update their own cards." 
   on public.cards for update 
   using (auth.uid() = user_id);
 
--- Owners can delete their own cards
+drop policy if exists "Users can delete their own cards." on public.cards;
 create policy "Users can delete their own cards." 
   on public.cards for delete 
   using (auth.uid() = user_id);
@@ -142,10 +148,12 @@ create table if not exists public.card_events (
 -- Enable RLS on card_events
 alter table public.card_events enable row level security;
 
+drop policy if exists "Anyone can insert anonymous events." on public.card_events;
 create policy "Anyone can insert anonymous events." 
   on public.card_events for insert 
   with check (true);
 
+drop policy if exists "Card owners can view analytics for their cards." on public.card_events;
 create policy "Card owners can view analytics for their cards." 
   on public.card_events for select 
   using (
@@ -160,14 +168,17 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
+drop policy if exists "Avatar images are publicly accessible." on storage.objects;
 create policy "Avatar images are publicly accessible."
   on storage.objects for select
   using (bucket_id = 'avatars');
 
+drop policy if exists "Authenticated users can upload avatar images." on storage.objects;
 create policy "Authenticated users can upload avatar images."
   on storage.objects for insert
   with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
 
+drop policy if exists "Authenticated users can update their avatar images." on storage.objects;
 create policy "Authenticated users can update their avatar images."
   on storage.objects for update
   using (bucket_id = 'avatars' and auth.role() = 'authenticated');
@@ -201,18 +212,22 @@ create table if not exists public.connections (
 -- Enable RLS on connections
 alter table public.connections enable row level security;
 
+drop policy if exists "Users can view their own connections." on public.connections;
 create policy "Users can view their own connections." 
   on public.connections for select 
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own connections." on public.connections;
 create policy "Users can insert their own connections." 
   on public.connections for insert 
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own connections." on public.connections;
 create policy "Users can update their own connections." 
   on public.connections for update 
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own connections." on public.connections;
 create policy "Users can delete their own connections." 
   on public.connections for delete 
   using (auth.uid() = user_id);
