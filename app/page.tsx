@@ -1,7 +1,13 @@
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
 import { Smartphone, Zap, Shield, Bot, LayoutDashboard, Send } from "lucide-react";
+import { MagicDemoModal } from "@/components/magic-demo-modal";
 
 export default function Home() {
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#050507] text-white selection:bg-indigo-500 selection:text-white font-sans overflow-hidden">
       
@@ -57,8 +63,11 @@ export default function Home() {
             <Link href="/auth" className="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-black font-bold text-[15px] hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)]">
               Create Your IZN Card (Free)
             </Link>
-            <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#121216]/60 backdrop-blur-xl text-white font-bold text-[15px] hover:bg-white/10 active:scale-95 transition-all border border-white/10 flex items-center justify-center gap-2">
-              <Smartphone className="w-5 h-5" /> Watch the Magic
+            <button
+              onClick={() => setIsDemoOpen(true)}
+              className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#121216]/60 backdrop-blur-xl text-white font-bold text-[15px] hover:bg-white/10 active:scale-95 transition-all border border-white/10 flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:border-violet-500/40"
+            >
+              <Smartphone className="w-5 h-5 text-violet-400" /> Watch the Magic
             </button>
           </div>
         </section>
@@ -221,6 +230,9 @@ export default function Home() {
       <footer className="w-full border-t border-white/10 py-10 text-center text-neutral-500 text-sm font-mono uppercase tracking-widest bg-black/20">
         <p>© {new Date().getFullYear()} IZN. The Zen of Networking. All rights reserved.</p>
       </footer>
+
+      {/* Magic Demo Modal */}
+      <MagicDemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
     </div>
   );
 }
