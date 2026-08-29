@@ -60,13 +60,6 @@ export default function Home() {
         
         {/* HERO SECTION */}
         <section className="max-w-6xl mx-auto px-6 pt-10 md:pt-20 pb-20 flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-xs font-medium text-blue-700 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-            </span>
-            IZN Wallet Passes are now live
-          </div>
           
           <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-bold tracking-tighter leading-[1.05] text-gray-900 max-w-4xl animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
             The last business card you will ever need.
@@ -369,9 +362,11 @@ export default function Home() {
       <footer className="w-full border-t border-gray-200 py-12 bg-white">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-              <span className="text-gray-900 font-bold text-[10px] tracking-tighter">IZN</span>
-            </div>
+            <svg id="logo-light" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+              <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0f172a" strokeWidth="12" strokeLinecap="round" />
+              <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#64748b" strokeWidth="12" strokeLinecap="round" />
+              <circle cx="100" cy="100" r="12" fill="#0f172a" />
+            </svg>
             <span className="font-semibold text-gray-900">IZN</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-500">
