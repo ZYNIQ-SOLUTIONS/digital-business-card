@@ -60,3 +60,35 @@ export async function toggleProductStock(id: string, inStock: boolean) {
   revalidatePath('/store');
   return { success: true };
 }
+
+export async function updateProduct(id: string, data: any) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthorized' };
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  if (profile?.role !== 'admin') return { error: 'Forbidden' };
+
+  const updateFields: any = {
+    name: data.name,
+    description: data.description,
+    price: parseFloat(data.price),
+    category: data.category,
+    in_stock: data.in_stock === 'true' || data.in_stock === true
+  };
+
+  if (data.image_url) {
+    updateFields.image_url = data.image_url;
+  }
+
+  const { error } = await supabase
+    .from('products')
+    .update(updateFields)
+    .eq('id', id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/admin/products');
+  revalidatePath('/store');
+  return { success: true };
+}

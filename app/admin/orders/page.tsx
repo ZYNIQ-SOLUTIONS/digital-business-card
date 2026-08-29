@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { OrderStatusSelect } from './order-status-select';
+import { EditOrderModal } from './edit-order-modal';
 
 export const revalidate = 0;
 
@@ -18,7 +19,7 @@ export default async function AdminOrdersPage() {
       
       <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-6 py-4 text-sm font-medium text-gray-500">Order ID</th>
@@ -27,6 +28,7 @@ export default async function AdminOrdersPage() {
                 <th className="px-6 py-4 text-sm font-medium text-gray-500">Amount / Items</th>
                 <th className="px-6 py-4 text-sm font-medium text-gray-500">Date</th>
                 <th className="px-6 py-4 text-sm font-medium text-gray-500">Status</th>
+                <th className="px-6 py-4 text-sm font-medium text-gray-500 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -52,6 +54,9 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <OrderStatusSelect orderId={order.id} initialStatus={order.status} />
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <EditOrderModal order={order} />
                   </td>
                 </tr>
               ))}

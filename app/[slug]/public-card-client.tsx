@@ -308,8 +308,8 @@ export default function PublicCardClient({
         {/* Profile Avatar & Badge */}
         <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 ease-out mt-2">
           <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[2.5rem] ${t.avatarBg} border-4 ${t.avatarBorder} shadow-[0_16px_40px_rgba(0,0,0,0.15)] flex items-center justify-center relative overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]`}>
-            {card.profile_image_url ? (
-              <img src={card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+            {card.avatar_url || card.profile_image_url ? (
+              <img src={card.avatar_url || card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
             ) : (
               <span className={`text-4xl sm:text-5xl font-bold tracking-tighter ${t.textMain}`}>
                 {card.avatar_initials || "IK"}

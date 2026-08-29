@@ -19,6 +19,7 @@ import {
   Loader2, 
   ExternalLink,
   ChevronRight,
+  ChevronDown,
   ShieldCheck,
   Building2,
   Share2,
@@ -78,6 +79,58 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const [isBioAiOpen, setIsBioAiOpen] = useState(false);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
+  // Expanded sections state (collapsed by default)
+  const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
+  });
+
+  const toggleSection = (sectionIndex: number) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionIndex]: !prev[sectionIndex],
+    }));
+  };
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadingAvatar(true);
+      setErrorMsg(null);
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not logged in");
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+
+        const newAvatarUrl = publicUrlData.publicUrl;
+        setCard((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
+      } catch (err: any) {
+        console.error("Avatar upload error:", err);
+        setErrorMsg("Avatar upload failed: " + err.message);
+      } finally {
+        setUploadingAvatar(false);
+      }
+    }
+  };
+
   // Card Form State
   const [card, setCard] = useState<any>({
     full_name: "",
@@ -86,6 +139,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     company: "",
     tagline: "",
     bio: "",
+    avatar_url: "",
     avatar_initials: "",
     theme: "apple-light",
     is_verified: false,
@@ -259,10 +313,18 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           
           {/* Section 1: Basic Identity */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                1. Profile Identity
-              </h2>
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(1)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[1] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  1. Profile Identity
+                </h2>
+              </div>
               {card.is_verified ? (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200/80 text-green-700 text-[11px] font-semibold">
                   <VerifiedBadgeIcon className="w-3.5 h-3.5 text-green-500" />
@@ -271,7 +333,10 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setIsVerifyOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsVerifyOpen(true);
+                  }}
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
                 >
                   <Camera className="w-3.5 h-3.5" />
@@ -280,200 +345,278 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={card.full_name}
-                  onChange={(e) => setCard({ ...card, full_name: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                />
-              </div>
+            {expandedSections[1] && (
+              <>
+                {/* Profile Photo Image Upload */}
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase">Profile Photo</label>
+                  <div className="flex items-center gap-4 p-3.5 bg-[#F5F5F7] rounded-2xl border border-black/[0.04]">
+                    <div className="w-16 h-16 rounded-full bg-neutral-200 border-2 border-white shadow-md relative overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      {card.avatar_url ? (
+                        <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-lg font-bold text-gray-500">{card.avatar_initials || "IK"}</span>
+                      )}
+                      {uploadingAvatar && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 text-white animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          disabled={uploadingAvatar}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        <button
+                          type="button"
+                          disabled={uploadingAvatar}
+                          className="px-3.5 py-1.5 bg-white border border-black/[0.08] hover:bg-gray-50 text-xs font-semibold rounded-xl transition active:scale-95 shadow-xs flex items-center gap-1.5"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Choose Profile Photo</span>
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-400">JPEG, PNG or WEBP. Max 2MB.</p>
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">URL Slug</label>
-                <input
-                  type="text"
-                  value={card.slug}
-                  onChange={(e) => setCard({ ...card, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs font-mono focus:outline-none focus:bg-white"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={card.full_name}
+                      onChange={(e) => setCard({ ...card, full_name: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Job Title</label>
-                <input
-                  type="text"
-                  value={card.title}
-                  onChange={(e) => setCard({ ...card, title: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                />
-              </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">URL Slug</label>
+                    <input
+                      type="text"
+                      value={card.slug}
+                      onChange={(e) => setCard({ ...card, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs font-mono focus:outline-none focus:bg-white"
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Company</label>
-                <input
-                  type="text"
-                  value={card.company}
-                  onChange={(e) => setCard({ ...card, company: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Job Title</label>
+                    <input
+                      type="text"
+                      value={card.title}
+                      onChange={(e) => setCard({ ...card, title: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Tagline</label>
-              <input
-                type="text"
-                value={card.tagline}
-                onChange={(e) => setCard({ ...card, tagline: e.target.value })}
-                className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-              />
-            </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Company</label>
+                    <input
+                      type="text"
+                      value={card.company}
+                      onChange={(e) => setCard({ ...card, company: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase">Executive Bio</label>
-                <button
-                  type="button"
-                  onClick={() => setIsBioAiOpen(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Enhance with AI</span>
-                </button>
-              </div>
-              <textarea
-                rows={3}
-                value={card.bio}
-                onChange={(e) => setCard({ ...card, bio: e.target.value })}
-                placeholder="Brief executive summary highlighting your role, expertise, and leadership focus..."
-                className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-              />
-            </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Tagline</label>
+                  <input
+                    type="text"
+                    value={card.tagline}
+                    onChange={(e) => setCard({ ...card, tagline: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">Executive Bio</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsBioAiOpen(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Enhance with AI</span>
+                    </button>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={card.bio}
+                    onChange={(e) => setCard({ ...card, bio: e.target.value })}
+                    placeholder="Brief executive summary highlighting your role, expertise, and leadership focus..."
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Section 2: Card Theme & Aesthetic */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                2. Visual Theme &amp; Color Palette
-              </h2>
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(2)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[2] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  2. Visual Theme &amp; Color Palette
+                </h2>
+              </div>
               <span className="text-xs text-neutral-400 font-mono">
                 {themeList.find(t => t.id === card.theme)?.name || "Apple Light"}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {themeList.map((th) => {
-                const isSelected = (card.theme || "apple-light") === th.id;
-                return (
-                  <button
-                    key={th.id}
-                    type="button"
-                    onClick={() => setCard({ ...card, theme: th.id })}
-                    className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between min-h-[90px] ${
-                      isSelected
-                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/20 shadow-xs"
-                        : "border-black/[0.06] hover:border-black/[0.15] bg-[#FBFBFD]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-1.5">
-                        <div
-                          className="w-4 h-4 rounded-full border border-black/10 shadow-2xs shrink-0"
-                          style={{ backgroundColor: th.previewBg }}
-                        />
-                        <div
-                          className="w-3 h-3 rounded-full shadow-2xs shrink-0"
-                          style={{ backgroundColor: th.previewAccent }}
-                        />
-                      </div>
-                      {isSelected && (
-                        <div className="w-4 h-4 rounded-full bg-[#0071E3] text-white flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5" />
+            {expandedSections[2] && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {themeList.map((th) => {
+                  const isSelected = (card.theme || "apple-light") === th.id;
+                  return (
+                    <button
+                      key={th.id}
+                      type="button"
+                      onClick={() => setCard({ ...card, theme: th.id })}
+                      className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between min-h-[90px] ${
+                        isSelected
+                          ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/20 shadow-xs"
+                          : "border-black/[0.06] hover:border-black/[0.15] bg-[#FBFBFD]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-4 h-4 rounded-full border border-black/10 shadow-2xs shrink-0"
+                            style={{ backgroundColor: th.previewBg }}
+                          />
+                          <div
+                            className="w-3 h-3 rounded-full shadow-2xs shrink-0"
+                            style={{ backgroundColor: th.previewAccent }}
+                          />
                         </div>
-                      )}
-                    </div>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-[#0071E3] text-white flex items-center justify-center">
+                            <Check className="w-2.5 h-2.5" />
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="mt-2">
-                      <span className="block text-[11px] font-semibold text-[#1D1D1F] leading-tight">
-                        {th.name}
-                      </span>
-                      <span className="block text-[9px] text-[#86868B] truncate mt-0.5">
-                        {th.isDark ? "Dark OLED" : "Light Frost"}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                      <div className="mt-2">
+                        <span className="block text-[11px] font-semibold text-[#1D1D1F] leading-tight">
+                          {th.name}
+                        </span>
+                        <span className="block text-[9px] text-[#86868B] truncate mt-0.5">
+                          {th.isDark ? "Dark OLED" : "Light Frost"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Section 3: Contact Information */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <h2 className="text-sm font-semibold text-[#1D1D1F] border-b pb-2">
-              3. Contact &amp; Links
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <PhoneInput
-                  label="Primary Phone"
-                  value={card.phone_primary}
-                  onChange={(val) => setCard({ ...card, phone_primary: val })}
-                  placeholder="555 019 2834"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Work Email</label>
-                <input
-                  type="email"
-                  value={card.email_work}
-                  onChange={(e) => setCard({ ...card, email_work: e.target.value })}
-                  className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
-                />
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(3)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[3] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  3. Contact &amp; Links
+                </h2>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Website URL</label>
-                <input
-                  type="text"
-                  value={card.website_primary}
-                  onChange={(e) => setCard({ ...card, website_primary: e.target.value })}
-                  className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
-                />
-              </div>
+            {expandedSections[3] && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <PhoneInput
+                      label="Primary Phone"
+                      value={card.phone_primary}
+                      onChange={(val) => setCard({ ...card, phone_primary: val })}
+                      placeholder="555 019 2834"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">External Booking Link (Optional)</label>
-                <input
-                  type="text"
-                  value={card.booking_url || ""}
-                  onChange={(e) => setCard({ ...card, booking_url: e.target.value })}
-                  placeholder="https://calendly.com/..."
-                  className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
-                />
-              </div>
-            </div>
+                  <div>
+                    <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Work Email</label>
+                    <input
+                      type="email"
+                      value={card.email_work}
+                      onChange={(e) => setCard({ ...card, email_work: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Website URL</label>
+                    <input
+                      type="text"
+                      value={card.website_primary}
+                      onChange={(e) => setCard({ ...card, website_primary: e.target.value })}
+                      className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">External Booking Link (Optional)</label>
+                    <input
+                      type="text"
+                      value={card.booking_url || ""}
+                      onChange={(e) => setCard({ ...card, booking_url: e.target.value })}
+                      placeholder="https://calendly.com/..."
+                      className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Section 4: Meeting & Calendar Booking Schedule */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(4)}
+            >
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#0071E3]" />
-                <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                  4. Meeting &amp; Calendar Booking Schedule
-                </h2>
+                <span className="text-gray-400">
+                  {expandedSections[4] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#0071E3]" />
+                  <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                    4. Meeting &amp; Calendar Booking Schedule
+                  </h2>
+                </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label 
+                className="relative inline-flex items-center cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <input
                   type="checkbox"
                   checked={card.booking_enabled ?? true}
@@ -484,179 +627,193 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               </label>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                  Meeting Topic / Title
-                </label>
-                <input
-                  type="text"
-                  value={card.booking_title || "30-Min Strategy Consultation"}
-                  onChange={(e) => setCard({ ...card, booking_title: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20"
-                />
-              </div>
-
-              {/* Available Days Checkboxes */}
-              <div>
-                <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
-                  Available Meeting Days
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
-                    const daysArr = card.booking_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-                    const isChecked = daysArr.includes(day);
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => {
-                          const updated = isChecked
-                            ? daysArr.filter((d: string) => d !== day)
-                            : [...daysArr, day];
-                          setCard({ ...card, booking_days: updated });
-                        }}
-                        className={`p-2 rounded-xl text-xs font-medium border text-center transition ${
-                          isChecked
-                            ? "border-[#0071E3] bg-blue-50 text-[#0071E3] font-semibold"
-                            : "border-black/[0.05] bg-[#F5F5F7] text-neutral-600 hover:border-black/[0.15]"
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Working Hours & Duration */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {expandedSections[4] && (
+              <div className="space-y-4">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                    Start Time
+                    Meeting Topic / Title
                   </label>
                   <input
-                    type="time"
-                    value={card.booking_start_time || "09:00"}
-                    onChange={(e) => setCard({ ...card, booking_start_time: e.target.value })}
-                    className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    type="text"
+                    value={card.booking_title || "30-Min Strategy Consultation"}
+                    onChange={(e) => setCard({ ...card, booking_title: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20"
                   />
                 </div>
 
+                {/* Available Days Checkboxes */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                    End Time
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
+                    Available Meeting Days
                   </label>
-                  <input
-                    type="time"
-                    value={card.booking_end_time || "17:00"}
-                    onChange={(e) => setCard({ ...card, booking_end_time: e.target.value })}
-                    className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                  />
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
+                      const daysArr = card.booking_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+                      const isChecked = daysArr.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            const updated = isChecked
+                              ? daysArr.filter((d: string) => d !== day)
+                              : [...daysArr, day];
+                            setCard({ ...card, booking_days: updated });
+                          }}
+                          className={`p-2 rounded-xl text-xs font-medium border text-center transition ${
+                            isChecked
+                              ? "border-[#0071E3] bg-blue-50 text-[#0071E3] font-semibold"
+                              : "border-black/[0.05] bg-[#F5F5F7] text-neutral-600 hover:border-black/[0.15]"
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                    Duration
-                  </label>
-                  <select
-                    value={card.booking_slot_duration || 30}
-                    onChange={(e) => setCard({ ...card, booking_slot_duration: Number(e.target.value) })}
-                    className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                  >
-                    <option value={15}>15 Minutes</option>
-                    <option value={30}>30 Minutes</option>
-                    <option value={45}>45 Minutes</option>
-                    <option value={60}>60 Minutes</option>
-                  </select>
+                {/* Working Hours & Duration */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      value={card.booking_start_time || "09:00"}
+                      onChange={(e) => setCard({ ...card, booking_start_time: e.target.value })}
+                      className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      value={card.booking_end_time || "17:00"}
+                      onChange={(e) => setCard({ ...card, booking_end_time: e.target.value })}
+                      className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Duration
+                    </label>
+                    <select
+                      value={card.booking_slot_duration || 30}
+                      onChange={(e) => setCard({ ...card, booking_slot_duration: Number(e.target.value) })}
+                      className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    >
+                      <option value={15}>15 Minutes</option>
+                      <option value={30}>30 Minutes</option>
+                      <option value={45}>45 Minutes</option>
+                      <option value={60}>60 Minutes</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Section 5: Social Media Links */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                5. Connected Social Networks
-              </h2>
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(5)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[5] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  5. Connected Social Networks
+                </h2>
+              </div>
               <span className="text-xs text-neutral-400 font-mono">
                 {card.socials.filter((s: any) => s.url).length} connected
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {card.socials.map((social: any) => (
-                <div key={social.id} className="space-y-1">
-                  {!social.isCustom ? (
-                    <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">
-                      <span className="w-4 h-4 text-neutral-600 flex items-center justify-center">
-                        <SocialIcon id={social.id} className="w-3.5 h-3.5" />
-                      </span>
-                      <span>{social.name}</span>
-                    </label>
-                  ) : (
-                    <div className="flex items-center gap-2">
+            {expandedSections[5] && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {card.socials.map((social: any) => (
+                    <div key={social.id} className="space-y-1">
+                      {!social.isCustom ? (
+                        <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">
+                          <span className="w-4 h-4 text-neutral-600 flex items-center justify-center">
+                            <SocialIcon id={social.id} className="w-3.5 h-3.5" />
+                          </span>
+                          <span>{social.name}</span>
+                        </label>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={social.name}
+                            onChange={(e) => {
+                              setCard((prev: any) => ({
+                                ...prev,
+                                socials: prev.socials.map((s: any) =>
+                                  s.id === social.id ? { ...s, name: e.target.value } : s
+                                ),
+                              }));
+                            }}
+                            placeholder="Link Title"
+                            className="flex-1 text-[12px] font-medium text-neutral-700 bg-transparent border-b border-black/[0.1] focus:outline-none focus:border-[#0071E3] px-1 py-0.5"
+                          />
+                          <button
+                            onClick={() => {
+                              setCard((prev: any) => ({
+                                ...prev,
+                                socials: prev.socials.filter((s: any) => s.id !== social.id),
+                              }));
+                            }}
+                            className="text-red-500 hover:bg-red-50 p-1 rounded-md"
+                            title="Remove Link"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                       <input
                         type="text"
-                        value={social.name}
-                        onChange={(e) => {
-                          setCard((prev: any) => ({
-                            ...prev,
-                            socials: prev.socials.map((s: any) =>
-                              s.id === social.id ? { ...s, name: e.target.value } : s
-                            ),
-                          }));
-                        }}
-                        placeholder="Link Title"
-                        className="flex-1 text-[12px] font-medium text-neutral-700 bg-transparent border-b border-black/[0.1] focus:outline-none focus:border-[#0071E3] px-1 py-0.5"
+                        value={social.url || ""}
+                        onChange={(e) => updateSocialUrl(social.id, e.target.value)}
+                        placeholder={social.isCustom ? "https://..." : `https://${social.id}.com/...`}
+                        className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
                       />
-                      <button
-                        onClick={() => {
-                          setCard((prev: any) => ({
-                            ...prev,
-                            socials: prev.socials.filter((s: any) => s.id !== social.id),
-                          }));
-                        }}
-                        className="text-red-500 hover:bg-red-50 p-1 rounded-md"
-                        title="Remove Link"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
                     </div>
-                  )}
-                  <input
-                    type="text"
-                    value={social.url || ""}
-                    onChange={(e) => updateSocialUrl(social.id, e.target.value)}
-                    placeholder={social.isCustom ? "https://..." : `https://${social.id}.com/...`}
-                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
-                  />
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <button
-              onClick={() => {
-                setCard((prev: any) => ({
-                  ...prev,
-                  socials: [
-                    ...prev.socials,
-                    {
-                      id: "custom_" + Date.now(),
-                      name: "Other Link",
-                      url: "",
-                      isCustom: true,
-                      active: true
-                    }
-                  ]
-                }));
-              }}
-              className="w-full mt-4 py-2 border-2 border-dashed border-black/[0.1] hover:border-[#0071E3] hover:text-[#0071E3] text-neutral-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
-            >
-              <Plus className="w-4 h-4" />
-              Add Custom Link
-            </button>
+                <button
+                  onClick={() => {
+                    setCard((prev: any) => ({
+                      ...prev,
+                      socials: [
+                        ...prev.socials,
+                        {
+                          id: "custom_" + Date.now(),
+                          name: "Other Link",
+                          url: "",
+                          isCustom: true,
+                          active: true
+                        }
+                      ]
+                    }));
+                  }}
+                  className="w-full mt-4 py-2 border-2 border-dashed border-black/[0.1] hover:border-[#0071E3] hover:text-[#0071E3] text-neutral-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Custom Link
+                </button>
+              </>
+            )}
           </div>
         </div>
 

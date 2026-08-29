@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { deleteProduct, toggleProductStock } from './actions';
 import { Loader2, Trash2 } from 'lucide-react';
+import { EditProductModal } from './edit-product-modal';
 
 export function ProductTable({ products }: { products: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -65,7 +66,8 @@ export function ProductTable({ products }: { products: any[] }) {
                   <option value="false">Out of Stock</option>
                 </select>
               </td>
-              <td className="px-6 py-4 text-right">
+              <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                <EditProductModal product={product} />
                 <button
                   onClick={() => handleDelete(product.id)}
                   disabled={loadingId === product.id}

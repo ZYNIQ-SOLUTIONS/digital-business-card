@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { 
   Plus, 
   LogOut, 
-  
+  Menu,
+  X
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -19,6 +20,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const supabase = createClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -45,8 +47,8 @@ export default function DashboardLayout({
             </Link>
           </div>
 
-          {/* Navigation Items */}
-          <div className="flex items-center gap-1.5">
+          {/* Desktop Navigation Items */}
+          <div className="hidden md:flex items-center gap-1.5">
             <Link
               href="/dashboard"
               className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
@@ -60,7 +62,7 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard/connections"
-              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors hidden md:flex ${
+              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
                 pathname === "/dashboard/connections"
                   ? "bg-neutral-100 text-neutral-900"
                   : "text-gray-400 hover:text-neutral-900 hover:bg-neutral-100/50"
@@ -71,7 +73,7 @@ export default function DashboardLayout({
 
             <Link
               href="/dashboard/enterprise"
-              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors hidden md:flex ${
+              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
                 pathname === "/dashboard/enterprise"
                   ? "bg-neutral-100 text-neutral-900"
                   : "text-gray-400 hover:text-neutral-900 hover:bg-neutral-100/50"
@@ -110,8 +112,93 @@ export default function DashboardLayout({
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+
+          {/* Mobile Navigation Trigger */}
+          <div className="flex md:hidden items-center gap-2">
+            <Link
+              href="/dashboard/cards/new"
+              className="inline-flex items-center justify-center p-1.5 min-h-[36px] min-w-[36px] rounded-md bg-neutral-100 hover:bg-neutral-200 text-gray-900 text-sm transition-all"
+            >
+              <Plus className="w-4 h-4" />
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md bg-neutral-100 text-gray-700 hover:bg-neutral-200 focus:outline-none"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Mobile Menu Drawer Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 top-14 z-30 bg-white md:hidden animate-fade-in flex flex-col border-b border-neutral-200 shadow-xl max-h-[calc(100vh-56px)] overflow-y-auto">
+          <nav className="p-4 flex flex-col gap-2">
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
+                pathname === "/dashboard"
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
+              }`}
+            >
+              My Cards
+            </Link>
+
+            <Link
+              href="/dashboard/connections"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
+                pathname === "/dashboard/connections"
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
+              }`}
+            >
+              Connections
+            </Link>
+
+            <Link
+              href="/dashboard/enterprise"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
+                pathname === "/dashboard/enterprise"
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
+              }`}
+            >
+              Enterprise
+            </Link>
+
+            <Link
+              href="/store"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
+                pathname.startsWith("/store")
+                  ? "bg-neutral-100 text-neutral-900"
+                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
+              }`}
+            >
+              Store
+            </Link>
+
+            <div className="h-[1px] bg-neutral-200 my-2" />
+
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleSignOut();
+              }}
+              disabled={isSigningOut}
+              className="w-full p-3.5 flex items-center rounded-xl text-base font-semibold text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              <span>Sign Out</span>
+            </button>
+          </nav>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8">
