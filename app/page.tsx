@@ -674,9 +674,6 @@ export default function Home() {
           {/* Feature 1: Apple Wallet Native Pass */}
           <div className="flex flex-col md:flex-row items-center gap-16">
             <div className="flex-1 space-y-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#8b5cf6]/10 text-[#8b5cf6] border border-[#8b5cf6]/20">
-                <Apple className="w-6 h-6" />
-              </div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
                 Lives natively in your Apple Wallet.
               </h2>
@@ -720,9 +717,6 @@ export default function Home() {
           {/* Feature 2: AI Paper Card Scanner */}
           <div className="flex flex-col md:flex-row-reverse items-center gap-16">
             <div className="flex-1 space-y-6">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#0ea5e9]/10 text-[#0ea5e9] border border-[#0ea5e9]/20">
-                <Bot className="w-6 h-6" />
-              </div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
                 AI camera paper card extraction.
               </h2>
