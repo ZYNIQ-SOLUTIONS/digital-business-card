@@ -1152,10 +1152,10 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                       <p className={`text-[10px] font-semibold ${pt.accent}`}>{card.title || "Title"}</p>
                       
                       <div className="grid grid-cols-4 gap-1 mt-3">
-                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Call</div>
-                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Email</div>
-                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Web</div>
-                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Meet</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} ${pt.textMain} border ${pt.pillBorder} text-[8px] font-bold text-center`}>Call</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} ${pt.textMain} border ${pt.pillBorder} text-[8px] font-bold text-center`}>Email</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} ${pt.textMain} border ${pt.pillBorder} text-[8px] font-bold text-center`}>Web</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} ${pt.textMain} border ${pt.pillBorder} text-[8px] font-bold text-center`}>Meet</div>
                       </div>
                     </div>
                   </div>

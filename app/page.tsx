@@ -509,10 +509,10 @@ export default function Home() {
                       </div>
 
                       <div className="grid grid-cols-4 gap-1">
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} text-[9px] font-bold text-center`}>Call</div>
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} text-[9px] font-bold text-center`}>Email</div>
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} text-[9px] font-bold text-center`}>Web</div>
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} text-[9px] font-bold text-center`}>Meet</div>
+                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Call</div>
+                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Email</div>
+                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Web</div>
+                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Meet</div>
                       </div>
 
                       <Link href="/auth" className={`w-full py-2.5 rounded-xl ${currentTheme.accentBg} text-white font-bold text-xs text-center block shadow-xs`}>
