@@ -4,16 +4,32 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 export function PageLoader() {
-  const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    setLoading(true);
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
+    // Start showing loader
+    setVisible(true);
+    setIsFadingOut(false);
+    
+    // Auto fadeout after 600ms
+    const fadeTimer = setTimeout(() => {
+      setIsFadingOut(true);
+    }, 600);
+
+    // Completely remove from DOM after fade-out transition (900ms total)
+    const removeTimer = setTimeout(() => {
+      setVisible(false);
+    }, 900);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
   }, [pathname]);
 
-  if (!loading) return null;
+  if (!visible) return null;
 
   return (
     <>
@@ -28,7 +44,22 @@ export function PageLoader() {
           align-items: center;
           justify-content: center;
           font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-          transition: opacity 0.3s ease;
+          transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sync-loader-wrapper.fade-out {
+          opacity: 0;
+          transform: scale(1.02);
+          pointer-events: none;
+        }
+        .loader-glow {
+          position: absolute;
+          width: 250px;
+          height: 250px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(16, 185, 129, 0.05) 50%, transparent 100%);
+          filter: blur(40px);
+          z-index: -1;
+          animation: glow-pulse 3s ease-in-out infinite alternate;
         }
         .sync-loader-logo .half-top {
           animation: loader-spin-top 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
@@ -41,6 +72,24 @@ export function PageLoader() {
         .sync-loader-logo .core-node {
           animation: loader-pulse-core 2s ease-in-out infinite;
           transform-origin: 100px 100px;
+        }
+        .loading-text {
+          font-family: var(--font-mono), monospace;
+          font-weight: 600;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          color: #9ca3af;
+          margin-top: 2rem;
+          animation: text-pulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes glow-pulse {
+          0% { transform: scale(0.9); opacity: 0.8; }
+          100% { transform: scale(1.1); opacity: 1.2; }
+        }
+        @keyframes text-pulse {
+          0% { opacity: 0.6; }
+          100% { opacity: 1; }
         }
         @keyframes loader-spin-top {
           0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); }
@@ -61,10 +110,11 @@ export function PageLoader() {
           100% { transform: translateX(250%); }
         }
       `}</style>
-      <div className="sync-loader-wrapper animate-in fade-in duration-200">
+      <div className={`sync-loader-wrapper ${isFadingOut ? "fade-out" : ""}`}>
+        <div className="loader-glow" />
         <svg
-          className="sync-loader-logo"
-          style={{ width: "8rem", height: "8rem", marginBottom: "2rem" }}
+          className="sync-loader-logo animate-in zoom-in-95 duration-300"
+          style={{ width: "8rem", height: "8rem" }}
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 200 200"
         >
@@ -86,18 +136,11 @@ export function PageLoader() {
           />
           <circle className="core-node" cx="100" cy="100" r="12" fill="#ffffff" />
         </svg>
-        <div
-          style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontWeight: 600,
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            fontSize: "0.75rem",
-            color: "#9ca3af",
-          }}
-        >
+        
+        <div className="loading-text">
           Syncing Identity
         </div>
+        
         <div
           style={{
             width: "12rem",
@@ -106,6 +149,7 @@ export function PageLoader() {
             borderRadius: "9999px",
             marginTop: "1.5rem",
             overflow: "hidden",
+            position: "relative",
           }}
         >
           <div
