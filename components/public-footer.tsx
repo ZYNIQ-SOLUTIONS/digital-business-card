@@ -105,7 +105,9 @@ export function PublicFooter() {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-          <p>© {new Date().getFullYear()} IZN Technologies LLC. All rights reserved. Dubai, United Arab Emirates.</p>
+          <p>
+            © {new Date().getFullYear()} IZN Created by <a href="https://zyniq.studio" target="_blank" rel="noopener noreferrer" className="text-gray-900 hover:underline font-semibold transition-colors">ZYNIQ Studio</a>. All rights reserved.
+          </p>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="hover:text-gray-600 transition-colors">
               Privacy

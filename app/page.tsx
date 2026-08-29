@@ -947,7 +947,9 @@ export default function Home() {
             <Link href="/support" className="hover:text-white transition">Support &amp; Help</Link>
           </div>
 
-          <p className="text-gray-500 text-xs">© {new Date().getFullYear()} IZN. All rights reserved.</p>
+          <p className="text-gray-500 text-xs">
+            © {new Date().getFullYear()} IZN Created by <a href="https://zyniq.studio" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white underline transition-colors">ZYNIQ Studio</a>. All rights reserved.
+          </p>
         </div>
       </footer>
 
