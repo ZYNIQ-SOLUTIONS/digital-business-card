@@ -57,11 +57,45 @@ export default function Home() {
   // Cart store for direct quick adding from the landing page
   const { addItem } = useCartStore();
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  const [storeProducts, setStoreProducts] = useState<ProductDetail[]>(DEFAULT_PRODUCTS);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    async function loadLiveProducts() {
+      try {
+        const res = await fetch("/api/products");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+            const mapped = data.products.map((p: any) => {
+              const def = DEFAULT_PRODUCTS.find((d) => d.id === p.id) || DEFAULT_PRODUCTS[0];
+              return {
+                ...def,
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                price: Number(p.price),
+                image_url: p.image_url || def.image_url,
+                category: p.category || def.category,
+                in_stock: p.in_stock ?? true,
+              };
+            });
+            setStoreProducts(mapped);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching live store products:", err);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    }
+    loadLiveProducts();
   }, []);
 
   const triggerNfcTap = () => {
@@ -561,7 +595,7 @@ export default function Home() {
 
           {/* Real Store Products Grid Showcase */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {DEFAULT_PRODUCTS.slice(0, 3).map((prod) => (
+            {storeProducts.slice(0, 3).map((prod) => (
               <div
                 key={prod.id}
                 className="bg-neutral-900/50 rounded-[32px] p-6 border border-white/[0.08] hover:border-white/20 shadow-xl flex flex-col justify-between group transition duration-300"
