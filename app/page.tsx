@@ -26,18 +26,26 @@ export default function Home() {
       {/* Navbar */}
       <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/80 backdrop-blur-md border-b border-gray-100 py-4" : "bg-transparent py-6"}`}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] group-hover:shadow-[0_0_20px_rgba(139,92,246,0.5)] transition-shadow">
-              <span className="text-gray-900 font-bold text-sm tracking-tighter">IZN</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2 group cursor-pointer">
+            <svg id="logo-light" className="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+              <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0f172a" strokeWidth="12" strokeLinecap="round" />
+              <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#64748b" strokeWidth="12" strokeLinecap="round" />
+              <circle cx="100" cy="100" r="12" fill="#0f172a" />
+            </svg>
             <span className="font-semibold text-lg tracking-tight text-gray-900 hidden sm:block">IZN</span>
-          </div>
+          </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
             <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
             <a href="#enterprise" className="hover:text-gray-900 transition-colors">Enterprise</a>
             <a href="#about" className="hover:text-gray-900 transition-colors">Our Story</a>
+            <Link href="/store" className="hover:text-gray-900 transition-colors flex items-center gap-1.5 font-semibold text-neutral-900">
+              Store
+            </Link>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/store" className="md:hidden text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+              Store
+            </Link>
             <Link href="/auth" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors hidden sm:block">
               Sign In
             </Link>
@@ -366,10 +374,10 @@ export default function Home() {
             </div>
             <span className="font-semibold text-gray-900">IZN</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-gray-400">
-            <a href="#" className="hover:text-gray-900 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-gray-900 transition-colors">Terms</a>
-            <a href="#" className="hover:text-gray-900 transition-colors">Support</a>
+          <div className="flex items-center gap-6 text-sm text-gray-500">
+            <Link href="/privacy" className="hover:text-gray-900 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-gray-900 transition-colors">Terms</Link>
+            <Link href="/support" className="hover:text-gray-900 transition-colors">Support</Link>
           </div>
           <p className="text-gray-400 text-sm">© {new Date().getFullYear()} IZN. All rights reserved.</p>
         </div>

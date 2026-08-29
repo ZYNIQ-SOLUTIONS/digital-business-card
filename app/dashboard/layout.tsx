@@ -34,13 +34,11 @@ export default function DashboardLayout({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="flex items-center gap-2 group min-h-[40px]">
-              <div className="logo-sync-container relative">
-                <svg width="24" height="24" viewBox="0 0 200 200" className="logo-sync">
-                  <path className="half half-top" d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0066CC" strokeWidth="12" strokeLinecap="round"/>
-                  <path className="half half-bot" d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#5E5E5E" strokeWidth="12" strokeLinecap="round"/>
-                  <circle className="core-node" cx="100" cy="100" r="15" fill="#171717"/>
-                </svg>
-              </div>
+              <svg id="logo-light" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+                <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0f172a" strokeWidth="12" strokeLinecap="round" />
+                <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#64748b" strokeWidth="12" strokeLinecap="round" />
+                <circle cx="100" cy="100" r="12" fill="#0f172a" />
+              </svg>
               <span className="font-display text-[15px] font-semibold tracking-tight text-neutral-900 hidden sm:block">
                 IZN
               </span>
@@ -80,6 +78,17 @@ export default function DashboardLayout({
               }`}
             >
               Enterprise
+            </Link>
+
+            <Link
+              href="/store"
+              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
+                pathname.startsWith("/store")
+                  ? "bg-neutral-100 text-neutral-900 font-semibold"
+                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-100/50"
+              }`}
+            >
+              Store
             </Link>
 
             <div className="w-[1px] h-4 bg-neutral-200 mx-1 hidden sm:block" />

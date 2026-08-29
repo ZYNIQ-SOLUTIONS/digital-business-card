@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
-import { GoogleIcon, GitHubIcon, TelegramIcon } from "@/components/icons";
+import { GoogleIcon, GitHubIcon } from "@/components/icons";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -67,13 +67,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleTelegramLogin = () => {
-    // Direct Telegram connection or instruction modal
-    setErrorMsg(null);
-    const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "CardSyncBot";
-    window.open(`https://t.me/${botUsername}?start=auth_${Date.now()}`, "_blank");
-  };
-
   const isMissingEnvVars = !process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   return (
@@ -103,11 +96,11 @@ export default function AuthPage() {
           </div>
         )}
         <div className="text-center space-y-2">
-          <div className="logo-sync-container relative flex justify-center mb-4">
-            <svg width="48" height="48" viewBox="0 0 200 200" className="logo-sync">
-              <path className="half half-top" d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#8b5cf6" strokeWidth="12" strokeLinecap="round"/>
-              <path className="half half-bot" d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#ec4899" strokeWidth="12" strokeLinecap="round"/>
-              <circle className="core-node" cx="100" cy="100" r="15" fill="#1D1D1F"/>
+          <div className="flex justify-center mb-4">
+            <svg id="logo-light" className="w-16 h-16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+              <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0f172a" strokeWidth="12" strokeLinecap="round"></path>
+              <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#64748b" strokeWidth="12" strokeLinecap="round"></path>
+              <circle cx="100" cy="100" r="12" fill="#0f172a"></circle>
             </svg>
           </div>
 
@@ -156,31 +149,19 @@ export default function AuthPage() {
                 <span>Continue with Google</span>
               </button>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSocialSignIn("github")}
-                  disabled={!!socialLoading || isLoading}
-                  className="py-2.5 px-3 rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.06] text-[#1D1D1F] font-medium text-xs flex items-center justify-center gap-2 transition shadow-2xs disabled:opacity-50"
-                >
-                  {socialLoading === "github" ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <GitHubIcon className="w-3.5 h-3.5" />
-                  )}
-                  <span>GitHub</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleTelegramLogin}
-                  disabled={!!socialLoading || isLoading}
-                  className="py-2.5 px-3 rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.06] text-[#1D1D1F] font-medium text-xs flex items-center justify-center gap-2 transition shadow-2xs disabled:opacity-50"
-                >
-                  <TelegramIcon className="w-3.5 h-3.5 text-[#24A1DE]" />
-                  <span>Telegram</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => handleSocialSignIn("github")}
+                disabled={!!socialLoading || isLoading}
+                className="w-full py-3 px-4 rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.06] text-[#1D1D1F] font-medium text-xs flex items-center justify-center gap-2.5 transition shadow-2xs disabled:opacity-50"
+              >
+                {socialLoading === "github" ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <GitHubIcon className="w-3.5 h-3.5" />
+                )}
+                <span>Continue with GitHub</span>
+              </button>
             </div>
 
             {/* Divider */}

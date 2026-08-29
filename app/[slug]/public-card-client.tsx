@@ -462,11 +462,11 @@ export default function PublicCardClient({
               </div>
             )}
 
-            {/* Dynamic vCard QR Code Card */}
+            {/* Dynamic Card URL QR Code Card */}
             <div className={`w-full ${t.qrContainerBg} border ${t.pillBorder} rounded-[32px] p-5 sm:p-6 flex flex-col items-center shadow-inner relative`}>
               <div className="bg-white p-4 rounded-[24px] shadow-[0_4px_16px_rgba(0,0,0,0.08)] border border-black/[0.05]">
                 <QRCodeSVG
-                  value={vCardString}
+                  value={typeof window !== "undefined" ? `${window.location.origin}/${card.slug}` : `/${card.slug}`}
                   size={180}
                   level="Q"
                   fgColor="#1D1D1F"
@@ -477,8 +477,8 @@ export default function PublicCardClient({
               </div>
 
               <div className="mt-4 text-center">
-                <p className={`text-[15px] font-semibold ${t.textMain}`}>Scan to Save Contact Card</p>
-                <p className={`text-[13px] ${t.textSecondary} mt-1`}>Compatible with iOS &amp; Android Address Books</p>
+                <p className={`text-[15px] font-semibold ${t.textMain}`}>Scan to Open Digital Card</p>
+                <p className={`text-[13px] ${t.textSecondary} mt-1`}>Instant web card on iOS &amp; Android</p>
               </div>
             </div>
 

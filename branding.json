@@ -1,0 +1,86 @@
+{
+  "brand": {
+    "name": "IZN",
+    "tagline": "The Zen of Networking",
+    "description": "The last business card you will ever need. Instantly share your contact info right from your Apple or Samsung Wallet."
+  },
+  "colors": {
+    "violet_sync": {
+      "name": "Violet Sync",
+      "hex": "#8B5CF6",
+      "rgb": "139, 92, 246",
+      "rgb_array": [139, 92, 246]
+    },
+    "signal_emerald": {
+      "name": "Signal Emerald",
+      "hex": "#10B981",
+      "rgb": "16, 185, 129",
+      "rgb_array": [16, 185, 129]
+    },
+    "data_cyan": {
+      "name": "Data Cyan",
+      "hex": "#0EA5E9",
+      "rgb": "14, 165, 233",
+      "rgb_array": [14, 165, 233]
+    },
+    "void_black": {
+      "name": "Void Black",
+      "hex": "#050507",
+      "rgb": "5, 5, 7",
+      "rgb_array": [5, 5, 7]
+    },
+    "gradients": {
+      "brand_gradient_01": "linear-gradient(to right, #8B5CF6, #10B981)",
+      "brand_gradient_02": "linear-gradient(to right, #10B981, #0EA5E9)"
+    }
+  },
+  "typography": {
+    "headings": {
+      "family": "Clash Display",
+      "category": "Primary / Headings",
+      "weights": ["Bold", "Medium", "Regular"],
+      "usage": "Used for hero titles, section headlines, and primary brand callouts."
+    },
+    "body": {
+      "family": "Inter",
+      "category": "Secondary / UI & Body",
+      "size": "Medium 16px (1rem)",
+      "usage": "Used for primary body copy, paragraph text, and long-form reading."
+    },
+    "technical": {
+      "family": "Space Mono",
+      "category": "Code / Monospace / Metadata",
+      "size": "12px",
+      "usage": "Used for technical data, metadata, small labels, and code snippets."
+    }
+  },
+  "assets": {
+    "logo_auth": {
+      "svg": "<svg id=\"logo-light\" class=\"w-24 h-24\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><path d=\"M 40 100 A 60 60 0 0 1 160 100\" fill=\"none\" stroke=\"#0f172a\" stroke-width=\"12\" stroke-linecap=\"round\"></path><path d=\"M 160 100 A 60 60 0 0 1 40 100\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"12\" stroke-linecap=\"round\"></path><circle cx=\"100\" cy=\"100\" r=\"12\" fill=\"#0f172a\"></circle></svg>",
+      "viewBox": "0 0 200 200",
+      "elements": {
+        "top_arc": { "d": "M 40 100 A 60 60 0 0 1 160 100", "stroke": "#0f172a", "stroke_width": 12 },
+        "bottom_arc": { "d": "M 160 100 A 60 60 0 0 1 40 100", "stroke": "#64748b", "stroke_width": 12 },
+        "core_circle": { "cx": 100, "cy": 100, "r": 12, "fill": "#0f172a" }
+      }
+    },
+    "logo_navbar": {
+      "svg": "<svg id=\"logo-light\" class=\"w-24 h-24\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><path d=\"M 40 100 A 60 60 0 0 1 160 100\" fill=\"none\" stroke=\"#0f172a\" stroke-width=\"12\" stroke-linecap=\"round\"></path><path d=\"M 160 100 A 60 60 0 0 1 40 100\" fill=\"none\" stroke=\"#64748b\" stroke-width=\"12\" stroke-linecap=\"round\"></path><circle cx=\"100\" cy=\"100\" r=\"12\" fill=\"#0f172a\"></circle></svg>",
+      "viewBox": "0 0 200 200",
+      "elements": {
+        "top_arc": { "d": "M 40 100 A 60 60 0 0 1 160 100", "stroke": "#0f172a", "stroke_width": 12 },
+        "bottom_arc": { "d": "M 160 100 A 60 60 0 0 1 40 100", "stroke": "#64748b", "stroke_width": 12 },
+        "core_circle": { "cx": 100, "cy": 100, "r": 12, "fill": "#0f172a" }
+      }
+    },
+    "favicon": {
+      "html": "<div id=\"app-icon-container\" class=\"w-24 h-24 rounded-2xl shadow-[0_10px_30px_rgba(139,92,246,0.2)] flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700\"><svg class=\"w-14 h-14\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><path d=\"M 40 100 A 60 60 0 0 1 160 100\" fill=\"none\" stroke=\"#8b5cf6\" stroke-width=\"16\" stroke-linecap=\"round\"></path><path d=\"M 160 100 A 60 60 0 0 1 40 100\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"16\" stroke-linecap=\"round\"></path><circle cx=\"100\" cy=\"100\" r=\"16\" fill=\"#ffffff\"></circle></svg></div>",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><path d=\"M 40 100 A 60 60 0 0 1 160 100\" fill=\"none\" stroke=\"#8b5cf6\" stroke-width=\"16\" stroke-linecap=\"round\"/><path d=\"M 160 100 A 60 60 0 0 1 40 100\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"16\" stroke-linecap=\"round\"/><circle cx=\"100\" cy=\"100\" r=\"16\" fill=\"#ffffff\"/></svg>"
+    }
+  },
+  "loader": {
+    "name": "Sync Sphere Full Page Loader",
+    "styles": ".sync-loader-wrapper { position: fixed; inset: 0; background-color: #050507; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; } .sync-loader-logo .half-top { animation: loader-spin-top 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; transform-origin: 100px 100px; } .sync-loader-logo .half-bot { animation: loader-spin-bot 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; transform-origin: 100px 100px; } .sync-loader-logo .core-node { animation: loader-pulse-core 2s ease-in-out infinite; transform-origin: 100px 100px; } @keyframes loader-spin-top { 0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); } 50% { transform: translateY(-16px) rotate(180deg) scale(1.1); stroke: #0ea5e9; filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.6)); } 100% { transform: translateY(0) rotate(360deg) scale(1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); } } @keyframes loader-spin-bot { 0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #10b981; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6)); } 50% { transform: translateY(16px) rotate(180deg) scale(1.1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); } 100% { transform: translateY(0) rotate(360deg) scale(1); stroke: #10b981; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6)); } } @keyframes loader-pulse-core { 0%, 100% { transform: scale(1); fill: #ffffff; filter: drop-shadow(0 0 0 transparent); } 50% { transform: scale(1.6); fill: #ffffff; filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); } } @keyframes sync-progress { 0% { transform: translateX(-50%); } 100% { transform: translateX(250%); } }",
+    "html": "<div class=\"sync-loader-wrapper\"><svg class=\"sync-loader-logo\" style=\"width: 8rem; height: 8rem; margin-bottom: 2rem;\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><path class=\"half-top\" d=\"M 40 100 A 60 60 0 0 1 160 100\" fill=\"none\" stroke=\"#8b5cf6\" stroke-width=\"12\" stroke-linecap=\"round\"/><path class=\"half-bot\" d=\"M 160 100 A 60 60 0 0 1 40 100\" fill=\"none\" stroke=\"#10b981\" stroke-width=\"12\" stroke-linecap=\"round\"/><circle class=\"core-node\" cx=\"100\" cy=\"100\" r=\"12\" fill=\"#ffffff\"/></svg><div style=\"font-family: monospace; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; font-size: 0.75rem; color: #9ca3af;\">Syncing Identity</div><div style=\"width: 12rem; height: 2px; background-color: rgba(255,255,255,0.1); border-radius: 9999px; margin-top: 1.5rem; overflow: hidden;\"><div style=\"height: 100%; background: linear-gradient(to right, #8b5cf6, #10b981, #0ea5e9); width: 33.333333%; border-radius: 9999px; animation: sync-progress 1s ease-in-out infinite alternate;\"></div></div></div>"
+  }
+}

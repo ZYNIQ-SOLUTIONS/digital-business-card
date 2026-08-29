@@ -15,9 +15,12 @@ import {
   Check, 
   Eye, 
   Download, 
-  Loader2
+  Loader2,
+  Smartphone,
+  Share2
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { AddToHomescreenModal } from "@/components/add-to-homescreen-modal";
 
 interface CardItem {
   id: string;
@@ -41,6 +44,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [qrModalCard, setQrModalCard] = useState<CardItem | null>(null);
+  const [homescreenTarget, setHomescreenTarget] = useState<{
+    type: "dashboard" | "card";
+    title: string;
+    slug?: string;
+    url?: string;
+  } | null>(null);
 
   const fetchCards = async () => {
     setLoading(true);
@@ -171,13 +180,29 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <Link
-          href="/dashboard/cards/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-white hover:bg-gray-100 text-gray-900 text-sm font-medium shadow-sm transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create New Card</span>
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() =>
+              setHomescreenTarget({
+                type: "dashboard",
+                title: "IZN Dashboard",
+                url: "/dashboard",
+              })
+            }
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium shadow-sm transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none"
+          >
+            <Smartphone className="w-4 h-4 text-emerald-400" />
+            <span>Add to Home Screen</span>
+          </button>
+
+          <Link
+            href="/dashboard/cards/new"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-white hover:bg-gray-100 text-gray-900 text-sm font-medium border border-neutral-200 shadow-xs transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create New Card</span>
+          </Link>
+        </div>
       </div>
 
       {/* Metrics Row */}
@@ -239,21 +264,36 @@ export default function DashboardPage() {
               <button
                 onClick={() => setQrModalCard(card)}
                 className="p-2.5 rounded-xl bg-neutral-100 hover:bg-gray-800 text-neutral-600 transition-colors focus:outline-none"
-                title="View QR Code"
+                title="View QR Code (Direct Card Link)"
               >
                 <QrCode className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Public URL Box */}
+            {/* Public URL Box & Shortcut Trigger */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-sm">
               <span className="font-mono text-neutral-600 truncate pr-2">
                 /{card.slug}
               </span>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
+                  onClick={() =>
+                    setHomescreenTarget({
+                      type: "card",
+                      title: card.full_name,
+                      slug: card.slug,
+                    })
+                  }
+                  className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200 text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs focus:outline-none"
+                  title="Add Card Shortcut to Home Screen"
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-violet-600" />
+                  <span className="hidden sm:inline">Shortcut</span>
+                </button>
+
+                <button
                   onClick={() => handleCopyLink(card.slug, card.id)}
-                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200 text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm focus:outline-none"
+                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200 text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs focus:outline-none"
                 >
                   {copiedId === card.id ? (
                     <>
@@ -271,7 +311,7 @@ export default function DashboardPage() {
                 <Link
                   href={`/${card.slug}`}
                   target="_blank"
-                  className="p-1.5 rounded-lg bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-900 shadow-sm transition-colors"
+                  className="p-1.5 rounded-lg bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-900 shadow-xs transition-colors"
                   title="Open live card"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -355,7 +395,7 @@ export default function DashboardPage() {
             </div>
 
             <p className="text-[11px] text-[#86868B]">
-              Scanning this code opens /{qrModalCard.slug} with live Apple Wallet &amp; vCard downloads.
+              Scanning this code opens /{qrModalCard.slug} (direct live digital business card).
             </p>
 
             <button
@@ -367,6 +407,13 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Add To Homescreen / Shortcut Modal */}
+      <AddToHomescreenModal
+        isOpen={Boolean(homescreenTarget)}
+        onClose={() => setHomescreenTarget(null)}
+        target={homescreenTarget || undefined}
+      />
     </div>
   );
 }
