@@ -26,7 +26,15 @@ import {
   Calendar,
   Camera,
   X,
-  Plus
+  Plus,
+  Search,
+  LayoutGrid,
+  Palette,
+  Terminal,
+  Layers,
+  Award,
+  Zap,
+  CreditCard
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -38,7 +46,8 @@ import {
 import { PhoneInput } from "@/components/phone-input";
 import { AiBioModal } from "@/components/ai-bio-modal";
 import { VerifyModal } from "@/components/verify-modal";
-import { themes, themeList } from "@/lib/theme";
+import { themes, themeList, ThemeCategory, ThemeTokens } from "@/lib/theme";
+import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
 
 const ALL_AVAILABLE_SOCIALS = [
   { id: "linkedin", name: "LinkedIn", url: "", active: true },
@@ -79,10 +88,14 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const [isBioAiOpen, setIsBioAiOpen] = useState(false);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
+  // Theme filtering and search state
+  const [selectedThemeCategory, setSelectedThemeCategory] = useState<ThemeCategory>("all");
+  const [themeSearchQuery, setThemeSearchQuery] = useState("");
+
   // Expanded sections state (collapsed by default)
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({
     1: false,
-    2: false,
+    2: true, // Expand theme & layout by default so user easily explores new themes
     3: false,
     4: false,
     5: false,
@@ -142,6 +155,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     avatar_url: "",
     avatar_initials: "",
     theme: "apple-light",
+    template_layout: "classic-segmented",
     is_verified: false,
     phone_primary: "",
     phone_secondary: "",
@@ -185,9 +199,11 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       .single();
 
     if (!error && data) {
-      // Ensure defaults if fields are empty
       setCard({
         ...data,
+        template_layout: data.template_layout || "classic-segmented",
+        theme: data.theme || "apple-light",
+        skills: data.skills || [],
         office_address: data.office_address || {
           street: "",
           city: "",
@@ -212,7 +228,6 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     setSaving(true);
     setErrorMsg(null);
 
-    // Compute initials
     const names = (card.full_name || "").trim().split(" ");
     const initials = names.length > 1
       ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
@@ -221,6 +236,8 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     const payload = {
       ...card,
       avatar_initials: initials,
+      template_layout: card.template_layout || "classic-segmented",
+      theme: card.theme || "apple-light",
       updated_at: new Date().toISOString(),
     };
 
@@ -251,6 +268,21 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     }));
   };
 
+  const filteredThemes = themeList.filter((th) => {
+    const matchesCategory = 
+      selectedThemeCategory === "all" ||
+      th.category === selectedThemeCategory ||
+      (selectedThemeCategory === "dark" && th.isDark) ||
+      (selectedThemeCategory === "light" && !th.isDark);
+
+    const matchesSearch = 
+      !themeSearchQuery ||
+      th.name.toLowerCase().includes(themeSearchQuery.toLowerCase()) ||
+      th.description.toLowerCase().includes(themeSearchQuery.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
+
   if (loading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-3">
@@ -260,58 +292,81 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 font-medium transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
-        </Link>
+  const activeThemeTokens = themes[card.theme || "apple-light"] || themes["apple-light"];
+  const activeTemplateDef = cardTemplates[card.template_layout as TemplateLayoutId] || cardTemplates["classic-segmented"];
 
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto pb-24">
+      {/* Top Breadcrumb & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="p-2 rounded-xl border border-black/[0.08] hover:bg-black/[0.03] transition"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#1D1D1F]" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
+              Edit Smart Card
+            </h1>
+            <p className="text-xs text-[#86868B]">
+              Customize design, layout templates, colors, and live integrations.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5">
           <Link
             href={`/${card.slug}`}
             target="_blank"
-            className="px-4 py-2 rounded-md bg-white border border-neutral-200 text-sm font-medium text-neutral-900 hover:bg-neutral-50 flex items-center gap-2 shadow-sm transition-colors focus:outline-none"
+            className="px-4 py-2 rounded-xl border border-black/[0.08] text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] flex items-center gap-1.5 transition"
           >
-            <Eye className="w-4 h-4" />
-            <span>Preview Live</span>
+            <Eye className="w-3.5 h-3.5" />
+            <span>Public Preview</span>
           </Link>
 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 rounded-md bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium flex items-center gap-2 shadow-sm transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none disabled:opacity-60"
+            className="px-5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
           >
             {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Saving...</span>
+              </>
             ) : saveSuccess ? (
-              <Check className="w-4 h-4 text-green-400" />
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Saved!</span>
+              </>
             ) : (
-              <Save className="w-4 h-4" />
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Changes</span>
+              </>
             )}
-            <span>{saving ? "Saving..." : saveSuccess ? "Saved!" : "Save Changes"}</span>
           </button>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs">
-          {errorMsg}
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-red-600">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Split-Screen Layout: Editor (Left) & Real-time Live Preview (Right) */}
+      {/* Main Grid: Form Sections (Left 7 cols) & Live Preview Mockup (Right 5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* LEFT COLUMN: EDIT FORM ACCORDIONS */}
+        {/* LEFT COLUMN: EDIT FORM SECTIONS */}
         <div className="lg:col-span-7 space-y-5">
           
-          {/* Section 1: Basic Identity */}
+          {/* Section 1: Profile Identity */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
             <div 
               className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
@@ -322,73 +377,66 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   {expandedSections[1] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
                 <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                  1. Profile Identity
+                  1. Profile Identity &amp; Bio
                 </h2>
               </div>
-              {card.is_verified ? (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200/80 text-green-700 text-[11px] font-semibold">
-                  <VerifiedBadgeIcon className="w-3.5 h-3.5 text-green-500" />
-                  <span>AI Verified Account</span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsVerifyOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Verify with AI Camera</span>
-                </button>
-              )}
+              <span className="text-xs text-neutral-400 font-mono">
+                {card.full_name || "Untitled"}
+              </span>
             </div>
 
             {expandedSections[1] && (
               <>
-                {/* Profile Photo Image Upload */}
-                <div className="space-y-1.5">
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase">Profile Photo</label>
-                  <div className="flex items-center gap-4 p-3.5 bg-[#F5F5F7] rounded-2xl border border-black/[0.04]">
-                    <div className="w-16 h-16 rounded-full bg-neutral-200 border-2 border-white shadow-md relative overflow-hidden flex-shrink-0 flex items-center justify-center">
+                {/* Profile Photo Upload */}
+                <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-[#FBFBFD] border border-black/[0.04]">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-neutral-100 border border-black/10 overflow-hidden flex items-center justify-center shadow-xs">
                       {card.avatar_url ? (
                         <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-lg font-bold text-gray-500">{card.avatar_initials || "IK"}</span>
-                      )}
-                      {uploadingAvatar && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <Loader2 className="w-5 h-5 text-white animate-spin" />
-                        </div>
+                        <span className="text-lg font-bold text-[#1D1D1F]">{card.avatar_initials || "IK"}</span>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <div className="relative">
+                    {uploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <span className="block text-xs font-semibold text-[#1D1D1F]">Profile Photo</span>
+                    <span className="block text-[11px] text-[#86868B] mb-2">Upload your custom picture for digital &amp; NFC cards.</span>
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-xl bg-white border border-black/[0.1] text-[11px] font-medium text-[#1D1D1F] hover:bg-neutral-50 cursor-pointer shadow-2xs flex items-center gap-1.5 transition">
+                        <Upload className="w-3.5 h-3.5 text-[#0071E3]" />
+                        <span>{uploadingAvatar ? "Uploading..." : "Upload Photo"}</span>
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleAvatarChange}
                           disabled={uploadingAvatar}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                          className="hidden"
                         />
+                      </label>
+                      {card.avatar_url && (
                         <button
                           type="button"
-                          disabled={uploadingAvatar}
-                          className="px-3.5 py-1.5 bg-white border border-black/[0.08] hover:bg-gray-50 text-xs font-semibold rounded-xl transition active:scale-95 shadow-xs flex items-center gap-1.5"
+                          onClick={() => setCard((prev: any) => ({ ...prev, avatar_url: "" }))}
+                          className="px-2.5 py-1.5 rounded-xl text-[11px] text-red-500 hover:bg-red-50 transition"
                         >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Choose Profile Photo</span>
+                          Remove
                         </button>
-                      </div>
-                      <p className="text-[10px] text-gray-400">JPEG, PNG or WEBP. Max 2MB.</p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Full Name</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Full Name *
+                    </label>
                     <input
                       type="text"
                       value={card.full_name}
@@ -398,19 +446,26 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">URL Slug</label>
-                    <input
-                      type="text"
-                      value={card.slug}
-                      onChange={(e) => setCard({ ...card, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })}
-                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs font-mono focus:outline-none focus:bg-white"
-                    />
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Custom URL Slug *
+                    </label>
+                    <div className="flex items-center rounded-xl bg-[#F5F5F7] border border-black/[0.05] px-2.5">
+                      <span className="text-xs text-[#86868B] font-mono">card.app/</span>
+                      <input
+                        type="text"
+                        value={card.slug}
+                        onChange={(e) => setCard({ ...card, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") })}
+                        className="w-full p-2.5 bg-transparent text-xs font-mono focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Job Title</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Job Title
+                    </label>
                     <input
                       type="text"
                       value={card.title}
@@ -420,7 +475,9 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Company</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Company Name
+                    </label>
                     <input
                       type="text"
                       value={card.company}
@@ -431,41 +488,32 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">Tagline</label>
-                  <input
-                    type="text"
-                    value={card.tagline}
-                    onChange={(e) => setCard({ ...card, tagline: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                  />
-                </div>
-
-                <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">Executive Bio</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">
+                      Executive Bio
+                    </label>
                     <button
                       type="button"
                       onClick={() => setIsBioAiOpen(true)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-[11px] font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0071E3] hover:underline"
                     >
                       <Sparkles className="w-3 h-3" />
-                      <span>Enhance with AI</span>
+                      <span>Generate AI Bio</span>
                     </button>
                   </div>
                   <textarea
                     rows={3}
                     value={card.bio}
                     onChange={(e) => setCard({ ...card, bio: e.target.value })}
-                    placeholder="Brief executive summary highlighting your role, expertise, and leadership focus..."
-                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white resize-none"
                   />
                 </div>
               </>
             )}
           </div>
 
-          {/* Section 2: Card Theme & Aesthetic */}
-          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
+          {/* Section 2: Card Theme & Modern Layout Templates */}
+          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-6">
             <div 
               className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
               onClick={() => toggleSection(2)}
@@ -474,59 +522,191 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                 <span className="text-gray-400">
                   {expandedSections[2] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
-                <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                  2. Visual Theme &amp; Color Palette
-                </h2>
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-[#0071E3]" />
+                  <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                    2. Card UI Layout &amp; Visual Theme
+                  </h2>
+                </div>
               </div>
-              <span className="text-xs text-neutral-400 font-mono">
-                {themeList.find(t => t.id === card.theme)?.name || "Apple Light"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-600 font-medium">
+                  {activeTemplateDef.name}
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-blue-50 text-[#0071E3] font-medium">
+                  {activeThemeTokens.name}
+                </span>
+              </div>
             </div>
 
             {expandedSections[2] && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {themeList.map((th) => {
-                  const isSelected = (card.theme || "apple-light") === th.id;
-                  return (
-                    <button
-                      key={th.id}
-                      type="button"
-                      onClick={() => setCard({ ...card, theme: th.id })}
-                      className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between min-h-[90px] ${
-                        isSelected
-                          ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/20 shadow-xs"
-                          : "border-black/[0.06] hover:border-black/[0.15] bg-[#FBFBFD]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className="w-4 h-4 rounded-full border border-black/10 shadow-2xs shrink-0"
-                            style={{ backgroundColor: th.previewBg }}
-                          />
-                          <div
-                            className="w-3 h-3 rounded-full shadow-2xs shrink-0"
-                            style={{ backgroundColor: th.previewAccent }}
-                          />
-                        </div>
-                        {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-[#0071E3] text-white flex items-center justify-center">
-                            <Check className="w-2.5 h-2.5" />
-                          </div>
-                        )}
-                      </div>
+              <div className="space-y-6">
+                
+                {/* SUB-SECTION A: 5 MODERN CARD UI LAYOUT TEMPLATES */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="block text-xs font-bold uppercase tracking-wider text-[#1D1D1F]">
+                        A. Choose Modern Card UI Architecture
+                      </span>
+                      <span className="block text-[11px] text-[#86868B]">
+                        Select the card layout and interaction model that fits your profile.
+                      </span>
+                    </div>
+                  </div>
 
-                      <div className="mt-2">
-                        <span className="block text-[11px] font-semibold text-[#1D1D1F] leading-tight">
-                          {th.name}
-                        </span>
-                        <span className="block text-[9px] text-[#86868B] truncate mt-0.5">
-                          {th.isDark ? "Dark OLED" : "Light Frost"}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {templateList.map((tpl) => {
+                      const isSelected = (card.template_layout || "classic-segmented") === tpl.id;
+                      return (
+                        <div
+                          key={tpl.id}
+                          onClick={() => setCard({ ...card, template_layout: tpl.id })}
+                          className={`p-4 rounded-2xl border text-left cursor-pointer transition-all relative flex flex-col justify-between ${
+                            isSelected
+                              ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/20 shadow-xs"
+                              : "border-black/[0.08] hover:border-black/[0.18] bg-[#FBFBFD]"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-neutral-200/70 text-neutral-700 mb-1">
+                                {tpl.badge}
+                              </span>
+                              <h3 className="text-xs font-bold text-[#1D1D1F]">
+                                {tpl.name}
+                              </h3>
+                            </div>
+                            {isSelected && (
+                              <div className="w-5 h-5 rounded-full bg-[#0071E3] text-white flex items-center justify-center shadow-xs">
+                                <Check className="w-3 h-3" />
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="text-[11px] text-[#86868B] my-2 leading-relaxed">
+                            {tpl.description}
+                          </p>
+
+                          <div className="pt-2 border-t border-black/[0.05] flex flex-wrap gap-1">
+                            {tpl.features.slice(0, 2).map((f) => (
+                              <span key={f} className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-white border border-black/5 text-neutral-600">
+                                ✓ {f}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="h-[1px] bg-black/[0.06] w-full" />
+
+                {/* SUB-SECTION B: 22 COLOR PALETTES & THEMES */}
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="block text-xs font-bold uppercase tracking-wider text-[#1D1D1F]">
+                        B. Select Color Palette ({themeList.length} Handcrafted Themes)
+                      </span>
+                      <span className="block text-[11px] text-[#86868B]">
+                        Each theme features distinct glassmorphism, accent glows, and contrast tokens.
+                      </span>
+                    </div>
+
+                    {/* Search themes */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Search palettes..."
+                        value={themeSearchQuery}
+                        onChange={(e) => setThemeSearchQuery(e.target.value)}
+                        className="pl-8 pr-3 py-1.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-[11px] focus:outline-none focus:bg-white w-full sm:w-44"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category Filter Pills */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {([
+                      { id: "all", label: "All Themes (22)" },
+                      { id: "dark", label: "Dark OLED" },
+                      { id: "light", label: "Light & Frost" },
+                      { id: "luxury", label: "Luxury" },
+                      { id: "cyber", label: "Cyber & Tech" },
+                      { id: "editorial", label: "Editorial" },
+                      { id: "creative", label: "Creative" },
+                    ] as const).map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedThemeCategory(cat.id as ThemeCategory)}
+                        className={`px-3 py-1 rounded-xl text-[11px] font-medium transition ${
+                          selectedThemeCategory === cat.id
+                            ? "bg-[#1D1D1F] text-white shadow-xs"
+                            : "bg-[#F5F5F7] text-[#86868B] hover:text-[#1D1D1F] hover:bg-[#E8E8ED]"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Theme Cards Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[420px] overflow-y-auto pr-1">
+                    {filteredThemes.map((th) => {
+                      const isSelected = (card.theme || "apple-light") === th.id;
+                      return (
+                        <button
+                          key={th.id}
+                          type="button"
+                          onClick={() => setCard({ ...card, theme: th.id })}
+                          className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between min-h-[95px] ${
+                            isSelected
+                              ? "border-[#0071E3] ring-2 ring-[#0071E3]/25 bg-blue-50/20 shadow-xs"
+                              : "border-black/[0.06] hover:border-black/[0.15] bg-[#FBFBFD]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-1.5">
+                              <div
+                                className="w-5 h-5 rounded-full border border-black/10 shadow-xs shrink-0"
+                                style={{ backgroundColor: th.previewBg }}
+                              />
+                              <div
+                                className="w-3.5 h-3.5 rounded-full shadow-2xs shrink-0"
+                                style={{ backgroundColor: th.previewAccent }}
+                              />
+                              {th.previewSecondary && (
+                                <div
+                                  className="w-2.5 h-2.5 rounded-full shadow-2xs shrink-0"
+                                  style={{ backgroundColor: th.previewSecondary }}
+                                />
+                              )}
+                            </div>
+                            {isSelected && (
+                              <div className="w-4 h-4 rounded-full bg-[#0071E3] text-white flex items-center justify-center">
+                                <Check className="w-2.5 h-2.5" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-2.5">
+                            <span className="block text-[11px] font-semibold text-[#1D1D1F] leading-tight truncate">
+                              {th.name}
+                            </span>
+                            <span className="block text-[9px] text-[#86868B] truncate mt-0.5 capitalize">
+                              {th.isDark ? "Dark" : "Light"} • {th.category}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
             )}
           </div>
@@ -542,53 +722,95 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   {expandedSections[3] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
                 <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                  3. Contact &amp; Links
+                  3. Contact &amp; Physical Office
                 </h2>
               </div>
+              <span className="text-xs text-neutral-400 font-mono">
+                {card.email_work || "No email"}
+              </span>
             </div>
 
             {expandedSections[3] && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Primary Phone
+                    </label>
                     <PhoneInput
-                      label="Primary Phone"
                       value={card.phone_primary}
                       onChange={(val) => setCard({ ...card, phone_primary: val })}
-                      placeholder="555 019 2834"
+                      placeholder="+1 (555) 000-0000"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Work Email</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Work Email
+                    </label>
                     <input
                       type="email"
                       value={card.email_work}
                       onChange={(e) => setCard({ ...card, email_work: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                      placeholder="name@company.com"
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">Website URL</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Primary Website
+                    </label>
                     <input
-                      type="text"
+                      type="url"
                       value={card.website_primary}
                       onChange={(e) => setCard({ ...card, website_primary: e.target.value })}
-                      className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                      placeholder="https://example.com"
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[13px] font-medium text-neutral-600 mb-1.5">External Booking Link (Optional)</label>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Portfolio / Case Studies
+                    </label>
+                    <input
+                      type="url"
+                      value={card.portfolio_url}
+                      onChange={(e) => setCard({ ...card, portfolio_url: e.target.value })}
+                      placeholder="https://dribbble.com/..."
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Office Street Address */}
+                <div className="pt-2 space-y-2">
+                  <span className="block text-[11px] font-semibold text-[#86868B] uppercase">
+                    Office / Headquarters Address
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="text"
-                      value={card.booking_url || ""}
-                      onChange={(e) => setCard({ ...card, booking_url: e.target.value })}
-                      placeholder="https://calendly.com/..."
-                      className="w-full p-3 rounded-2xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
+                      placeholder="Street Address"
+                      value={card.office_address?.street || ""}
+                      onChange={(e) => setCard({
+                        ...card,
+                        office_address: { ...card.office_address, street: e.target.value }
+                      })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="City & Country"
+                      value={card.office_address?.city || ""}
+                      onChange={(e) => setCard({
+                        ...card,
+                        office_address: { ...card.office_address, city: e.target.value }
+                      })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                     />
                   </div>
                 </div>
@@ -596,7 +818,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             )}
           </div>
 
-          {/* Section 4: Meeting & Calendar Booking Schedule */}
+          {/* Section 4: Calendar Meeting Integration */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
             <div 
               className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
@@ -606,120 +828,62 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                 <span className="text-gray-400">
                   {expandedSections[4] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#0071E3]" />
-                  <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                    4. Meeting &amp; Calendar Booking Schedule
-                  </h2>
-                </div>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  4. Calendar &amp; Instant Booking
+                </h2>
               </div>
-              <label 
-                className="relative inline-flex items-center cursor-pointer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <input
-                  type="checkbox"
-                  checked={card.booking_enabled ?? true}
-                  onChange={(e) => setCard({ ...card, booking_enabled: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0071E3]" />
-              </label>
+              <span className="text-xs text-neutral-400 font-mono">
+                {card.booking_enabled ? "Enabled" : "Disabled"}
+              </span>
             </div>
 
             {expandedSections[4] && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                    Meeting Topic / Title
-                  </label>
+              <>
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-[#FBFBFD] border border-black/[0.04]">
+                  <div>
+                    <span className="block text-xs font-semibold text-[#1D1D1F]">Enable 1-Tap Booking</span>
+                    <span className="block text-[11px] text-[#86868B]">Let clients book appointments directly through your smart card.</span>
+                  </div>
                   <input
-                    type="text"
-                    value={card.booking_title || "30-Min Strategy Consultation"}
-                    onChange={(e) => setCard({ ...card, booking_title: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20"
+                    type="checkbox"
+                    checked={card.booking_enabled}
+                    onChange={(e) => setCard({ ...card, booking_enabled: e.target.checked })}
+                    className="w-4 h-4 rounded text-[#0071E3]"
                   />
                 </div>
 
-                {/* Available Days Checkboxes */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
-                    Available Meeting Days
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
-                      const daysArr = card.booking_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-                      const isChecked = daysArr.includes(day);
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => {
-                            const updated = isChecked
-                              ? daysArr.filter((d: string) => d !== day)
-                              : [...daysArr, day];
-                            setCard({ ...card, booking_days: updated });
-                          }}
-                          className={`p-2 rounded-xl text-xs font-medium border text-center transition ${
-                            isChecked
-                              ? "border-[#0071E3] bg-blue-50 text-[#0071E3] font-semibold"
-                              : "border-black/[0.05] bg-[#F5F5F7] text-neutral-600 hover:border-black/[0.15]"
-                          }`}
-                        >
-                          {day}
-                        </button>
-                      );
-                    })}
+                {card.booking_enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                        Meeting Title
+                      </label>
+                      <input
+                        type="text"
+                        value={card.booking_title}
+                        onChange={(e) => setCard({ ...card, booking_title: e.target.value })}
+                        placeholder="30-Min Strategy Consultation"
+                        className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                        Duration (Minutes)
+                      </label>
+                      <input
+                        type="number"
+                        value={card.booking_slot_duration}
+                        onChange={(e) => setCard({ ...card, booking_slot_duration: parseInt(e.target.value) || 30 })}
+                        className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                      />
+                    </div>
                   </div>
-                </div>
-
-                {/* Working Hours & Duration */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                      Start Time
-                    </label>
-                    <input
-                      type="time"
-                      value={card.booking_start_time || "09:00"}
-                      onChange={(e) => setCard({ ...card, booking_start_time: e.target.value })}
-                      className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      value={card.booking_end_time || "17:00"}
-                      onChange={(e) => setCard({ ...card, booking_end_time: e.target.value })}
-                      className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                      Duration
-                    </label>
-                    <select
-                      value={card.booking_slot_duration || 30}
-                      onChange={(e) => setCard({ ...card, booking_slot_duration: Number(e.target.value) })}
-                      className="w-full p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                    >
-                      <option value={15}>15 Minutes</option>
-                      <option value={30}>30 Minutes</option>
-                      <option value={45}>45 Minutes</option>
-                      <option value={60}>60 Minutes</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+                )}
+              </>
             )}
           </div>
 
-          {/* Section 5: Social Media Links */}
+          {/* Section 5: Connected Social Channels */}
           <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
             <div 
               className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
@@ -730,193 +894,272 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   {expandedSections[5] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </span>
                 <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                  5. Connected Social Networks
+                  5. Connected Social Networks &amp; Links
                 </h2>
               </div>
               <span className="text-xs text-neutral-400 font-mono">
-                {card.socials.filter((s: any) => s.url).length} connected
+                {card.socials?.filter((s:any)=>s.url)?.length || 0} Connected
               </span>
             </div>
 
             {expandedSections[5] && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {card.socials.map((social: any) => (
-                    <div key={social.id} className="space-y-1">
-                      {!social.isCustom ? (
-                        <label className="flex items-center gap-1.5 text-[12px] font-medium text-neutral-700">
-                          <span className="w-4 h-4 text-neutral-600 flex items-center justify-center">
-                            <SocialIcon id={social.id} className="w-3.5 h-3.5" />
-                          </span>
-                          <span>{social.name}</span>
-                        </label>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={social.name}
-                            onChange={(e) => {
-                              setCard((prev: any) => ({
-                                ...prev,
-                                socials: prev.socials.map((s: any) =>
-                                  s.id === social.id ? { ...s, name: e.target.value } : s
-                                ),
-                              }));
-                            }}
-                            placeholder="Link Title"
-                            className="flex-1 text-[12px] font-medium text-neutral-700 bg-transparent border-b border-black/[0.1] focus:outline-none focus:border-[#0071E3] px-1 py-0.5"
-                          />
-                          <button
-                            onClick={() => {
-                              setCard((prev: any) => ({
-                                ...prev,
-                                socials: prev.socials.filter((s: any) => s.id !== social.id),
-                              }));
-                            }}
-                            className="text-red-500 hover:bg-red-50 p-1 rounded-md"
-                            title="Remove Link"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                      <input
-                        type="text"
-                        value={social.url || ""}
-                        onChange={(e) => updateSocialUrl(social.id, e.target.value)}
-                        placeholder={social.isCustom ? "https://..." : `https://${social.id}.com/...`}
-                        className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0071E3]/20 transition"
-                      />
+              <div className="space-y-3 pt-1">
+                {card.socials.map((social: any) => (
+                  <div key={social.id} className="flex items-center gap-2">
+                    <div className="w-24 shrink-0">
+                      <span className="text-xs font-semibold text-[#1D1D1F]">{social.name}</span>
                     </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => {
-                    setCard((prev: any) => ({
-                      ...prev,
-                      socials: [
-                        ...prev.socials,
-                        {
-                          id: "custom_" + Date.now(),
-                          name: "Other Link",
-                          url: "",
-                          isCustom: true,
-                          active: true
-                        }
-                      ]
-                    }));
-                  }}
-                  className="w-full mt-4 py-2 border-2 border-dashed border-black/[0.1] hover:border-[#0071E3] hover:text-[#0071E3] text-neutral-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Custom Link
-                </button>
-              </>
+                    <input
+                      type="url"
+                      placeholder={`https://${social.id}.com/...`}
+                      value={social.url || ""}
+                      onChange={(e) => updateSocialUrl(social.id, e.target.value)}
+                      className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
+
         </div>
 
-        {/* RIGHT COLUMN: REAL-TIME APPLE LIVE PREVIEW */}
+        {/* RIGHT COLUMN: REAL-TIME MOBILE CARD PREVIEW */}
         {(() => {
-          const pt = themes[card.theme || "apple-light"] || themes["apple-light"];
+          const pt = activeThemeTokens;
+          const template = card.template_layout || "classic-segmented";
+
           return (
             <div className="lg:col-span-5 sticky top-20">
-              <div className="text-center pb-2">
+              <div className="text-center pb-2 flex items-center justify-center gap-1.5">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
-                  Real-Time Mobile Card Preview ({pt.name})
+                  Live Preview: {activeTemplateDef.name} ({pt.name})
                 </span>
               </div>
 
-              {/* Device Mockup Wrapper */}
-              <div className={`w-full max-w-sm mx-auto ${pt.cardBg} border ${pt.border} rounded-[32px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.12)] flex flex-col items-center space-y-5 transition-all duration-300`}>
+              {/* Device Mockup Canvas */}
+              <div className={`w-full max-w-sm mx-auto ${pt.cardBg} border ${pt.border} rounded-[36px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14)] flex flex-col items-center space-y-4 transition-all duration-300 relative overflow-hidden`}>
                 
-                {/* Avatar Initials */}
-                <div className={`w-20 h-20 rounded-full ${pt.avatarBg} border-2 ${pt.avatarBorder} shadow-md flex items-center justify-center relative overflow-hidden`}>
-                  <span className={`text-2xl font-semibold tracking-tighter ${pt.textMain}`}>
-                    {card.avatar_initials || "IK"}
-                  </span>
-                  <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full ${pt.accentBg} text-white flex items-center justify-center shadow-xs border ${pt.avatarBorder}`}>
-                    <Sparkles className="w-3 h-3 fill-white" />
-                  </div>
-                </div>
+                {/* Template 1 & Default: Classic Apple Mockup */}
+                {template === "classic-segmented" && (
+                  <>
+                    <div className={`w-20 h-20 rounded-[1.8rem] ${pt.avatarBg} border-2 ${pt.avatarBorder} shadow-md flex items-center justify-center relative overflow-hidden`}>
+                      {card.avatar_url ? (
+                        <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className={`text-2xl font-bold tracking-tighter ${pt.textMain}`}>
+                          {card.avatar_initials || "IK"}
+                        </span>
+                      )}
+                      <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full ${pt.accentBg} text-white flex items-center justify-center shadow-xs border ${pt.avatarBorder}`}>
+                        <Sparkles className="w-3 h-3 fill-white" />
+                      </div>
+                    </div>
 
-                {/* Name & Title */}
-                <div className="text-center space-y-0.5">
-                  <div className="flex items-center justify-center gap-1">
-                    <h3 className={`text-xl font-bold tracking-tight ${pt.textMain}`}>
-                      {card.full_name || "Your Name"}
-                    </h3>
-                    {card.is_verified ? (
-                      <VerifiedBadgeIcon className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <ShieldCheck className={`w-4 h-4 ${pt.accent}`} />
-                    )}
-                  </div>
-                  <p className={`text-xs font-semibold ${pt.accent}`}>
-                    {card.title || "Job Title"}
-                  </p>
-                  <p className={`text-[11px] ${pt.textSecondary}`}>
-                    {card.company || "Company Name"}
-                  </p>
-                </div>
+                    <div className="text-center space-y-0.5">
+                      <div className="flex items-center justify-center gap-1">
+                        <h3 className={`text-lg font-bold tracking-tight ${pt.textMain}`}>
+                          {card.full_name || "Your Full Name"}
+                        </h3>
+                        {card.is_verified && <VerifiedBadgeIcon className="w-4 h-4 text-green-500" />}
+                      </div>
+                      <p className={`text-xs font-semibold ${pt.accent}`}>
+                        {card.title || "Job Title"}
+                      </p>
+                      <p className={`text-[11px] ${pt.textSecondary}`}>
+                        {card.company || "Company Name"}
+                      </p>
+                    </div>
 
-                {/* Quick Actions 4-Grid */}
-                <div className="w-full grid grid-cols-4 gap-1.5">
-                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
-                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
-                      <Phone className="w-3.5 h-3.5 text-[#34C759]" />
+                    {/* Quick Actions */}
+                    <div className="w-full grid grid-cols-4 gap-1.5">
+                      <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                        <Phone className="w-3.5 h-3.5 text-[#34C759] mb-1" />
+                        <span className={`text-[9px] font-medium ${pt.textMain}`}>Call</span>
+                      </div>
+                      <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                        <Mail className={`w-3.5 h-3.5 ${pt.accent} mb-1`} />
+                        <span className={`text-[9px] font-medium ${pt.textMain}`}>Email</span>
+                      </div>
+                      <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                        <Globe className="w-3.5 h-3.5 text-[#5856D6] mb-1" />
+                        <span className={`text-[9px] font-medium ${pt.textMain}`}>Web</span>
+                      </div>
+                      <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
+                        <Calendar className="w-3.5 h-3.5 text-[#FF9500] mb-1" />
+                        <span className={`text-[9px] font-medium ${pt.textMain}`}>Meet</span>
+                      </div>
                     </div>
-                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Call</span>
-                  </div>
-                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
-                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
-                      <Mail className={`w-3.5 h-3.5 ${pt.accent}`} />
-                    </div>
-                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Email</span>
-                  </div>
-                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
-                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
-                      <Globe className="w-3.5 h-3.5 text-[#5856D6]" />
-                    </div>
-                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Web</span>
-                  </div>
-                  <div className={`flex flex-col items-center p-2 rounded-xl ${pt.pillBg} text-center border ${pt.pillBorder}`}>
-                    <div className={`w-7 h-7 rounded-full ${pt.iconCircleBg} flex items-center justify-center mb-1 shadow-2xs`}>
-                      <Calendar className="w-3.5 h-3.5 text-[#FF9500]" />
-                    </div>
-                    <span className={`text-[10px] font-medium ${pt.textMain}`}>Meet</span>
-                  </div>
-                </div>
 
-                {/* QR Mockup */}
-                <div className={`w-full ${pt.qrContainerBg} rounded-2xl p-3 flex flex-col items-center border ${pt.pillBorder}`}>
-                  <div className="bg-white p-2 rounded-xl shadow-xs">
-                    <QRCodeSVG
-                      value={`https://card.app/${card.slug || "demo"}`}
-                      size={120}
-                      level="Q"
-                      className="w-28 h-28"
-                    />
-                  </div>
-                  <span className={`text-[10px] ${pt.textSecondary} pt-2 font-mono`}>
-                    /{card.slug || "slug"}
-                  </span>
-                </div>
-
-                {/* CTA Pill Buttons */}
-                <div className="w-full space-y-2">
-                  <div className="w-full py-2.5 px-3 rounded-xl bg-black text-white text-[11px] font-medium flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <AppleIcon className="w-3.5 h-3.5 fill-white" />
-                      <span>Add to Apple Wallet</span>
+                    {/* QR Mockup */}
+                    <div className={`w-full ${pt.qrContainerBg} rounded-2xl p-3 flex flex-col items-center border ${pt.pillBorder}`}>
+                      <div className="bg-white p-2 rounded-xl shadow-xs">
+                        <QRCodeSVG
+                          value={`https://card.app/${card.slug || "demo"}`}
+                          size={110}
+                          level="Q"
+                          className="w-24 h-24"
+                        />
+                      </div>
+                      <span className={`text-[9px] ${pt.textSecondary} pt-1 font-mono`}>
+                        /{card.slug || "slug"}
+                      </span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5" />
+
+                    {/* CTA Actions */}
+                    <div className="w-full space-y-1.5">
+                      <div className="w-full py-2 px-3 rounded-xl bg-black text-white text-[11px] font-medium flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <AppleIcon className="w-3.5 h-3.5 fill-white" />
+                          <span>Add to Apple Wallet</span>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
+                      <div className={`w-full py-2 px-3 rounded-xl ${pt.accentBg} text-white text-[11px] font-medium text-center shadow-xs`}>
+                        Save Contact Card (.vcf)
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Template 2: Bento Grid Mockup */}
+                {template === "bento-grid" && (
+                  <div className="w-full space-y-3">
+                    <div className={`p-3.5 rounded-2xl ${pt.pillBg} border ${pt.pillBorder} flex items-center gap-3`}>
+                      <div className={`w-12 h-12 rounded-xl ${pt.avatarBg} border ${pt.avatarBorder} overflow-hidden shrink-0 flex items-center justify-center`}>
+                        {card.avatar_url ? (
+                          <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className={`text-lg font-bold ${pt.textMain}`}>{card.avatar_initials || "IK"}</span>
+                        )}
+                      </div>
+                      <div className="truncate flex-1">
+                        <span className={`block text-xs font-bold ${pt.textMain} truncate`}>{card.full_name || "Name"}</span>
+                        <span className={`block text-[10px] font-semibold ${pt.accent} truncate`}>{card.title || "Title"}</span>
+                        <span className={`block text-[9px] ${pt.textSecondary} truncate`}>{card.company || "Company"}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className={`p-2.5 rounded-xl ${pt.pillBg} border ${pt.pillBorder} text-center flex flex-col items-center justify-center`}>
+                        <div className="bg-white p-1.5 rounded-lg shadow-2xs mb-1">
+                          <QRCodeSVG value={`https://card.app/${card.slug}`} size={56} level="Q" className="w-14 h-14" />
+                        </div>
+                        <span className={`text-[8px] font-mono ${pt.textSecondary}`}>Instant Scan</span>
+                      </div>
+                      <div className={`p-2.5 rounded-xl ${pt.pillBg} border ${pt.pillBorder} flex flex-col justify-between`}>
+                        <div className="space-y-0.5">
+                          <span className={`block text-[10px] font-bold ${pt.textMain}`}>Bento Matrix</span>
+                          <span className={`block text-[8px] ${pt.textSecondary}`}>NFC pass &amp; vCard</span>
+                        </div>
+                        <div className={`py-1.5 px-2 rounded-lg ${pt.accentBg} text-white text-[9px] font-bold text-center`}>
+                          Sync Pass
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1.5">
+                      <div className={`p-1.5 rounded-lg ${pt.pillBg} text-center text-[9px] font-medium ${pt.textMain}`}>Call</div>
+                      <div className={`p-1.5 rounded-lg ${pt.pillBg} text-center text-[9px] font-medium ${pt.textMain}`}>Email</div>
+                      <div className={`p-1.5 rounded-lg ${pt.pillBg} text-center text-[9px] font-medium ${pt.textMain}`}>Web</div>
+                      <div className={`p-1.5 rounded-lg ${pt.pillBg} text-center text-[9px] font-medium ${pt.textMain}`}>Meet</div>
+                    </div>
                   </div>
-                  <div className={`w-full py-2.5 px-3 rounded-xl ${pt.accentBg} text-white text-[11px] font-medium text-center shadow-xs`}>
-                    Save Contact Card (.vcf)
+                )}
+
+                {/* Template 3: Executive Minimal Mockup */}
+                {template === "executive-minimal" && (
+                  <div className="w-full space-y-3 text-left">
+                    <div className="border-b pb-2 border-black/10 dark:border-white/10 flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-xl ${pt.avatarBg} border ${pt.avatarBorder} overflow-hidden shrink-0 flex items-center justify-center`}>
+                        {card.avatar_url ? (
+                          <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className={`text-base font-serif font-bold ${pt.textMain}`}>{card.avatar_initials || "IK"}</span>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className={`text-sm font-bold font-serif ${pt.textMain}`}>{card.full_name || "Name"}</h4>
+                        <span className={`text-[10px] uppercase font-semibold ${pt.accent}`}>{card.title || "Title"}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className={`p-2 rounded-lg ${pt.pillBg} border ${pt.pillBorder} text-[10px] font-semibold ${pt.textMain} flex items-center justify-between`}>
+                        <span>Direct Call</span>
+                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <div className={`p-2 rounded-lg ${pt.pillBg} border ${pt.pillBorder} text-[10px] font-semibold ${pt.textMain} flex items-center justify-between`}>
+                        <span>Official Email</span>
+                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                      </div>
+                      <div className={`p-2 rounded-lg ${pt.pillBg} border ${pt.pillBorder} text-[10px] font-semibold ${pt.textMain} flex items-center justify-between`}>
+                        <span>Corporate Portal</span>
+                        <ChevronRight className="w-3 h-3 text-gray-400" />
+                      </div>
+                    </div>
+
+                    <div className={`w-full py-2 rounded-xl ${pt.accentBg} text-white text-[10px] font-bold text-center`}>
+                      Save Executive vCard
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Template 4: Cyber HUD Mockup */}
+                {template === "cyber-holo" && (
+                  <div className="w-full space-y-3 font-mono text-center">
+                    <div className="text-[9px] text-cyan-400 font-bold tracking-widest">[NODE:ONLINE // ENC:256]</div>
+                    <div className="w-16 h-16 mx-auto rounded-xl border-2 border-cyan-400 p-0.5 overflow-hidden">
+                      {card.avatar_url ? (
+                        <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-lg" />
+                      ) : (
+                        <div className="w-full h-full bg-cyan-950 flex items-center justify-center text-cyan-300 font-bold text-lg">
+                          {card.avatar_initials || "IK"}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">{card.full_name || "Name"}</h4>
+                      <p className="text-[9px] text-cyan-400">// {card.title || "TITLE"}</p>
+                    </div>
+                    <div className="p-2 rounded-xl bg-black/50 border border-cyan-500/40">
+                      <QRCodeSVG value={`https://card.app/${card.slug}`} size={70} level="Q" className="w-16 h-16 mx-auto" />
+                    </div>
+                    <div className="w-full py-1.5 rounded-lg bg-cyan-500 text-black text-[9px] font-bold">
+                      EXTRACT VCARD STREAM
+                    </div>
+                  </div>
+                )}
+
+                {/* Template 5: Creative Hero Mockup */}
+                {template === "creative-hero" && (
+                  <div className="w-full rounded-2xl overflow-hidden text-left -mt-2">
+                    <div className={`w-full h-16 bg-gradient-to-r ${pt.gradient} p-2 flex items-end`}>
+                      <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-black/40 text-white font-bold">Visual Pass</span>
+                    </div>
+                    <div className="p-3 pt-0">
+                      <div className="flex items-end justify-between -mt-6 mb-2">
+                        <div className={`w-12 h-12 rounded-xl ${pt.avatarBg} border-2 ${pt.avatarBorder} overflow-hidden flex items-center justify-center shadow-md`}>
+                          {card.avatar_url ? (
+                            <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className={`text-sm font-bold ${pt.textMain}`}>{card.avatar_initials || "IK"}</span>
+                          )}
+                        </div>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg ${pt.accentBg} text-white`}>Connect</span>
+                      </div>
+                      <h4 className={`text-xs font-bold ${pt.textMain}`}>{card.full_name || "Name"}</h4>
+                      <p className={`text-[10px] font-semibold ${pt.accent}`}>{card.title || "Title"}</p>
+                      
+                      <div className="grid grid-cols-4 gap-1 mt-3">
+                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Call</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Email</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Web</div>
+                        <div className={`p-1 rounded-md ${pt.pillBg} text-[8px] font-bold text-center`}>Meet</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               </div>
             </div>

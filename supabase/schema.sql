@@ -60,6 +60,7 @@ create table if not exists public.cards (
   slug text unique not null,
   is_published boolean default true not null,
   theme text default 'apple-light' not null,
+  template_layout text default 'classic-segmented' not null,
   
   -- Personal Identity
   full_name text not null,

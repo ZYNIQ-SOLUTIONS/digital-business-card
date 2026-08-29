@@ -7,6 +7,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowLeft, Sparkles, ArrowRight, Loader2, Check } from "lucide-react";
 import { themeList } from "@/lib/theme";
+import { templateList } from "@/lib/templates";
 
 export default function NewCardPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function NewCardPage() {
     company: "",
     slug: "",
     theme: "apple-light",
+    template_layout: "classic-segmented",
     phonePrimary: "",
     emailWork: "",
     websitePrimary: "https://",
@@ -77,6 +79,7 @@ export default function NewCardPage() {
         slug: formData.slug || `card-${Date.now().toString(36)}`,
         is_published: true,
         theme: formData.theme || "apple-light",
+        template_layout: formData.template_layout || "classic-segmented",
         full_name: formData.fullName,
         avatar_initials: avatarInitials,
         title: formData.title,
@@ -132,7 +135,7 @@ export default function NewCardPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto py-6">
+    <div className="max-w-xl mx-auto py-6">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1.5 text-xs text-[#86868B] hover:text-[#1D1D1F] font-medium mb-6 transition"
@@ -144,10 +147,10 @@ export default function NewCardPage() {
       <div className="bg-white rounded-[32px] p-6 sm:p-8 border border-black/[0.06] shadow-xs space-y-6">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
-            Create a New Business Card
+            Create a New Smart Business Card
           </h1>
           <p className="text-xs text-[#86868B] pt-0.5">
-            Add another personal, professional, or side-project card to your account.
+            Choose your profile details, layout architecture, and color palette.
           </p>
         </div>
 
@@ -157,7 +160,7 @@ export default function NewCardPage() {
           </div>
         )}
 
-        <form onSubmit={handleCreateCard} className="space-y-4 text-xs">
+        <form onSubmit={handleCreateCard} className="space-y-5 text-xs">
           <div>
             <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
               Full Name *
@@ -202,11 +205,47 @@ export default function NewCardPage() {
             </div>
           </div>
 
+          {/* Template Layout Selection */}
           <div>
             <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
-              Choose Initial Theme
+              Select UI Layout Template
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {templateList.map((tpl) => {
+                const isSelected = formData.template_layout === tpl.id;
+                return (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, template_layout: tpl.id })}
+                    className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between ${
+                      isSelected
+                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/30"
+                        : "border-black/[0.06] hover:border-black/[0.15] bg-[#F8F9FA]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-700">
+                        {tpl.badge}
+                      </span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3]" />}
+                    </div>
+                    <div className="mt-1.5">
+                      <span className="block text-xs font-bold text-[#1D1D1F]">{tpl.name}</span>
+                      <span className="block text-[10px] text-[#86868B] line-clamp-1">{tpl.description}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Initial Theme Palette Selection */}
+          <div>
+            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
+              Choose Color Theme ({themeList.length} Palettes)
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
               {themeList.map((th) => {
                 const isSelected = formData.theme === th.id;
                 return (
@@ -230,10 +269,16 @@ export default function NewCardPage() {
                           className="w-2.5 h-2.5 rounded-full shadow-2xs shrink-0"
                           style={{ backgroundColor: th.previewAccent }}
                         />
+                        {th.previewSecondary && (
+                          <div
+                            className="w-2 h-2 rounded-full shadow-2xs shrink-0"
+                            style={{ backgroundColor: th.previewSecondary }}
+                          />
+                        )}
                       </div>
                       {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3]" />}
                     </div>
-                    <span className="block text-[11px] font-medium text-[#1D1D1F] truncate mt-1">
+                    <span className="block text-[11px] font-semibold text-[#1D1D1F] truncate mt-1">
                       {th.name}
                     </span>
                   </button>
