@@ -35,6 +35,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate Limiting: 10 AI requests per 24 hours
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+
+    const { count, error: countError } = await supabase
+      .from('ai_usage_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', yesterday.toISOString());
+
+    if (!countError && count !== null && count >= 10) {
+      return NextResponse.json(
+        { error: "AI rate limit exceeded. You can use AI features up to 10 times per 24 hours." },
+        { status: 429 }
+      );
+    }
+
+    // Log the usage
+    await supabase.from('ai_usage_logs').insert({
+      user_id: user.id,
+      endpoint: 'generate-collections',
+    });
+
     const body = await request.json();
     const { 
       mode = "connections", // "connections" | "profile"
