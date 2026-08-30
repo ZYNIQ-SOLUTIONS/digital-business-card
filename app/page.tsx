@@ -36,6 +36,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { MagicDemoModal } from "@/components/magic-demo-modal";
+import { IphoneCardShowcase } from "@/components/iphone-card-showcase";
 import { themes, themeList, ThemeCategory } from "@/lib/theme";
 import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
 import { DEFAULT_PRODUCTS, ProductDetail } from "@/lib/store/default-products";
@@ -232,332 +233,30 @@ export default function Home() {
         </section>
 
         {/* =========================================================================
-            SECTION 2: REAL-TIME CARD ENGINE & THEME SANDBOX EXHIBIT
-            (Fully synchronous with public-card-client & editor templates)
+            SECTION 2: REAL-TIME CARD ENGINE & AUTONOMOUS iPHONE SHOWCASE
+            (Realistic Apple iPhone 16 Pro device with autonomous morphing animation)
             ========================================================================= */}
         <section id="interactive-exhibit" className="max-w-6xl mx-auto px-6">
-          <div className="rounded-[40px] bg-gradient-to-b from-white/[0.05] to-white/[0.01] border border-white/[0.08] p-6 sm:p-12 shadow-2xl space-y-8 relative overflow-hidden">
+          <div className="rounded-[44px] bg-gradient-to-b from-white/[0.05] via-white/[0.02] to-white/[0.01] border border-white/[0.08] p-6 sm:p-14 shadow-2xl space-y-10 relative overflow-hidden">
             
-            <div className="text-center space-y-2 max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8b5cf6]/10 text-[#8b5cf6] border border-[#8b5cf6]/20 text-xs font-bold uppercase tracking-wider">
-                <Palette className="w-3.5 h-3.5" />
-                <span>Live Interactive Sandbox</span>
+            <div className="text-center space-y-3 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#0071E3]/10 text-[#38BDF8] border border-[#0071E3]/20 text-xs font-bold uppercase tracking-wider">
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Live Device Demonstration</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                Experience the 5 UI Architectures &amp; 22 Palettes Live.
+              <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+                5 UI Architectures. 22 Color Palettes. <br/>
+                <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
+                  Rendered Live on Device.
+                </span>
               </h2>
-              <p className="text-xs sm:text-sm text-gray-400">
-                Click any layout architecture or color theme to watch the business card morph in real-time.
+              <p className="text-xs sm:text-sm text-gray-400 max-w-xl mx-auto leading-relaxed">
+                Watch our dynamic theme engine morph seamlessly between executive minimal, modular bento, cyber holographic, and creative hero layouts.
               </p>
             </div>
 
-            {/* 5 UI Layout Templates Selector Tabs */}
-            <div className="flex flex-wrap justify-center gap-2">
-              {templateList.map((tpl) => {
-                const isSelected = activeTemplateId === tpl.id;
-                return (
-                  <button
-                    key={tpl.id}
-                    onClick={() => setActiveTemplateId(tpl.id)}
-                    className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
-                      isSelected
-                        ? "bg-white text-black shadow-lg scale-105 ring-2 ring-white/20"
-                        : "bg-white/[0.04] text-gray-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]"
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isSelected ? "#0071E3" : "#6E6E73" }} />
-                    <span>{tpl.name}</span>
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${isSelected ? 'bg-neutral-200 text-neutral-800' : 'bg-white/10 text-gray-400'}`}>
-                      {tpl.badge}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Theme Category Filter Pills */}
-            <div className="flex items-center justify-center gap-1.5 flex-wrap">
-              {([
-                { id: "all", label: "All Themes (22)" },
-                { id: "dark", label: "Dark OLED" },
-                { id: "light", label: "Light & Frost" },
-                { id: "luxury", label: "Luxury" },
-                { id: "cyber", label: "Cyber & Tech" },
-                { id: "editorial", label: "Editorial" },
-                { id: "creative", label: "Creative" },
-              ] as const).map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedThemeCategory(cat.id as ThemeCategory)}
-                  className={`px-3 py-1 rounded-xl text-[11px] font-medium transition ${
-                    selectedThemeCategory === cat.id
-                      ? "bg-neutral-200 text-black font-semibold shadow-xs"
-                      : "bg-white/[0.03] text-gray-400 hover:text-white hover:bg-white/[0.06]"
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Theme Swatches Picker Row */}
-            <div className="flex items-center justify-center gap-2 flex-wrap max-h-32 overflow-y-auto px-2">
-              {filteredThemes.map((th) => (
-                <button
-                  key={th.id}
-                  onClick={() => setActiveThemeId(th.id)}
-                  className={`p-2 rounded-xl flex items-center gap-2 transition border ${
-                    activeThemeId === th.id
-                      ? "border-white bg-white/15 ring-2 ring-white/30 shadow-md scale-105"
-                      : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] opacity-75 hover:opacity-100"
-                  }`}
-                >
-                  <div className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: th.previewBg }} />
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: th.previewAccent }} />
-                  <span className="text-[10px] font-semibold text-white pr-1">{th.name}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* DYNAMIC REAL-TIME CARD ENGINE CANVAS (Accurately renders the selected template) */}
-            <div className="flex justify-center pt-2">
-              <div className={`w-full max-w-md ${currentTheme.cardBg} border ${currentTheme.border} rounded-[36px] p-6 shadow-2xl transition-all duration-500 relative overflow-hidden`}>
-                
-                {/* Simulated NFC Beacon Ripple if tapped */}
-                {nfcTapped && (
-                  <div className="absolute inset-0 bg-[#0ea5e9]/30 backdrop-blur-xs rounded-[36px] flex flex-col items-center justify-center z-30 animate-in fade-in duration-300">
-                    <div className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-2xl animate-bounce mb-2">
-                      <Zap className="w-8 h-8 text-[#0071E3]" />
-                    </div>
-                    <span className="text-sm font-bold text-white uppercase tracking-wider">NFC Signal Transmitted!</span>
-                    <span className="text-xs text-gray-200">Contact pass synchronized to Apple Wallet.</span>
-                  </div>
-                )}
-
-                {/* =========================================================================
-                    TEMPLATE 1: CLASSIC APPLE TABS
-                    ========================================================================= */}
-                {activeTemplateId === "classic-segmented" && (
-                  <div className="flex flex-col items-center space-y-4 text-center animate-fade-in">
-                    <div className={`w-20 h-20 rounded-[1.8rem] ${currentTheme.avatarBg} border-2 ${currentTheme.avatarBorder} shadow-md flex items-center justify-center relative overflow-hidden`}>
-                      <span className={`text-2xl font-bold tracking-tighter ${currentTheme.textMain}`}>IK</span>
-                      <div className={`absolute bottom-0 right-0 w-6 h-6 rounded-full ${currentTheme.accentBg} text-white flex items-center justify-center shadow-xs border ${currentTheme.avatarBorder}`}>
-                        <Sparkles className="w-3 h-3 fill-white" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-0.5">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <h3 className={`text-lg font-bold tracking-tight ${currentTheme.textMain}`}>Ibrahim El Khalil</h3>
-                        <VerifiedBadgeIcon className="w-4 h-4 text-green-500" />
-                      </div>
-                      <p className={`text-xs font-semibold ${currentTheme.accent}`}>Founder &amp; AI Architect</p>
-                      <p className={`text-[11px] ${currentTheme.textSecondary}`}>ZYNIQ Solutions • Dubai &amp; Global</p>
-                    </div>
-
-                    <div className="w-full grid grid-cols-4 gap-1.5">
-                      <div className={`flex flex-col items-center p-2 rounded-xl ${currentTheme.pillBg} text-center border ${currentTheme.pillBorder}`}>
-                        <Phone className="w-3.5 h-3.5 text-[#34C759] mb-1" />
-                        <span className={`text-[9px] font-medium ${currentTheme.textMain}`}>Call</span>
-                      </div>
-                      <div className={`flex flex-col items-center p-2 rounded-xl ${currentTheme.pillBg} text-center border ${currentTheme.pillBorder}`}>
-                        <Mail className={`w-3.5 h-3.5 ${currentTheme.accent} mb-1`} />
-                        <span className={`text-[9px] font-medium ${currentTheme.textMain}`}>Email</span>
-                      </div>
-                      <div className={`flex flex-col items-center p-2 rounded-xl ${currentTheme.pillBg} text-center border ${currentTheme.pillBorder}`}>
-                        <Globe className="w-3.5 h-3.5 text-[#5856D6] mb-1" />
-                        <span className={`text-[9px] font-medium ${currentTheme.textMain}`}>Web</span>
-                      </div>
-                      <div className={`flex flex-col items-center p-2 rounded-xl ${currentTheme.pillBg} text-center border ${currentTheme.pillBorder}`}>
-                        <Calendar className="w-3.5 h-3.5 text-[#FF9500] mb-1" />
-                        <span className={`text-[9px] font-medium ${currentTheme.textMain}`}>Meet</span>
-                      </div>
-                    </div>
-
-                    <div className={`w-full ${currentTheme.qrContainerBg} rounded-2xl p-3 flex flex-col items-center border ${currentTheme.pillBorder}`}>
-                      <div className="bg-white p-2 rounded-xl shadow-xs">
-                        <QRCodeSVG value="https://card.app/ibrahim" size={100} level="Q" className="w-20 h-20" />
-                      </div>
-                      <span className={`text-[9px] ${currentTheme.textSecondary} pt-1 font-mono`}>card.app/ibrahim</span>
-                    </div>
-
-                    <div className="w-full space-y-2">
-                      <button onClick={triggerNfcTap} className="w-full py-2.5 px-3 rounded-xl bg-black text-white text-[11px] font-medium flex items-center justify-between shadow-xs">
-                        <div className="flex items-center gap-1.5">
-                          <AppleIcon className="w-3.5 h-3.5 fill-white" />
-                          <span>Add to Apple Wallet</span>
-                        </div>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </button>
-                      <Link href="/auth" className={`w-full py-2.5 px-3 rounded-xl ${currentTheme.accentBg} text-white text-[11px] font-bold text-center block shadow-xs hover:brightness-110 transition`}>
-                        Save Contact Card (.vcf)
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-                {/* =========================================================================
-                    TEMPLATE 2: MODERN BENTO GRID
-                    ========================================================================= */}
-                {activeTemplateId === "bento-grid" && (
-                  <div className="space-y-3 text-left animate-fade-in">
-                    {/* Hero Bento Pod */}
-                    <div className={`p-4 rounded-2xl ${currentTheme.pillBg} border ${currentTheme.pillBorder} flex items-center justify-between gap-3`}>
-                      <div className="space-y-1 truncate">
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[9px] font-bold uppercase">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping inline-block" />
-                          Available for advisory
-                        </div>
-                        <h4 className={`text-base font-bold tracking-tight ${currentTheme.textMain} truncate`}>Ibrahim El Khalil</h4>
-                        <p className={`text-xs font-semibold ${currentTheme.accent} truncate`}>Founder &amp; AI Architect • ZYNIQ</p>
-                      </div>
-                      <div className={`w-12 h-12 rounded-xl ${currentTheme.avatarBg} border-2 ${currentTheme.avatarBorder} overflow-hidden shrink-0 flex items-center justify-center shadow-xs`}>
-                        <span className={`text-base font-bold ${currentTheme.textMain}`}>IK</span>
-                      </div>
-                    </div>
-
-                    {/* QR and Wallet Matrix */}
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div className={`p-3 rounded-2xl ${currentTheme.pillBg} border ${currentTheme.pillBorder} text-center flex flex-col items-center justify-center`}>
-                        <div className="bg-white p-1.5 rounded-xl shadow-xs mb-1">
-                          <QRCodeSVG value="https://card.app/ibrahim" size={60} level="Q" className="w-14 h-14" />
-                        </div>
-                        <span className={`text-[8px] font-mono ${currentTheme.textSecondary}`}>Instant Tap Sync</span>
-                      </div>
-
-                      <div className={`p-3 rounded-2xl ${currentTheme.pillBg} border ${currentTheme.pillBorder} flex flex-col justify-between`}>
-                        <div>
-                          <span className={`block text-[10px] font-bold ${currentTheme.textMain}`}>Modular Pass</span>
-                          <span className={`block text-[8px] ${currentTheme.textSecondary}`}>Digital Wallet &amp; vCard</span>
-                        </div>
-                        <button onClick={triggerNfcTap} className={`w-full py-1.5 rounded-xl ${currentTheme.accentBg} text-white text-[9px] font-bold text-center shadow-xs`}>
-                          Transmit NFC
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Skill Matrix */}
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {["Enterprise AI", "Cloud Systems", "Agentic Workflows"].map((s) => (
-                        <span key={s} className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder}`}>
-                          ⚡ {s}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* =========================================================================
-                    TEMPLATE 3: EXECUTIVE MINIMAL
-                    ========================================================================= */}
-                {activeTemplateId === "executive-minimal" && (
-                  <div className="space-y-3.5 text-left animate-fade-in">
-                    <div className="border-b pb-2.5 border-black/10 dark:border-white/10 flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-xl ${currentTheme.avatarBg} border ${currentTheme.avatarBorder} flex items-center justify-center shrink-0`}>
-                        <span className={`text-base font-serif font-bold ${currentTheme.textMain}`}>IK</span>
-                      </div>
-                      <div>
-                        <h4 className={`text-base font-bold font-serif ${currentTheme.textMain}`}>Ibrahim El Khalil</h4>
-                        <span className={`text-[10px] uppercase font-semibold ${currentTheme.accent} tracking-wider`}>Founder &amp; Managing Director</span>
-                      </div>
-                    </div>
-
-                    <p className={`text-xs italic ${currentTheme.textMain} font-serif leading-relaxed pl-2 border-l-2 border-amber-500/60`}>
-                      &quot;Architecting autonomous intelligence and high-throughput enterprise systems.&quot;
-                    </p>
-
-                    <div className="space-y-1.5">
-                      <div className={`p-2 rounded-xl ${currentTheme.pillBg} border ${currentTheme.pillBorder} text-xs font-semibold ${currentTheme.textMain} flex items-center justify-between`}>
-                        <span>Primary Executive Contact</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                      <div className={`p-2 rounded-xl ${currentTheme.pillBg} border ${currentTheme.pillBorder} text-xs font-semibold ${currentTheme.textMain} flex items-center justify-between`}>
-                        <span>Official Corporate Email</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-                      </div>
-                    </div>
-
-                    <Link href="/auth" className={`w-full py-2.5 rounded-xl ${currentTheme.accentBg} text-white font-bold text-xs text-center block shadow-xs`}>
-                      Save Executive Contact (.vcf)
-                    </Link>
-                  </div>
-                )}
-
-                {/* =========================================================================
-                    TEMPLATE 4: CYBER HUD TERMINAL
-                    ========================================================================= */}
-                {activeTemplateId === "cyber-holo" && (
-                  <div className="space-y-3 font-mono text-center animate-fade-in relative">
-                    <div className="flex items-center justify-between text-[8px] text-cyan-400 opacity-75">
-                      <span>[SYS:ACTIVE]</span>
-                      <span>[ENC:256-BIT]</span>
-                    </div>
-
-                    <div className="w-16 h-16 mx-auto rounded-xl border-2 border-cyan-400 p-0.5 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                      <div className="w-full h-full bg-cyan-950 flex items-center justify-center text-cyan-300 font-bold text-base rounded-lg">
-                        IK
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">IBRAHIM EL KHALIL</h4>
-                      <p className="text-[9px] text-cyan-400">// ROLE: AI ARCHITECT @ ZYNIQ</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1.5 text-[9px]">
-                      <div className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-cyan-200">COMMS.CALL</div>
-                      <div className="p-1.5 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-cyan-200">COMMS.MAIL</div>
-                    </div>
-
-                    <div className="p-2 rounded-xl bg-black/60 border border-cyan-500/40">
-                      <QRCodeSVG value="https://card.app/ibrahim" size={70} level="Q" className="w-16 h-16 mx-auto" />
-                    </div>
-
-                    <button onClick={triggerNfcTap} className="w-full py-2 rounded-xl bg-cyan-500 text-black font-bold text-[10px] shadow-[0_0_15px_rgba(6,182,212,0.4)]">
-                      TRANSMIT ENCRYPTED STREAM
-                    </button>
-                  </div>
-                )}
-
-                {/* =========================================================================
-                    TEMPLATE 5: CREATIVE HERO SHOWCASE
-                    ========================================================================= */}
-                {activeTemplateId === "creative-hero" && (
-                  <div className="rounded-2xl overflow-hidden text-left -mt-2 animate-fade-in">
-                    <div className={`w-full h-20 bg-gradient-to-r ${currentTheme.gradient} p-3 flex items-end justify-between`}>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-black/40 text-white backdrop-blur-xs">Creator Pass</span>
-                    </div>
-                    <div className="p-4 pt-0 space-y-3">
-                      <div className="flex items-end justify-between -mt-8 mb-1">
-                        <div className={`w-14 h-14 rounded-2xl ${currentTheme.avatarBg} border-2 ${currentTheme.avatarBorder} overflow-hidden flex items-center justify-center shadow-lg`}>
-                          <span className={`text-base font-bold ${currentTheme.textMain}`}>IK</span>
-                        </div>
-                        <button onClick={triggerNfcTap} className={`px-3 py-1.5 rounded-xl ${currentTheme.accentBg} text-white font-bold text-[10px]`}>
-                          Connect
-                        </button>
-                      </div>
-
-                      <div>
-                        <h4 className={`text-sm font-bold ${currentTheme.textMain}`}>Ibrahim El Khalil</h4>
-                        <p className={`text-[10px] font-semibold ${currentTheme.accent}`}>Founder &amp; AI Architect • ZYNIQ</p>
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-1">
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Call</div>
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Email</div>
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Web</div>
-                        <div className={`p-1.5 rounded-lg ${currentTheme.pillBg} ${currentTheme.textMain} border ${currentTheme.pillBorder} text-[9px] font-bold text-center`}>Meet</div>
-                      </div>
-
-                      <Link href="/auth" className={`w-full py-2.5 rounded-xl ${currentTheme.accentBg} text-white font-bold text-xs text-center block shadow-xs`}>
-                        Save Contact Card (.vcf)
-                      </Link>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            </div>
+            {/* REALISTIC TITANIUM iPHONE 16 PRO WITH CONTINUOUS AUTONOMOUS ANIMATION */}
+            <IphoneCardShowcase />
 
           </div>
         </section>
