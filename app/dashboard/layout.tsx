@@ -8,7 +8,12 @@ import {
   Plus, 
   LogOut, 
   Menu,
-  X
+  X,
+  CreditCard,
+  Users,
+  Building2,
+  ShoppingBag,
+  ExternalLink
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -29,181 +34,145 @@ export default function DashboardLayout({
     router.refresh();
   };
 
+  const navLinks = [
+    { href: "/dashboard", label: "My Cards", icon: CreditCard, active: pathname === "/dashboard" },
+    { href: "/dashboard/connections", label: "Connections", icon: Users, active: pathname === "/dashboard/connections" },
+    { href: "/dashboard/enterprise", label: "Enterprise", icon: Building2, active: pathname === "/dashboard/enterprise" },
+    { href: "/store", label: "Store", icon: ShoppingBag, active: pathname.startsWith("/store") },
+  ];
+
   return (
-    <div className="min-h-screen bg-neutral-50/50 text-neutral-900 flex flex-col font-sans selection:bg-white selection:text-gray-900">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 w-full bg-white/70 backdrop-blur-md border-b border-neutral-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-[#FBFBFD] text-[#1D1D1F] flex flex-col font-sans selection:bg-[#0071E3]/20 selection:text-black antialiased">
+      
+      {/* Apple Cupertino Frosted Header */}
+      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-black/[0.06] transition-all">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          
+          {/* Brand Logo */}
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2 group min-h-[40px]">
-              <svg id="logo-light" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-                <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0f172a" strokeWidth="12" strokeLinecap="round" />
-                <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#64748b" strokeWidth="12" strokeLinecap="round" />
-                <circle cx="100" cy="100" r="12" fill="#0f172a" />
+            <Link href="/dashboard" className="flex items-center gap-2.5 group min-h-[44px]">
+              <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+                <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#0071E3" strokeWidth="14" strokeLinecap="round" />
+                <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#34C759" strokeWidth="14" strokeLinecap="round" />
+                <circle cx="100" cy="100" r="14" fill="#1D1D1F" />
               </svg>
-              <span className="font-display text-[15px] font-semibold tracking-tight text-neutral-900 hidden sm:block">
+              <span className="font-bold text-base tracking-tight text-[#1D1D1F]">
                 IZN
               </span>
             </Link>
           </div>
 
           {/* Desktop Navigation Items */}
-          <div className="hidden md:flex items-center gap-1.5">
-            <Link
-              href="/dashboard"
-              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
-                pathname === "/dashboard"
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-400 hover:text-neutral-900 hover:bg-neutral-100/50"
-              }`}
-            >
-              My Cards
-            </Link>
+          <nav className="hidden md:flex items-center gap-1 bg-[#F5F5F7] p-1 rounded-2xl border border-black/[0.04]">
+            {navLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                  item.active
+                    ? "bg-white text-black shadow-xs"
+                    : "text-gray-500 hover:text-black hover:bg-white/50"
+                }`}
+              >
+                <item.icon className="w-3.5 h-3.5" />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </nav>
 
-            <Link
-              href="/dashboard/connections"
-              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
-                pathname === "/dashboard/connections"
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-400 hover:text-neutral-900 hover:bg-neutral-100/50"
-              }`}
-            >
-              Connections
-            </Link>
-
-            <Link
-              href="/dashboard/enterprise"
-              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
-                pathname === "/dashboard/enterprise"
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-400 hover:text-neutral-900 hover:bg-neutral-100/50"
-              }`}
-            >
-              Enterprise
-            </Link>
-
-            <Link
-              href="/store"
-              className={`px-3 py-1.5 min-h-[36px] flex items-center rounded-md text-sm font-medium transition-colors ${
-                pathname.startsWith("/store")
-                  ? "bg-neutral-100 text-neutral-900 font-semibold"
-                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-100/50"
-              }`}
-            >
-              Store
-            </Link>
-
-            <div className="w-[1px] h-4 bg-neutral-200 mx-1 hidden sm:block" />
-
+          {/* Right Action Bar (Desktop) */}
+          <div className="hidden md:flex items-center gap-2.5">
             <Link
               href="/dashboard/cards/new"
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-md bg-white hover:bg-gray-100 text-gray-900 text-sm font-medium shadow-sm transition-all focus:ring-2 focus:ring-neutral-900/20 focus:outline-none"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>New Card</span>
             </Link>
 
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none"
+              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Mobile Navigation Trigger */}
+          {/* Mobile Navigation Controls */}
           <div className="flex md:hidden items-center gap-2">
             <Link
               href="/dashboard/cards/new"
-              className="inline-flex items-center justify-center p-1.5 min-h-[36px] min-w-[36px] rounded-md bg-neutral-100 hover:bg-neutral-200 text-gray-900 text-sm transition-all"
+              className="inline-flex items-center justify-center p-2 min-h-[40px] min-w-[40px] rounded-xl bg-black text-white text-xs font-bold shadow-xs active:scale-95"
+              aria-label="Create New Card"
             >
               <Plus className="w-4 h-4" />
             </Link>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-md bg-neutral-100 text-gray-700 hover:bg-neutral-200 focus:outline-none"
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl bg-[#F5F5F7] text-gray-700 hover:bg-gray-200 transition-colors focus:outline-none"
+              aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
+
         </div>
       </header>
 
-      {/* Mobile Menu Drawer Drawer Overlay */}
+      {/* Mobile Menu Drawer Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 top-14 z-30 bg-white md:hidden animate-fade-in flex flex-col border-b border-neutral-200 shadow-xl max-h-[calc(100vh-56px)] overflow-y-auto">
-          <nav className="p-4 flex flex-col gap-2">
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
-                pathname === "/dashboard"
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
-              }`}
-            >
-              My Cards
-            </Link>
+        <div className="fixed inset-0 top-16 z-30 bg-black/30 backdrop-blur-xs md:hidden animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
+          <div 
+            className="bg-white border-b border-black/[0.06] shadow-2xl p-4 flex flex-col gap-2 rounded-b-[28px] max-h-[calc(100vh-64px)] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <nav className="flex flex-col gap-1.5">
+              {navLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-3 rounded-2xl flex items-center gap-3 text-sm font-semibold transition-colors ${
+                    item.active
+                      ? "bg-[#F5F5F7] text-black"
+                      : "text-gray-600 hover:text-black hover:bg-[#F5F5F7]/50"
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${item.active ? 'bg-white shadow-2xs text-[#0071E3]' : 'bg-[#F5F5F7] text-gray-500'}`}>
+                    <item.icon className="w-4 h-4" />
+                  </div>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
 
-            <Link
-              href="/dashboard/connections"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
-                pathname === "/dashboard/connections"
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
-              }`}
-            >
-              Connections
-            </Link>
+              <div className="h-[1px] bg-black/[0.06] my-2" />
 
-            <Link
-              href="/dashboard/enterprise"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
-                pathname === "/dashboard/enterprise"
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
-              }`}
-            >
-              Enterprise
-            </Link>
-
-            <Link
-              href="/store"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`p-3.5 flex items-center rounded-xl text-base font-semibold transition-colors ${
-                pathname.startsWith("/store")
-                  ? "bg-neutral-100 text-neutral-900"
-                  : "text-gray-500 hover:text-neutral-900 hover:bg-neutral-50"
-              }`}
-            >
-              Store
-            </Link>
-
-            <div className="h-[1px] bg-neutral-200 my-2" />
-
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                handleSignOut();
-              }}
-              disabled={isSigningOut}
-              className="w-full p-3.5 flex items-center rounded-xl text-base font-semibold text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              <span>Sign Out</span>
-            </button>
-          </nav>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleSignOut();
+                }}
+                disabled={isSigningOut}
+                className="w-full p-3 flex items-center gap-3 rounded-2xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center">
+                  <LogOut className="w-4 h-4 text-red-600" />
+                </div>
+                <span>Sign Out</span>
+              </button>
+            </nav>
+          </div>
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-8">
+      {/* Main Content Surface */}
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 md:p-8">
         {children}
-      </div>
+      </main>
+
     </div>
   );
 }

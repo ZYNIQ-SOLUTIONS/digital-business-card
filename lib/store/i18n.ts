@@ -32,8 +32,8 @@ export const storeTranslations = {
     // Navigation
     nav: {
       backHome: "Back to Home",
-      store: "Hardware Store",
-      allProducts: "All Hardware",
+      store: "Store",
+      allProducts: "All Products",
       cart: "Cart",
       currency: "Currency",
       language: "Language",
@@ -156,7 +156,7 @@ export const storeTranslations = {
     // Navigation
     nav: {
       backHome: "العودة للرئيسية",
-      store: "متجر البطاقات الذكية",
+      store: "المتجر",
       allProducts: "جميع المنتجات",
       cart: "السلة",
       currency: "العملة",

@@ -149,12 +149,12 @@ export default function Home() {
             </a>
             <a href="#hardware-store" className="hover:text-white transition-colors flex items-center gap-1.5">
               <ShoppingBag className="w-3.5 h-3.5 text-amber-300" />
-              <span>Hardware Store</span>
+              <span>NFC Hardware</span>
             </a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#enterprise" className="hover:text-white transition-colors">Enterprise</a>
             <Link href="/store" className="hover:text-white transition-colors font-semibold text-[#10b981] flex items-center gap-1">
-              <span>All Products</span>
+              <span>Store</span>
             </Link>
           </div>
 
@@ -587,7 +587,7 @@ export default function Home() {
                 href="/store"
                 className="px-6 py-3.5 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-2"
               >
-                <span>Visit Full Hardware Store</span>
+                <span>Visit Store</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -941,7 +941,7 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-6 text-xs text-gray-400">
-            <Link href="/store" className="hover:text-white transition">Hardware Store</Link>
+            <Link href="/store" className="hover:text-white transition">Store</Link>
             <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition">Terms of Service</Link>
             <Link href="/support" className="hover:text-white transition">Support &amp; Help</Link>

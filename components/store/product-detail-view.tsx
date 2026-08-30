@@ -41,6 +41,24 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   const [customTitle, setCustomTitle] = useState('');
   const [added, setAdded] = useState(false);
   const [activeTab, setActiveTab] = useState<'specs' | 'features' | 'faq'>('features');
+  const [liveRelatedProducts, setLiveRelatedProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
+
+  React.useEffect(() => {
+    async function loadRelated() {
+      try {
+        const res = await fetch('/api/products');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+            setLiveRelatedProducts(data.products);
+          }
+        }
+      } catch (e) {
+        // Fallback to defaults
+      }
+    }
+    loadRelated();
+  }, []);
 
   const t = storeTranslations[lang].productDetail;
   const productTrans = PRODUCT_TRANSLATIONS[product.id];
@@ -394,7 +412,7 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {DEFAULT_PRODUCTS.filter((p) => p.id !== product.id).slice(0, 3).map((rel) => {
+          {liveRelatedProducts.filter((p) => p.id !== product.id).slice(0, 3).map((rel) => {
             const relTrans = PRODUCT_TRANSLATIONS[rel.id];
             const relName = (lang === 'ar' && relTrans) ? relTrans.name : rel.name;
             const relDesc = (lang === 'ar' && relTrans) ? relTrans.description : rel.description;
