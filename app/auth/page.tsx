@@ -24,11 +24,17 @@ export default function AuthPage() {
     setErrorMsg(null);
 
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteCode = urlParams.get("invite");
+      const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
+      if (inviteCode) {
+        redirectUrl.searchParams.set("invite", inviteCode);
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: redirectUrl.toString(),
         },
       });
 
@@ -49,11 +55,17 @@ export default function AuthPage() {
     setErrorMsg(null);
 
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteCode = urlParams.get("invite");
+      const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
+      if (inviteCode) {
+        redirectUrl.searchParams.set("invite", inviteCode);
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: redirectUrl.toString(),
         },
       });
 

@@ -10,6 +10,14 @@ export default async function AdminUsersPage() {
     .select('*')
     .order('created_at', { ascending: false });
 
+  // Calculate referrals per user efficiently
+  const referralCountMap = (profiles || []).reduce((acc: any, p: any) => {
+    if (p.invited_by) {
+      acc[p.invited_by] = (acc[p.invited_by] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <h1 className="text-3xl font-semibold mb-8">Manage Users</h1>
@@ -21,6 +29,7 @@ export default async function AdminUsersPage() {
               <th className="px-6 py-4 text-sm font-medium text-gray-500">User</th>
               <th className="px-6 py-4 text-sm font-medium text-gray-500">Email</th>
               <th className="px-6 py-4 text-sm font-medium text-gray-500">Joined</th>
+              <th className="px-6 py-4 text-sm font-medium text-gray-500">Invited Users</th>
               <th className="px-6 py-4 text-sm font-medium text-gray-500">Role</th>
             </tr>
           </thead>
@@ -45,6 +54,9 @@ export default async function AdminUsersPage() {
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {new Date(profile.created_at).toLocaleDateString()}
                 </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  {referralCountMap[profile.id] || 0}
+                </td>
                 <td className="px-6 py-4">
                   <UserRoleSelect userId={profile.id} initialRole={profile.role} />
                 </td>
@@ -52,7 +64,7 @@ export default async function AdminUsersPage() {
             ))}
             {(!profiles || profiles.length === 0) && (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                   No users found.
                 </td>
               </tr>

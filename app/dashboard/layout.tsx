@@ -13,7 +13,8 @@ import {
   Users,
   Building2,
   ShoppingBag,
-  ExternalLink
+  ExternalLink,
+  Link2
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -37,6 +38,7 @@ export default function DashboardLayout({
   const navLinks = [
     { href: "/dashboard", label: "My Cards", icon: CreditCard, active: pathname === "/dashboard" },
     { href: "/dashboard/connections", label: "Connections", icon: Users, active: pathname === "/dashboard/connections" },
+    { href: "/dashboard/invites", label: "Invites", icon: Link2, active: pathname === "/dashboard/invites" },
     { href: "/dashboard/enterprise", label: "Enterprise", icon: Building2, active: pathname === "/dashboard/enterprise" },
     { href: "/store", label: "Store", icon: ShoppingBag, active: pathname.startsWith("/store") },
   ];
