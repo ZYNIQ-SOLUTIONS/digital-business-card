@@ -1,18 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X, Loader2, Upload } from 'lucide-react';
+import { Plus, X, Loader2, Upload, DollarSign } from 'lucide-react';
 import { addProduct } from './actions';
 import { createClient } from '@/lib/supabase/client';
+import { USD_TO_AED_RATE } from '@/lib/store/currency';
 
 export function AddProductModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Dual currency inputs
+  const [priceAed, setPriceAed] = useState<string>('');
+  const [priceUsd, setPriceUsd] = useState<string>('');
+
   // Image state
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+
+  function handlePriceAedChange(val: string) {
+    setPriceAed(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      setPriceUsd((num / USD_TO_AED_RATE).toFixed(2));
+    } else {
+      setPriceUsd('');
+    }
+  }
+
+  function handlePriceUsdChange(val: string) {
+    setPriceUsd(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      setPriceAed((num * USD_TO_AED_RATE).toFixed(2));
+    } else {
+      setPriceAed('');
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files[0]) {
@@ -55,7 +80,7 @@ export function AddProductModal() {
       const productData = {
         name: formData.get('name'),
         description: formData.get('description'),
-        price: formData.get('price'),
+        price: priceAed || formData.get('price'),
         category: formData.get('category'),
         in_stock: formData.get('in_stock'),
         image_url: imageUrl,
@@ -70,6 +95,8 @@ export function AddProductModal() {
       setIsOpen(false);
       setFile(null);
       setPreview(null);
+      setPriceAed('');
+      setPriceUsd('');
     } catch (err: any) {
       setError(err.message || 'An error occurred');
     } finally {
@@ -81,7 +108,7 @@ export function AddProductModal() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="bg-black text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors flex items-center gap-2"
+        className="bg-black text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors flex items-center gap-2 shadow-xs"
       >
         <Plus className="w-4 h-4" />
         Add Product
@@ -91,23 +118,23 @@ export function AddProductModal() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !isSubmitting && setIsOpen(false)} />
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40" onClick={() => !isSubmitting && setIsOpen(false)} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-xl pointer-events-auto max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl pointer-events-auto max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Add New Product</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Add New Product</h2>
             <button
               onClick={() => setIsOpen(false)}
               disabled={isSubmitting}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-black"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 text-left">
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm">
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-200">
                 {error}
               </div>
             )}
@@ -137,41 +164,87 @@ export function AddProductModal() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input required name="name" type="text" className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" placeholder="e.g. Premium NFC Card" />
+              <input required name="name" type="text" className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" placeholder="e.g. Matte Obsidian NFC Metal Card" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input required name="category" type="text" className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" placeholder="e.g. Cards, Accessories" />
+              <input required name="category" type="text" className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" placeholder="e.g. Metal Cards, Wood Cards, Accessories" />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Price (AED)</label>
-              <input required name="price" type="number" step="0.01" min="0" className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" placeholder="0.00" />
+            {/* Dual Currency Price Section */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                Product Pricing (Dual Currency)
+              </label>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="block text-xs font-medium text-gray-600 mb-1">Price (AED)</span>
+                  <div className="relative">
+                    <input 
+                      required 
+                      name="price" 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      value={priceAed}
+                      onChange={(e) => handlePriceAedChange(e.target.value)}
+                      className="w-full border-gray-300 rounded-xl px-3 py-2 bg-white text-sm focus:ring-black focus:border-black" 
+                      placeholder="0.00" 
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-400">AED</span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="block text-xs font-medium text-gray-600 mb-1">Price (USD)</span>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      value={priceUsd}
+                      onChange={(e) => handlePriceUsdChange(e.target.value)}
+                      className="w-full border-gray-300 rounded-xl px-3 py-2 bg-white text-sm focus:ring-black focus:border-black" 
+                      placeholder="0.00" 
+                    />
+                    <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-400">USD</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400">
+                Automatic live conversion: 1 USD ≈ {USD_TO_AED_RATE} AED.
+              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea required name="description" rows={3} className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black resize-none" placeholder="Product details..."></textarea>
+              <textarea name="description" rows={3} className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" placeholder="Product features, materials, compatibility..." />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Initial Stock Status</label>
-              <select name="in_stock" className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black">
-                <option value="true">In Stock</option>
-                <option value="false">Out of Stock</option>
-              </select>
+            <div className="flex items-center gap-2 pt-2">
+              <input type="checkbox" id="in_stock" name="in_stock" defaultChecked className="rounded border-gray-300 text-black focus:ring-black h-4 w-4" />
+              <label htmlFor="in_stock" className="text-sm font-medium text-gray-700">In Stock (Available in Store)</label>
             </div>
 
-            <div className="pt-4">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-black text-white font-medium py-3 rounded-xl hover:bg-gray-900 transition-colors flex justify-center items-center"
+                className="bg-black text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors flex items-center gap-2"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Saving...
                   </>
                 ) : (

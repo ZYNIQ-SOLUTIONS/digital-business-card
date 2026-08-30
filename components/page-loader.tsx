@@ -9,19 +9,19 @@ export function PageLoader() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Start showing loader
+    // Start showing loader on route navigation
     setVisible(true);
     setIsFadingOut(false);
     
-    // Auto fadeout after 600ms
+    // Auto fadeout after 500ms
     const fadeTimer = setTimeout(() => {
       setIsFadingOut(true);
-    }, 600);
+    }, 500);
 
-    // Completely remove from DOM after fade-out transition (900ms total)
+    // Completely remove from DOM after fade-out transition (800ms total)
     const removeTimer = setTimeout(() => {
       setVisible(false);
-    }, 900);
+    }, 800);
 
     return () => {
       clearTimeout(fadeTimer);
@@ -34,137 +34,166 @@ export function PageLoader() {
   return (
     <>
       <style>{`
-        .sync-loader-wrapper {
+        .apple-loader-wrapper {
           position: fixed;
           inset: 0;
-          background-color: #050507;
+          background: rgba(255, 255, 255, 0.96);
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
           z-index: 99999;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-          transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+          transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1), transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .sync-loader-wrapper.fade-out {
+        .apple-loader-wrapper.fade-out {
           opacity: 0;
-          transform: scale(1.02);
+          transform: scale(1.015);
           pointer-events: none;
         }
-        .loader-glow {
+        .apple-loader-glow {
           position: absolute;
-          width: 250px;
-          height: 250px;
+          width: 280px;
+          height: 280px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(16, 185, 129, 0.05) 50%, transparent 100%);
+          background: radial-gradient(circle, rgba(0, 113, 227, 0.08) 0%, rgba(52, 199, 89, 0.04) 50%, transparent 100%);
           filter: blur(40px);
           z-index: -1;
-          animation: glow-pulse 3s ease-in-out infinite alternate;
+          animation: apple-glow-pulse 2.5s ease-in-out infinite alternate;
         }
-        .sync-loader-logo .half-top {
-          animation: loader-spin-top 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        .apple-loader-card {
+          width: 140px;
+          height: 140px;
+          border-radius: 36px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid rgba(0, 0, 0, 0.06);
+          box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08), 0 0 1px 1px rgba(0, 0, 0, 0.02);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          animation: apple-card-float 3s ease-in-out infinite alternate;
+        }
+        .apple-loader-logo .half-top {
+          animation: apple-spin-top 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
           transform-origin: 100px 100px;
         }
-        .sync-loader-logo .half-bot {
-          animation: loader-spin-bot 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        .apple-loader-logo .half-bot {
+          animation: apple-spin-bot 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
           transform-origin: 100px 100px;
         }
-        .sync-loader-logo .core-node {
-          animation: loader-pulse-core 2s ease-in-out infinite;
+        .apple-loader-logo .core-node {
+          animation: apple-pulse-core 2s ease-in-out infinite;
           transform-origin: 100px 100px;
         }
-        .loading-text {
-          font-family: var(--font-mono), monospace;
+        .apple-loading-text {
           font-weight: 600;
-          letter-spacing: 0.3em;
+          letter-spacing: 0.15em;
           text-transform: uppercase;
-          font-size: 0.75rem;
-          color: #9ca3af;
-          margin-top: 2rem;
-          animation: text-pulse 1.5s ease-in-out infinite alternate;
+          font-size: 0.6875rem;
+          color: #1D1D1F;
+          margin-top: 1.75rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
         }
-        @keyframes glow-pulse {
-          0% { transform: scale(0.9); opacity: 0.8; }
-          100% { transform: scale(1.1); opacity: 1.2; }
+        .apple-loading-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background-color: #0071E3;
+          animation: apple-dot-pulse 1.2s ease-in-out infinite alternate;
         }
-        @keyframes text-pulse {
-          0% { opacity: 0.6; }
-          100% { opacity: 1; }
+        .apple-loading-bar-container {
+          width: 80px;
+          height: 3px;
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 999px;
+          margin-top: 0.75rem;
+          overflow: hidden;
+          position: relative;
         }
-        @keyframes loader-spin-top {
-          0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); }
-          50% { transform: translateY(-16px) rotate(180deg) scale(1.1); stroke: #0ea5e9; filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.6)); }
-          100% { transform: translateY(0) rotate(360deg) scale(1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); }
+        .apple-loading-bar {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 40%;
+          background: linear-gradient(90deg, #0071E3, #34C759);
+          border-radius: 999px;
+          animation: apple-bar-slide 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
-        @keyframes loader-spin-bot {
-          0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #10b981; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6)); }
-          50% { transform: translateY(16px) rotate(180deg) scale(1.1); stroke: #8b5cf6; filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.6)); }
-          100% { transform: translateY(0) rotate(360deg) scale(1); stroke: #10b981; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6)); }
+
+        @keyframes apple-glow-pulse {
+          0% { transform: scale(0.9); opacity: 0.6; }
+          100% { transform: scale(1.15); opacity: 1; }
         }
-        @keyframes loader-pulse-core {
-          0%, 100% { transform: scale(1); fill: #ffffff; filter: drop-shadow(0 0 0 transparent); }
-          50% { transform: scale(1.6); fill: #ffffff; filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
+        @keyframes apple-card-float {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(-4px); }
         }
-        @keyframes sync-progress {
-          0% { transform: translateX(-50%); }
-          100% { transform: translateX(250%); }
+        @keyframes apple-dot-pulse {
+          0% { transform: scale(0.8); opacity: 0.4; }
+          100% { transform: scale(1.2); opacity: 1; }
+        }
+        @keyframes apple-bar-slide {
+          0% { left: -40%; width: 30%; }
+          50% { left: 30%; width: 60%; }
+          100% { left: 100%; width: 30%; }
+        }
+        @keyframes apple-spin-top {
+          0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #0071E3; }
+          50% { transform: translateY(-12px) rotate(180deg) scale(1.06); stroke: #5856D6; }
+          100% { transform: translateY(0) rotate(360deg) scale(1); stroke: #0071E3; }
+        }
+        @keyframes apple-spin-bot {
+          0% { transform: translateY(0) rotate(0deg) scale(1); stroke: #34C759; }
+          50% { transform: translateY(12px) rotate(-180deg) scale(1.06); stroke: #0071E3; }
+          100% { transform: translateY(0) rotate(-360deg) scale(1); stroke: #34C759; }
+        }
+        @keyframes apple-pulse-core {
+          0% { transform: scale(0.85); fill: #1D1D1F; }
+          50% { transform: scale(1.15); fill: #0071E3; }
+          100% { transform: scale(0.85); fill: #1D1D1F; }
         }
       `}</style>
-      <div className={`sync-loader-wrapper ${isFadingOut ? "fade-out" : ""}`}>
-        <div className="loader-glow" />
-        <svg
-          className="sync-loader-logo animate-in zoom-in-95 duration-300"
-          style={{ width: "8rem", height: "8rem" }}
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 200 200"
-        >
-          <path
-            className="half-top"
-            d="M 40 100 A 60 60 0 0 1 160 100"
-            fill="none"
-            stroke="#8b5cf6"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path
-            className="half-bot"
-            d="M 160 100 A 60 60 0 0 1 40 100"
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <circle className="core-node" cx="100" cy="100" r="12" fill="#ffffff" />
-        </svg>
+
+      <div className={`apple-loader-wrapper ${isFadingOut ? 'fade-out' : ''}`}>
+        <div className="apple-loader-glow" />
         
-        <div className="loading-text">
-          Syncing Identity
+        <div className="apple-loader-card">
+          <svg className="apple-loader-logo w-14 h-14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <path
+              className="half-top"
+              d="M 40 100 A 60 60 0 0 1 160 100"
+              fill="none"
+              stroke="#0071E3"
+              strokeWidth="14"
+              strokeLinecap="round"
+            />
+            <path
+              className="half-bot"
+              d="M 160 100 A 60 60 0 0 1 40 100"
+              fill="none"
+              stroke="#34C759"
+              strokeWidth="14"
+              strokeLinecap="round"
+            />
+            <circle className="core-node" cx="100" cy="100" r="13" fill="#1D1D1F" />
+          </svg>
         </div>
-        
-        <div
-          style={{
-            width: "12rem",
-            height: "2px",
-            backgroundColor: "rgba(255,255,255,0.1)",
-            borderRadius: "9999px",
-            marginTop: "1.5rem",
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              background: "linear-gradient(to right, #8b5cf6, #10b981, #0ea5e9)",
-              width: "33.333333%",
-              borderRadius: "9999px",
-              animation: "sync-progress 1s ease-in-out infinite alternate",
-            }}
-          />
+
+        <div className="apple-loading-text">
+          <span className="apple-loading-dot" />
+          <span>IZN SMART PASS</span>
+        </div>
+
+        <div className="apple-loading-bar-container">
+          <div className="apple-loading-bar" />
         </div>
       </div>
     </>
   );
 }
-
-export default PageLoader;

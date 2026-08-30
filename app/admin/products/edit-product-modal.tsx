@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Edit3, X, Loader2, Upload } from 'lucide-react';
+import { Edit3, X, Loader2, Upload, DollarSign } from 'lucide-react';
 import { updateProduct } from './actions';
 import { createClient } from '@/lib/supabase/client';
+import { USD_TO_AED_RATE } from '@/lib/store/currency';
 
 interface EditProductModalProps {
   product: {
@@ -22,9 +23,36 @@ export function EditProductModal({ product }: EditProductModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Dual currency inputs
+  const initialPriceAed = product.price ? String(product.price) : '';
+  const initialPriceUsd = product.price ? (Number(product.price) / USD_TO_AED_RATE).toFixed(2) : '';
+  
+  const [priceAed, setPriceAed] = useState<string>(initialPriceAed);
+  const [priceUsd, setPriceUsd] = useState<string>(initialPriceUsd);
+
   // Image state
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(product.image_url || null);
+
+  function handlePriceAedChange(val: string) {
+    setPriceAed(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      setPriceUsd((num / USD_TO_AED_RATE).toFixed(2));
+    } else {
+      setPriceUsd('');
+    }
+  }
+
+  function handlePriceUsdChange(val: string) {
+    setPriceUsd(val);
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 0) {
+      setPriceAed((num * USD_TO_AED_RATE).toFixed(2));
+    } else {
+      setPriceAed('');
+    }
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files[0]) {
@@ -67,7 +95,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
       const productData = {
         name: formData.get('name'),
         description: formData.get('description'),
-        price: formData.get('price'),
+        price: priceAed || formData.get('price'),
         category: formData.get('category'),
         in_stock: formData.get('in_stock'),
         image_url: imageUrl,
@@ -100,23 +128,23 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !isSubmitting && setIsOpen(false)} />
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40" onClick={() => !isSubmitting && setIsOpen(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-xl pointer-events-auto max-h-[90vh] overflow-y-auto text-left">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl pointer-events-auto max-h-[90vh] overflow-y-auto text-left">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Edit Product</h2>
                 <button
                   onClick={() => setIsOpen(false)}
                   disabled={isSubmitting}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-black"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 text-left">
                 {error && (
-                  <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm">
+                  <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-200">
                     {error}
                   </div>
                 )}
@@ -138,7 +166,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                       />
                     </div>
                     <div className="text-sm text-gray-500">
-                      <p>Click to upload a high-quality image.</p>
+                      <p>Click to change product image.</p>
                       <p>JPEG, PNG, WEBP (Max 2MB)</p>
                     </div>
                   </div>
@@ -151,7 +179,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                     name="name" 
                     type="text" 
                     defaultValue={product.name}
-                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black text-gray-900" 
+                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" 
                   />
                 </div>
 
@@ -162,56 +190,93 @@ export function EditProductModal({ product }: EditProductModalProps) {
                     name="category" 
                     type="text" 
                     defaultValue={product.category}
-                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black text-gray-900" 
+                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" 
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (AED)</label>
-                  <input 
-                    required 
-                    name="price" 
-                    type="number" 
-                    step="0.01" 
-                    min="0" 
-                    defaultValue={product.price}
-                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black text-gray-900" 
-                  />
+                {/* Dual Currency Price Section */}
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Product Pricing (Dual Currency)
+                  </label>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="block text-xs font-medium text-gray-600 mb-1">Price (AED)</span>
+                      <div className="relative">
+                        <input 
+                          required 
+                          name="price" 
+                          type="number" 
+                          step="0.01" 
+                          min="0" 
+                          value={priceAed}
+                          onChange={(e) => handlePriceAedChange(e.target.value)}
+                          className="w-full border-gray-300 rounded-xl px-3 py-2 bg-white text-sm focus:ring-black focus:border-black" 
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-400">AED</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-xs font-medium text-gray-600 mb-1">Price (USD)</span>
+                      <div className="relative">
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          min="0" 
+                          value={priceUsd}
+                          onChange={(e) => handlePriceUsdChange(e.target.value)}
+                          className="w-full border-gray-300 rounded-xl px-3 py-2 bg-white text-sm focus:ring-black focus:border-black" 
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-400">USD</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    Automatic live conversion: 1 USD ≈ {USD_TO_AED_RATE} AED.
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea 
-                    required 
                     name="description" 
                     rows={3} 
                     defaultValue={product.description}
-                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black resize-none text-gray-900" 
+                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black" 
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock Status</label>
-                  <select 
+                <div className="flex items-center gap-2 pt-2">
+                  <input 
+                    type="checkbox" 
+                    id={`in_stock_${product.id}`} 
                     name="in_stock" 
-                    defaultValue={product.in_stock ? 'true' : 'false'}
-                    className="w-full border-gray-200 rounded-xl px-4 py-2.5 bg-gray-50 focus:bg-white focus:ring-black focus:border-black text-gray-900"
-                  >
-                    <option value="true">In Stock</option>
-                    <option value="false">Out of Stock</option>
-                  </select>
+                    defaultChecked={product.in_stock} 
+                    className="rounded border-gray-300 text-black focus:ring-black h-4 w-4" 
+                  />
+                  <label htmlFor={`in_stock_${product.id}`} className="text-sm font-medium text-gray-700">In Stock (Available in Store)</label>
                 </div>
 
-                <div className="pt-4">
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-black text-white font-medium py-3 rounded-xl hover:bg-gray-900 transition-colors flex justify-center items-center"
+                    className="bg-black text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors flex items-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Saving changes...
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving...
                       </>
                     ) : (
                       'Save Changes'
