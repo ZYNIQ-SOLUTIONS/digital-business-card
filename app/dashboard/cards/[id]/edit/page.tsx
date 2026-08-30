@@ -233,18 +233,49 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
       : (names[0] ? names[0].slice(0, 2).toUpperCase() : "IK");
 
-    const payload = {
-      ...card,
-      avatar_initials: initials,
-      template_layout: card.template_layout || "classic-segmented",
-      theme: card.theme || "apple-light",
-      updated_at: new Date().toISOString(),
+    const getPayload = (includeTemplate: boolean) => {
+      const {
+        id: _id,
+        user_id: _uid,
+        created_at: _created,
+        views_count: _views,
+        vcard_downloads_count: _vcards,
+        wallet_downloads_count: _wallets,
+        template_layout: _tpl,
+        ...rest
+      } = card;
+
+      const p: any = {
+        ...rest,
+        avatar_initials: initials,
+        theme: card.theme || "apple-light",
+        updated_at: new Date().toISOString(),
+      };
+
+      if (includeTemplate) {
+        p.template_layout = card.template_layout || "classic-segmented";
+      }
+
+      return p;
     };
 
-    const { error } = await supabase
+    let payload = getPayload(true);
+
+    let { error } = await supabase
       .from("cards")
       .update(payload)
       .eq("id", id);
+
+    // Fallback: If template_layout column doesn't exist in Supabase schema cache, retry without it
+    if (error && (error.message?.includes("template_layout") || error.code === "PGRST204")) {
+      console.warn("Retrying card update without template_layout column:", error.message);
+      payload = getPayload(false);
+      const retryResult = await supabase
+        .from("cards")
+        .update(payload)
+        .eq("id", id);
+      error = retryResult.error;
+    }
 
     if (error) {
       if (error.code === "23505") {

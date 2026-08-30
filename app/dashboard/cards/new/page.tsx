@@ -113,11 +113,24 @@ export default function NewCardPage() {
         skills: ["Leadership", "Strategy"],
       };
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("cards")
         .insert(newCard)
         .select()
         .single();
+
+      // Fallback: If template_layout column is missing from Supabase schema cache, retry without it
+      if (error && (error.message?.includes("template_layout") || error.code === "PGRST204")) {
+        console.warn("Retrying card insert without template_layout column:", error.message);
+        const { template_layout: _tpl, ...cardWithoutTemplate } = newCard;
+        const retryResult = await supabase
+          .from("cards")
+          .insert(cardWithoutTemplate)
+          .select()
+          .single();
+        data = retryResult.data;
+        error = retryResult.error;
+      }
 
       if (error) {
         if (error.code === "23505") {

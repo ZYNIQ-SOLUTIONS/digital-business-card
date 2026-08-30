@@ -196,8 +196,9 @@ create policy "Authenticated users can upload avatar images."
 -- 5. INTELLIGENT NETWORKING PASS UPDATES
 -- =============================================================================
 
--- Add Contextual Wallet Pass features to cards
+-- Add Contextual Wallet Pass features & template layout to cards
 alter table public.cards 
+  add column if not exists template_layout text default 'classic-segmented' not null,
   add column if not exists active_mode text default 'default' not null,
   add column if not exists geofence_locations jsonb default '[]'::jsonb;
 
