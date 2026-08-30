@@ -961,7 +961,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           const template = card.template_layout || "classic-segmented";
 
           return (
-            <div className="lg:col-span-5 sticky top-20">
+            <div id="preview-canvas" className="lg:col-span-5 sticky top-20">
               <div className="text-center pb-2 flex items-center justify-center gap-1.5">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
                   Live Preview: {activeTemplateDef.name} ({pt.name})
@@ -1224,6 +1224,43 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         cardId={id}
         fullName={card.full_name}
       />
+
+      {/* Mobile Floating Action & Preview Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-t border-black/[0.08] p-3 px-4 flex items-center justify-between gap-3 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] pb-safe">
+        <button
+          onClick={() => {
+            const el = document.getElementById("preview-canvas");
+            el?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-[#1D1D1F] text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 min-h-[44px]"
+        >
+          <Eye className="w-4 h-4 text-[#0071E3]" />
+          <span>Live Preview</span>
+        </button>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px]"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : saveSuccess ? (
+            <>
+              <Check className="w-4 h-4" />
+              <span>Saved!</span>
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              <span>Save Card</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

@@ -60,9 +60,12 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-sm bg-white rounded-[32px] p-6 shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-sm bg-white rounded-t-[36px] sm:rounded-[32px] p-6 pb-8 sm:pb-6 shadow-2xl relative animate-in slide-in-from-bottom-6 duration-200">
+        {/* Mobile Cupertino Grab Bar */}
+        <div className="sm:hidden w-10 h-1.5 bg-black/20 rounded-full mx-auto -mt-2 mb-4" />
+
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition min-h-[36px] min-w-[36px] flex items-center justify-center">
           <X className="w-5 h-5" />
         </button>
 

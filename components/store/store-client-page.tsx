@@ -120,7 +120,7 @@ export function StoreClientPage({ initialProducts }: StoreClientPageProps) {
           </div>
 
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 max-w-full">
             {[
               { id: 'all', label: t.catalog.filterAll },
               { id: 'metal', label: t.catalog.filterMetal },
@@ -131,9 +131,9 @@ export function StoreClientPage({ initialProducts }: StoreClientPageProps) {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                className={`px-4 py-2 rounded-2xl text-xs font-semibold shrink-0 min-h-[40px] transition active:scale-95 ${
                   selectedCategory === cat.id
-                    ? 'bg-black text-white shadow-xs'
+                    ? 'bg-black text-white shadow-sm'
                     : 'bg-white text-gray-600 hover:text-black hover:bg-neutral-100 border border-black/[0.06]'
                 }`}
               >

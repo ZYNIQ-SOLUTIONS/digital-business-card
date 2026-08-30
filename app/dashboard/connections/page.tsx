@@ -294,8 +294,50 @@ export default function ConnectionsPage() {
             </div>
           </div>
           
-          {/* Collections List */}
-          <div className="space-y-1">
+          {/* Mobile Horizontal Pill Scroll */}
+          <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            <button
+              onClick={() => setActiveCollectionId(null)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl shrink-0 text-xs font-semibold transition active:scale-95 ${
+                !activeCollectionId
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-neutral-100 text-[#1D1D1F]"
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>All Cards</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${!activeCollectionId ? "bg-neutral-800 text-white" : "bg-neutral-200 text-neutral-600"}`}>
+                {connections.length}
+              </span>
+            </button>
+
+            {collections.map(collection => {
+              const count = connections.filter(c => c.collection_id === collection.id).length;
+              const isActive = activeCollectionId === collection.id;
+              const color = collection.color || "#0071E3";
+
+              return (
+                <button
+                  key={collection.id}
+                  onClick={() => setActiveCollectionId(collection.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl shrink-0 text-xs font-semibold transition active:scale-95 ${
+                    isActive
+                      ? "bg-[#0071E3] text-white shadow-xs"
+                      : "bg-neutral-100 text-[#1D1D1F]"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isActive ? "#FFFFFF" : color }} />
+                  <span>{collection.name}</span>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-600"}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop Collections List */}
+          <div className="hidden lg:block space-y-1">
             {/* All Cards Option */}
             <button
               onClick={() => setActiveCollectionId(null)}

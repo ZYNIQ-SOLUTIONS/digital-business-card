@@ -440,6 +440,31 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
           })}
         </div>
       </div>
+
+      {/* Mobile Sticky Bottom Floating Purchase Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-t border-black/[0.08] p-3 px-4 flex items-center justify-between gap-3 shadow-[0_-8px_20px_rgba(0,0,0,0.06)] pb-safe">
+        <div className="truncate">
+          <span className="block text-[11px] text-gray-500 truncate">{displayName}</span>
+          <span className="block text-base font-bold text-black">{formatPrice(priceInAED * quantity)}</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleAddToCart}
+            className={`py-2.5 px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 transition active:scale-95 ${
+              added ? 'bg-[#34C759] text-white' : 'bg-black text-white'
+            }`}
+          >
+            {added ? <Check className="w-3.5 h-3.5" /> : <ShoppingBag className="w-3.5 h-3.5" />}
+            <span>{added ? 'Added' : t.addToBag}</span>
+          </button>
+          <button
+            onClick={handleBuyNow}
+            className="py-2.5 px-4 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-bold text-xs shadow-xs transition active:scale-95 flex items-center gap-1"
+          >
+            <span>{t.instantCheckout}</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

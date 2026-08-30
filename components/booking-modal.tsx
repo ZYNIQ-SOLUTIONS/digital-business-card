@@ -220,11 +220,14 @@ export function BookingModal({ isOpen, onClose, card }: BookingModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white rounded-[32px] overflow-hidden shadow-2xl border border-black/[0.08] flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-white rounded-t-[36px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-black/[0.08] flex flex-col max-h-[92vh] animate-in slide-in-from-bottom-6 duration-200">
         
+        {/* Mobile Cupertino Grab Bar */}
+        <div className="sm:hidden w-10 h-1.5 bg-black/20 rounded-full mx-auto mt-2.5 mb-1" />
+
         {/* Header */}
-        <div className="p-5 border-b border-black/[0.06] flex items-center justify-between bg-[#FBFBFD]">
+        <div className="p-4 sm:p-5 border-b border-black/[0.06] flex items-center justify-between bg-[#FBFBFD]">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#0071E3] flex items-center justify-center shadow-2xs">
               <Calendar className="w-4 h-4" />

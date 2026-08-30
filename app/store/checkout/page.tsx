@@ -103,11 +103,11 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">{t.fullName}</label>
-                  <input required name="customer_name" type="text" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-2.5 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-black transition" placeholder={lang === 'ar' ? 'إبراهيم الخليل' : 'John Doe'} />
+                  <input required name="customer_name" type="text" autoComplete="name" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-3 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition min-h-[44px]" placeholder={lang === 'ar' ? 'إبراهيم الخليل' : 'John Doe'} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">{t.phone}</label>
-                  <input required name="customer_phone" type="tel" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-2.5 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-black transition" placeholder="+971 50 123 4567" />
+                  <input required name="customer_phone" type="tel" inputMode="tel" autoComplete="tel" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-3 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition min-h-[44px]" placeholder="+971 50 123 4567" />
                 </div>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function CheckoutPage() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">{t.city}</label>
-                  <select required name="shipping_city" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-2.5 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-black transition">
+                  <select required name="shipping_city" autoComplete="address-level1" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-3 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition min-h-[44px]">
                     <option value="">{lang === 'ar' ? 'اختر الإمارة / المدينة' : 'Select Emirate / City'}</option>
                     <option value="Dubai">Dubai / دبي</option>
                     <option value="Abu Dhabi">Abu Dhabi / أبوظبي</option>
@@ -137,17 +137,17 @@ export default function CheckoutPage() {
                 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">{lang === 'ar' ? 'المنطقة / الحي' : 'Area / Neighborhood'}</label>
-                  <input required name="shipping_area" type="text" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-2.5 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-black transition" placeholder={lang === 'ar' ? 'مثال: وسط مدينة دبي (Downtown)' : 'e.g. Downtown Dubai, Marina'} />
+                  <input required name="shipping_area" type="text" autoComplete="address-level2" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-3 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition min-h-[44px]" placeholder={lang === 'ar' ? 'مثال: وسط مدينة دبي (Downtown)' : 'e.g. Downtown Dubai, Marina'} />
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">{t.address}</label>
-                    <input required name="shipping_street" type="text" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-2.5 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-black transition" placeholder={lang === 'ar' ? 'شارع الشيخ زايد' : 'e.g. Sheikh Zayed Rd'} />
+                    <input required name="shipping_street" type="text" autoComplete="street-address" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-3 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition min-h-[44px]" placeholder={lang === 'ar' ? 'شارع الشيخ زايد' : 'e.g. Sheikh Zayed Rd'} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-1">{lang === 'ar' ? 'المبنى / رقم الفيلا' : 'Building / Villa No.'}</label>
-                    <input required name="shipping_building" type="text" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-2.5 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-black transition" placeholder={lang === 'ar' ? 'برج 1، شقة 104' : 'e.g. Tower 1, Apt 104'} />
+                    <input required name="shipping_building" type="text" className="w-full border border-black/[0.08] rounded-xl px-3.5 py-3 bg-[#F5F5F7] focus:bg-white text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#0071E3] transition min-h-[44px]" placeholder={lang === 'ar' ? 'برج 1، شقة 104' : 'e.g. Tower 1, Apt 104'} />
                   </div>
                 </div>
               </div>

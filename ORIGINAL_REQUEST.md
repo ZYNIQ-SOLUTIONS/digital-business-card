@@ -1,112 +1,42 @@
 # Original User Request
 
-## Initial Request — 2026-08-27T15:11:26Z
+## Initial Request — 2026-08-30T04:34:23Z
 
-An expert technical audit of a production-grade Next.js 16 + Supabase digital business card platform. The team should review every layer of the app — from UX completeness, feature parity, security, performance, and code quality — and produce a prioritized, actionable report.
+Modernize and elevate the mobile responsive UI/UX across all non-landing product surfaces of the IZN Digital Business Card application (Public Card Profiles, User Dashboard ecosystem, Store & Checkout flow, Admin Portal, Auth & Support pages) to Apple Human Interface Guidelines and UI Craft production standards.
 
 Working directory: /home/level-77/Desktop/digital_business_card
-Integrity mode: development
-
----
-
-## Context
-
-This is a SaaS-style digital business card platform built with:
-- **Next.js 16.3.3** (App Router, Turbopack)
-- **Supabase** (PostgreSQL + Auth + Storage + RLS)
-- **Tailwind CSS** (custom theme system)
-- **Google Gemini AI** (bio enhancement, identity verification, card scanning)
-- **Apple Wallet** (`.pkpass` generation)
-
-### Key Features Implemented So Far
-
-1. **Auth**: Magic link + OAuth (Google, GitHub, Telegram) — `app/auth/page.tsx`
-2. **Card Editor**: Full profile editor with 8 themes, phone input with country codes, social links, custom links, AI bio enhancement, AI identity verification — `app/dashboard/cards/[id]/edit/page.tsx`
-3. **Public Card View**: `app/[slug]/public-card-client.tsx` — themed card with QR, vCard download, Apple/generic Wallet pass, social links, booking modal, floating QR FAB button
-4. **Booking/Meeting**: Calendar-based time slot picker on public card — `components/booking-modal.tsx`, `app/api/bookings/route.ts`
-5. **Networking Wallet (Connections)**: Collections sidebar + AI follow-up drafting — `app/dashboard/connections/page.tsx`, `app/api/collections/route.ts`
-6. **Enterprise Management**: CSV bulk upload, one-by-one invite, employee directory with search/filter, edit modal — `app/dashboard/enterprise/page.tsx`, `app/api/enterprise/members/route.ts`
-7. **AI Identity Verification**: Live webcam photo → Gemini analysis → verified badge — `components/verify-modal.tsx`, `app/api/ai/verify-identity/route.ts`
-8. **AI Bio Enhancement**: Rewrite/enhance user bio with Gemini — `components/ai-bio-modal.tsx`, `app/api/ai/enhance-bio/route.ts`
-9. **Card Scanning**: Upload physical business card image → Gemini extracts contact info — `app/api/ai/extract-card/route.ts`
-10. **Invite System**: Email invitations for enterprise members — `app/api/invite/route.ts`
-11. **Analytics**: Page view events tracked in `card_events` table
-12. **Main Landing Page**: `app/page.tsx` — marketing page
-
----
+Integrity mode: demo
 
 ## Requirements
 
-### R1. Feature Completeness Audit
-Inspect every implemented feature listed above. For each: (a) identify what is working as intended, (b) identify what is partially implemented or broken, (c) identify what is missing (e.g., a route exists but has no handler, a UI element references a function that doesn't exist, etc.).
+### R1. Public Digital Business Card Mobile Ergonomics (`/[slug]`, `components/public-card-client.tsx`)
+- Enhance all 5 layout architectures (`classic-segmented`, `bento-grid`, `executive-minimal`, `cyber-holo`, `creative-hero`) for single-hand mobile viewport navigation.
+- Implement Apple-style bottom action sheet modals (Exchange Contact, Share QR, Apple Wallet Pass push) with native haptic feel, swipe indicators, and zero text truncation issues.
 
-### R2. UX & Flow Audit
-Review the full user journey end-to-end:
-- Visitor lands on the landing page → signs up → creates a card → edits and publishes → shares the card link → visitor of the card interacts with it (saves contact, books meeting, shares info back).
-- Enterprise HR flow: creates org → invites employees → manages profiles.
-- Networking flow: captures a connection → assigns to a collection → sends AI follow-up.
-Identify broken flows, missing redirects, dead ends, confusing UI, or incomplete states.
+### R2. User Dashboard & Card Studio Mobile Overhaul (`/dashboard`, `/dashboard/cards/*`, `/dashboard/connections`, `/dashboard/enterprise`)
+- Add an Apple-style bottom tab bar / sticky floating control pill for mobile viewports (`min-h-[44px]` touch targets, frosted glass blur, safe-area inset padding).
+- Optimize the card editor (`/dashboard/cards/[id]/edit`) on mobile: collapsible section accordions, responsive theme selector swatches, instant photo upload camera trigger, and a sliding live preview bottom sheet.
 
-### R3. Security & RLS Audit
-Review all Supabase Row Level Security policies in `supabase/schema.sql`. Verify all API routes properly authenticate the user before performing DB operations. Identify any routes missing auth checks, any tables without RLS enabled, or any policy gaps that could expose data.
+### R3. Hardware Store & Checkout Mobile Flow (`/store`, `/store/product/[id]`, `/store/checkout`, `/store/success`)
+- Refine Store mobile layout into an Apple Store iOS app experience: crisp product cards, fluid category pills, sticky bottom "Add to Bag / Buy Now" bar with dual currency (AED/USD) and bilingual English/Arabic layout support.
+- Streamline checkout on mobile with floating step progression, Apple Pay-ready button styling, and clean form inputs with native mobile keyboard types.
 
-### R4. Code Quality & Technical Debt
-Review `/* eslint-disable */` suppressions, `// @ts-ignore` suppressions, `any` type usage, missing error boundaries, unhandled promise rejections, and console.error calls that hide real failures. Identify the highest-priority items to clean up.
-
-### R5. Performance & SEO Audit
-Check the public card page (`app/[slug]/page.tsx` and `public-card-client.tsx`) for: proper `<head>` metadata (OG tags, Twitter cards, canonical), server-side rendering vs. client rendering decisions, image optimization, and Largest Contentful Paint risks. Check the landing page (`app/page.tsx`) similarly.
-
-### R6. Missing & Incomplete Features
-Based on the codebase, identify features that were planned or referenced but never completed. Examples: the `active_mode` (work/social/all) toggle mentioned in `public-card-client.tsx` but not surfaced in the editor; the `geofence_locations` column in schema with no UI; the `portfolio_url` field referenced in the editor but possibly unused in the public card; NFC tab content that may be a placeholder.
-
----
-
-## Deliverable
-
-Produce a single comprehensive **Expert App Audit Report** written to:
-`/home/level-77/Desktop/digital_business_card/AUDIT_REPORT.md`
-
-The report must be structured as follows:
-
-### 1. Executive Summary
-3-5 bullet points: overall health, biggest risk, most impactful next steps.
-
-### 2. Feature Status Table
-A markdown table with columns: Feature | Status (✅ Complete / ⚠️ Partial / ❌ Broken / 🔲 Missing) | Notes
-
-### 3. Critical Issues (P0)
-Items that could cause data loss, security exposure, or complete feature failure. Each issue: description, affected file(s), recommended fix.
-
-### 4. High Priority (P1)
-Bugs, broken flows, or UX dead-ends that significantly impact usability. Same format.
-
-### 5. Medium Priority (P2)
-Code quality, TypeScript hygiene, performance improvements. Same format.
-
-### 6. Low Priority (P3)
-Nice-to-haves, polish, SEO, minor UX. Same format.
-
-### 7. What's Working Well
-Acknowledge strong implementations — don't just report problems.
-
-### 8. Recommended Next Sprint
-A prioritized list of 5-8 specific, actionable tasks the developer should tackle next, in order.
-
----
+### R4. Admin Console & Auth Mobile Adaptation (`/admin/*`, `/auth`, `/support`, `/privacy`, `/terms`)
+- Ensure administrative data tables, metric tiles, order dispatch filters, and product editing modals are horizontally scroll-safe and responsive on 360px–430px screens.
+- Modernize Auth login/signup sheets and Support forms with Cupertino form styling, floating labels, and crisp validation states.
 
 ## Acceptance Criteria
 
-### Report completeness
-- [ ] The report covers all 6 requirement areas (R1–R6)
-- [ ] Every feature listed in the Context section appears in the Feature Status Table
-- [ ] Each issue entry includes: the affected file path, a clear description, and a recommended fix or next step
-- [ ] The Recommended Next Sprint contains 5–8 concrete tasks in priority order
+### Mobile Responsiveness & Ergonomics
+- [ ] Zero horizontal screen overflow or clipping on mobile viewports (360px - 430px).
+- [ ] All interactive buttons, tabs, inputs, and toggles meet the minimum 44x44px touch target standard.
+- [ ] Safe-area inset support (`pb-safe`, `pt-safe`) for iOS Safari / standalone PWA mobile viewports.
 
-### Depth of analysis
-- [ ] At least one security finding is reported (or explicitly stated as "no issues found" with justification)
-- [ ] The UX flow audit traces at minimum the visitor-to-card-save journey and the enterprise invite journey
-- [ ] Code quality findings are grounded in specific file locations, not generic observations
+### Apple HIG & UI Craft Excellence
+- [ ] Cupertino frosted glass materials (`backdrop-blur-xl`, `bg-white/80` or `bg-neutral-900/80`, hairline `border-black/[0.06]`).
+- [ ] SF Pro typography scale with tight letter-spacing on headings and high contrast ratios for readability.
+- [ ] Micro-interactions and drawer transitions under 200ms with natural spring curves.
 
-### Output
-- [ ] `AUDIT_REPORT.md` exists and is valid markdown at `/home/level-77/Desktop/digital_business_card/AUDIT_REPORT.md`
-- [ ] The file is at least 600 lines or 15,000 characters (ensuring sufficient depth)
+### Quality & Functionality Verification
+- [ ] `npm run build` compiles with 0 errors across all routes.
+- [ ] All Supabase database mutations, cart operations, currency switching (AED/USD), and language switching (EN/AR) operate without regressions.
