@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="outfit-techwear" class="outfit">
+    <!-- Techwear High Tactical Collar & Shoulders -->
+    <path class="outfit-primary" d="M 75 512 C 85 405, 145 365, 202 345 L 206 320 C 206 312, 306 312, 306 320 L 310 345 C 367 365, 427 405, 437 512 Z" fill="#09090b" />
+    <!-- Storm Collar Outer Layer -->
+    <path d="M 205 320 L 220 365 L 292 365 L 307 320 Z" fill="#18181b" />
+    <!-- Asymmetric Cyber Zipper & Neon Accent -->
+    <line x1="242" y1="325" x2="230" y2="512" stroke="#06b6d4" stroke-width="3" />
+    <line x1="242" y1="325" x2="230" y2="512" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4,4" />
+    <!-- Tactical Shoulder Straps / Harness -->
+    <polygon points="150,380 180,370 200,430 170,440" fill="#27272a" stroke="#06b6d4" stroke-width="1" />
+    <polygon points="362,380 332,370 312,430 342,440" fill="#27272a" />
+    <!-- Cyber Badge -->
+    <rect x="315" y="440" width="30" height="12" rx="2" fill="#06b6d4" fill-opacity="0.8" />
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="face-shape-oval" class="face-shape">
+    <!-- Base Head & Jaw: Oval -->
+    <path class="skin-base" d="M 176 170 C 176 110, 336 110, 336 170 C 336 280, 312 372, 256 376 C 200 372, 176 280, 176 170 Z" fill="#F5CBA7" stroke="#000000" stroke-opacity="0.1" stroke-width="2" />
+    <!-- Ambient Cheek Shading -->
+    <ellipse cx="205" cy="275" rx="22" ry="14" fill="#000000" fill-opacity="0.04" />
+    <ellipse cx="307" cy="275" rx="22" ry="14" fill="#000000" fill-opacity="0.04" />
+    <!-- Chin Highlight / Shadow -->
+    <path d="M 232 350 C 244 356, 268 356, 280 350 C 274 362, 238 362, 232 350 Z" fill="#000000" fill-opacity="0.06" />
+  </g>
+</svg>

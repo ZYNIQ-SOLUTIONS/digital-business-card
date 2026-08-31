@@ -1,0 +1,31 @@
+{
+  "name": "zavatar",
+  "version": "1.0.0",
+  "description": "Zavatar Avatar Microservice Engine & Generation Adapters",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/test_adapter.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "avatar",
+    "zavatar",
+    "sharp",
+    "svg",
+    "nft",
+    "composite"
+  ],
+  "author": "Zavatar Team",
+  "license": "MIT",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/sharp": "^0.31.1",
+    "typescript": "^5.7.0"
+  }
+}

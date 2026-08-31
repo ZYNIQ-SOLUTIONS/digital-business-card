@@ -22,6 +22,7 @@ import {
 import { AddMemberModal } from "@/components/add-member-modal";
 import { EditMemberModal } from "@/components/edit-member-modal";
 import { VerifiedBadgeIcon } from "@/components/icons";
+import { createClient } from "@/lib/supabase/client";
 
 interface Member {
   id: string;
@@ -45,6 +46,9 @@ export default function EnterpriseDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState("All");
+  const [brandLock, setBrandLock] = useState(false);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const supabase = createClient();
 
   // Modal States
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -59,7 +63,34 @@ export default function EnterpriseDashboard() {
 
   useEffect(() => {
     fetchMembers();
+    fetchOrgSettings();
   }, []);
+
+  const fetchOrgSettings = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("organization_members")
+      .select("org_id, organizations(brand_lock)")
+      .eq("user_id", user.id)
+      .single();
+      
+    if (data) {
+      setOrgId(data.org_id);
+      const org = data.organizations as any;
+      if (org) {
+        setBrandLock(org.brand_lock || false);
+      }
+    }
+  };
+
+  const toggleBrandLock = async () => {
+    if (!orgId) return;
+    const newValue = !brandLock;
+    setBrandLock(newValue);
+    await supabase.from("organizations").update({ brand_lock: newValue }).eq("id", orgId);
+  };
 
   const fetchMembers = async () => {
     setIsLoading(true);
@@ -169,7 +200,16 @@ export default function EnterpriseDashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-black/[0.08] shadow-xs cursor-pointer hover:bg-neutral-50 transition">
+            <input
+              type="checkbox"
+              checked={brandLock}
+              onChange={toggleBrandLock}
+              className="w-4 h-4 rounded text-[#0071E3] focus:ring-[#0071E3]"
+            />
+            <span className="text-xs font-bold text-[#1D1D1F]">Lock Brand Assets</span>
+          </label>
           <button
             type="button"
             onClick={() => setIsAddOpen(true)}

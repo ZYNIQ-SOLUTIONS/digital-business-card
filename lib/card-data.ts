@@ -7,7 +7,36 @@ export interface SocialLink {
   active: boolean;
 }
 
+
+export interface CardMode {
+  id: string;
+  name: string;
+  active: boolean;
+  profileOverrides: Partial<BusinessCardProfile>;
+}
+
+export interface TemporaryLayer {
+  id: string;
+  type: 'phone' | 'offer' | 'address' | 'link';
+  label: string;
+  value: string;
+  expiresAt: string;
+}
+
+export interface CryptoIdentity {
+  walletAddress: string;
+  signature: string;
+  message: string;
+  verifiedAt: string;
+}
+
 export interface BusinessCardProfile {
+  avatar_id?: string;
+  customFields?: { label: string; value: string }[];
+  videoUrl?: string;
+  whiteLabel?: boolean;
+  isPrivate?: boolean;
+  pinCode?: string;
   personal: {
     fullName: string;
     preferredName?: string;
@@ -17,9 +46,12 @@ export interface BusinessCardProfile {
     avatarImageUrl?: string;
     tagline: string;
     bio: string;
+    bioAr?: string;
+    icebreakers?: string[];
   };
   professional: {
     title: string;
+    titleAr?: string;
     company: string;
     department?: string;
     industry: string;
@@ -51,6 +83,9 @@ export interface BusinessCardProfile {
     bookingUrl?: string;
   };
   socials: SocialLink[];
+  contextModes?: CardMode[];
+  temporaryLayers?: TemporaryLayer[];
+  cryptoIdentity?: CryptoIdentity;
 }
 
 export const defaultProfile: BusinessCardProfile = {

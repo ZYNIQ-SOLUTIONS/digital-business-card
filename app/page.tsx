@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { 
   Smartphone, 
   Zap, 
@@ -58,8 +59,21 @@ export default function Home() {
   // Cart store for direct quick adding from the landing page
   const { addItem } = useCartStore();
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
-  const [storeProducts, setStoreProducts] = useState<ProductDetail[]>(DEFAULT_PRODUCTS);
+  const [storeProducts, setStoreProducts] = useState<ProductDetail[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserName(user.user_metadata?.full_name || 'Dashboard');
+      }
+    };
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -74,20 +88,9 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-            const mapped = data.products.map((p: any) => {
-              const def = DEFAULT_PRODUCTS.find((d) => d.id === p.id) || DEFAULT_PRODUCTS[0];
-              return {
-                ...def,
-                id: p.id,
-                name: p.name,
-                description: p.description,
-                price: Number(p.price),
-                image_url: p.image_url || def.image_url,
-                category: p.category || def.category,
-                in_stock: p.in_stock ?? true,
-              };
-            });
-            setStoreProducts(mapped);
+            setStoreProducts(data.products);
+          } else {
+            setStoreProducts([]);
           }
         }
       } catch (err) {
@@ -154,6 +157,7 @@ export default function Home() {
             </a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#enterprise" className="hover:text-white transition-colors">Enterprise</a>
+            <a href="#about" className="hover:text-white transition-colors">About</a>
             <Link href="/store" className="hover:text-white transition-colors font-semibold text-[#10b981] flex items-center gap-1">
               <span>Store</span>
             </Link>
@@ -163,13 +167,22 @@ export default function Home() {
             <Link href="/store" className="text-xs font-semibold text-[#10b981] px-3.5 py-1.5 rounded-full bg-[#10b981]/10 border border-[#10b981]/25 hover:bg-[#10b981]/20 transition">
               Store
             </Link>
-            <Link href="/auth" className="text-xs font-semibold text-gray-300 hover:text-white transition-colors hidden sm:block px-3 py-1.5">
-              Sign In
-            </Link>
-            <Link href="/auth" className="px-5 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs shadow-[0_4px_20px_rgba(255,255,255,0.2)] transition active:scale-95 flex items-center gap-1.5">
-              <span>Get Free Card</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {userName ? (
+              <Link href="/dashboard" className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs transition active:scale-95 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#10b981] flex items-center justify-center text-[9px] font-bold text-white">{userName.charAt(0).toUpperCase()}</span>
+                <span>{userName.split(' ')[0]}</span>
+              </Link>
+            ) : (
+              <>
+                <Link href="/auth" className="text-xs font-semibold text-gray-300 hover:text-white transition-colors hidden sm:block px-3 py-1.5">
+                  Sign In
+                </Link>
+                <Link href="/auth" className="px-5 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs shadow-[0_4px_20px_rgba(255,255,255,0.2)] transition active:scale-95 flex items-center gap-1.5">
+                  <span>Get Free Card</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -181,12 +194,7 @@ export default function Home() {
             ========================================================================= */}
         <section className="max-w-6xl mx-auto px-6 pt-6 md:pt-16 flex flex-col items-center text-center relative">
           
-          {/* Top Live Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.12] text-xs font-semibold text-white mb-6 backdrop-blur-md shadow-xs animate-in fade-in slide-in-from-top-4 duration-500">
-            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-            <span className="text-gray-300 font-normal">Next-Gen Digital Networking:</span>
-            <span className="text-white font-bold">22 Themes &amp; 5 UI Templates Live</span>
-          </div>
+          {/* Top Live Badge Removed */}
 
           <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight leading-[1.04] text-white max-w-4xl">
             The last <span className="bg-gradient-to-r from-[#8b5cf6] via-[#10b981] to-[#0ea5e9] bg-clip-text text-transparent">business card</span> you will ever carry.
@@ -212,21 +220,21 @@ export default function Home() {
           </div>
 
           {/* Social Proof Bar */}
-          <div className="mt-20 pt-8 border-t border-white/[0.06] w-full max-w-4xl flex flex-wrap items-center justify-between gap-6 text-gray-500 text-xs">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#10b981]" />
+          <div className="mt-16 pt-8 border-t border-white/[0.06] w-full max-w-4xl grid grid-cols-2 sm:flex sm:flex-wrap items-center justify-center sm:justify-between gap-4 sm:gap-6 text-gray-400 text-[11px] sm:text-xs">
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#10b981] shrink-0" />
               <span>100% No App Required</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-[#8b5cf6]" />
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#8b5cf6] shrink-0" />
               <span>Instant Contact (.vcf) Sync</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Apple className="w-4 h-4 text-[#0ea5e9]" />
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <Apple className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#0ea5e9] shrink-0" />
               <span>Native Apple Wallet Passes</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-300" />
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 shrink-0" />
               <span>Aerospace Laser Engraved Metal</span>
             </div>
           </div>
@@ -240,12 +248,8 @@ export default function Home() {
           <div className="rounded-[44px] bg-gradient-to-b from-white/[0.05] via-white/[0.02] to-white/[0.01] border border-white/[0.08] p-6 sm:p-14 shadow-2xl space-y-10 relative overflow-hidden">
             
             <div className="text-center space-y-3 max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#0071E3]/10 text-[#38BDF8] border border-[#0071E3]/20 text-xs font-bold uppercase tracking-wider">
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Live Device Demonstration</span>
-              </div>
               <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
-                5 UI Architectures. 22 Color Palettes. <br/>
+                Premium and Personalised Cards templates. <br/>
                 <span className="bg-gradient-to-r from-white via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
                   Rendered Live on Device.
                 </span>
@@ -269,10 +273,6 @@ export default function Home() {
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/[0.08] pb-6">
             <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Physical Laser NFC Collection</span>
-              </div>
               <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
                 Pair your digital card with aerospace metal hardware.
               </h2>
@@ -293,6 +293,11 @@ export default function Home() {
           </div>
 
           {/* Real Store Products Grid Showcase */}
+          {isLoadingProducts ? (
+            <div className="text-center text-gray-500 py-10">Loading products...</div>
+          ) : storeProducts.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">No products available at the moment.</div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {storeProducts.slice(0, 3).map((prod) => (
               <div
@@ -380,6 +385,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+          )}
 
           {/* Quick Hardware Guarantees Bar */}
           <div className="p-6 rounded-3xl bg-neutral-900/40 border border-white/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-gray-300">
@@ -558,6 +564,117 @@ export default function Home() {
         </section>
 
         {/* =========================================================================
+            SECTION: ABOUT US
+            ========================================================================= */}
+        <section id="about" className="max-w-6xl mx-auto px-6">
+          <div className="rounded-[44px] bg-gradient-to-br from-white/[0.04] via-white/[0.02] to-transparent border border-white/[0.08] p-10 md:p-16 shadow-xl">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 text-[#a78bfa] text-xs font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6] animate-pulse" />
+                  About IZN
+                </div>
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.1]">
+                  Built for the future of <span className="bg-gradient-to-r from-[#8b5cf6] to-[#10b981] bg-clip-text text-transparent">human connection.</span>
+                </h2>
+                <p className="text-gray-400 leading-relaxed">
+                  IZN was born from a simple belief: the way professionals introduce themselves should be as dynamic and intelligent as the people behind the card. We're building the world's most sophisticated digital networking identity platform — where your card is never out of date, never runs out, and never fails to make a lasting impression.
+                </p>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Created by <span className="text-white font-semibold">ZYNIQ Studio</span>, a Dubai-based design & technology house specializing in smart branding ecosystems for executives, founders, and enterprise teams across the UAE and globally.
+                </p>
+                <div className="flex flex-wrap gap-4 pt-2">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-white">10K+</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Smart Cards Created</div>
+                  </div>
+                  <div className="w-px bg-white/10 self-stretch" />
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-white">UAE</div>
+                    <div className="text-xs text-gray-500 mt-0.5">Based & Operated</div>
+                  </div>
+                  <div className="w-px bg-white/10 self-stretch" />
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-white">24h</div>
+                    <div className="text-xs text-gray-500 mt-0.5">UAE Delivery</div>
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <div className="w-full aspect-square rounded-[36px] bg-gradient-to-br from-[#8b5cf6]/20 via-[#10b981]/10 to-[#0ea5e9]/20 border border-white/[0.08] flex items-center justify-center shadow-2xl overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(139,92,246,0.15),transparent_60%)]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(16,185,129,0.1),transparent_60%)]" />
+                  <svg className="w-32 h-32 opacity-30" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+                    <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#8b5cf6" strokeWidth="14" strokeLinecap="round" />
+                    <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#10b981" strokeWidth="14" strokeLinecap="round" />
+                    <circle cx="100" cy="100" r="14" fill="#ffffff" />
+                  </svg>
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
+                    <p className="text-white font-bold text-sm">ZYNIQ Studio</p>
+                    <p className="text-gray-400 text-xs">Dubai, UAE · Est. 2023</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =========================================================================
+            SECTION: OUR FOUNDERS
+            ========================================================================= */}
+        <section id="founders" className="max-w-5xl mx-auto px-6 space-y-10">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#10b981]/10 border border-[#10b981]/20 text-[#6ee7b7] text-xs font-bold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+              Our Founders
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+              The people behind IZN.
+            </h2>
+            <p className="text-gray-400 text-sm max-w-xl mx-auto">
+              A team of creatives, technologists, and brand architects who believe in the power of first impressions.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Ibrahim",
+                role: "Founder & CEO",
+                bio: "Visionary entrepreneur and brand architect. Ibrahim founded ZYNIQ Studio with a mission to redefine professional identity in the digital age.",
+                initials: "IB",
+                gradient: "from-[#8b5cf6] to-[#6d28d9]",
+              },
+              {
+                name: "Zaki",
+                role: "Founder & CCO",
+                bio: "Product design leader with a passion for human-centered interfaces. Drives the visual language and UX across the IZN platform.",
+                initials: "ZA",
+                gradient: "from-[#10b981] to-[#047857]",
+              },
+              {
+                name: "Nadjib",
+                role: "Founder & CMO",
+                bio: "Strategic marketing visionary who scales global adoption. Builds the growth engine that brings IZN to millions of professionals.",
+                initials: "NA",
+                gradient: "from-[#0ea5e9] to-[#0284c7]",
+              },
+            ].map((founder, i) => (
+              <div key={i} className="p-6 rounded-3xl bg-white/[0.03] border border-white/[0.07] hover:border-white/[0.14] hover:bg-white/[0.05] transition-all group space-y-5">
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${founder.gradient} flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform`}>
+                  {founder.initials}
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">{founder.name}</h3>
+                  <p className="text-xs font-semibold text-[#10b981] mt-0.5">{founder.role}</p>
+                </div>
+                <p className="text-xs text-gray-400 leading-relaxed">{founder.bio}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* =========================================================================
             SECTION 6: FREQUENTLY ASKED QUESTIONS (ACCORDION)
             ========================================================================= */}
         <section className="max-w-4xl mx-auto px-6 space-y-8">
@@ -602,7 +719,7 @@ export default function Home() {
         <section className="max-w-4xl mx-auto px-6 text-center space-y-6">
           <div className="p-10 md:p-16 rounded-[40px] bg-gradient-to-b from-white/[0.06] to-transparent border border-white/[0.08] shadow-2xl space-y-6">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
-              Ready to own every room you enter?
+              Ready to own every place you enter.
             </h2>
             <p className="text-base text-gray-400 max-w-xl mx-auto">
               Join thousands of executives, founders, and professionals upgrading to smart digital networking today.

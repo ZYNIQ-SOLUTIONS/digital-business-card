@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="expression-neutral" class="expression">
+    <!-- Neutral Eyebrows -->
+    <path d="M 195 198 C 210 194, 230 196, 240 200" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <path d="M 317 198 C 302 194, 282 196, 272 200" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <!-- Neutral Eyes (both open, balanced) -->
+    <g class="eyes">
+      <ellipse cx="215" cy="225" rx="14" ry="9" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="215" cy="225" r="6" fill="#1e293b" />
+      <circle cx="217" cy="223" r="2" fill="#ffffff" />
+      <ellipse cx="297" cy="225" rx="14" ry="9" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="297" cy="225" r="6" fill="#1e293b" />
+      <circle cx="299" cy="223" r="2" fill="#ffffff" />
+    </g>
+    <!-- Neutral Mouth -->
+    <path d="M 235 315 C 245 317, 267 317, 277 315" stroke="#78350f" stroke-width="3.5" stroke-linecap="round" fill="none" />
+    <path d="M 245 324 C 252 327, 260 327, 267 324" stroke="#000000" stroke-opacity="0.08" stroke-width="2.5" stroke-linecap="round" fill="none" />
+  </g>
+</svg>

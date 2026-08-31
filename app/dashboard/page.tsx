@@ -68,6 +68,7 @@ export default function DashboardPage() {
       .from("cards")
       .select("*")
       .eq("user_id", user.id)
+      .is("is_deleted", false)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
@@ -107,11 +108,16 @@ export default function DashboardPage() {
   };
 
   const handleDeleteCard = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this business card?")) return;
+    if (!confirm("Are you sure you want to move this business card to the trash?")) return;
 
-    const { error } = await supabase.from("cards").delete().eq("id", id);
+    // Soft delete
+    const { error } = await supabase.from("cards").update({ is_deleted: true }).eq("id", id);
     if (!error) {
       setCards(cards.filter((c) => c.id !== id));
+    } else {
+      // Fallback to hard delete if is_deleted doesn't exist yet in the DB
+      const { error: hardError } = await supabase.from("cards").delete().eq("id", id);
+      if (!hardError) setCards(cards.filter((c) => c.id !== id));
     }
   };
 
@@ -252,6 +258,9 @@ export default function DashboardPage() {
                   >
                     {card.is_published ? "Live" : "Draft"}
                   </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F5F5F7] text-gray-500 border border-black/[0.06] uppercase tracking-wider">
+                    {(card as any).template_layout?.replace(/-/g, " ") || "Classic"}
+                  </span>
                 </div>
                 <p className="text-xs font-semibold text-gray-700 truncate max-w-full">{card.title || "No Title Specified"}</p>
                 <p className="text-xs text-gray-400 truncate max-w-full">{card.company || "Independent"}</p>
@@ -312,20 +321,27 @@ export default function DashboardPage() {
                   className="p-2 rounded-xl bg-white hover:bg-neutral-100 border border-black/[0.06] text-black shadow-2xs transition"
                   title="Preview live card"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <CreditCard className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
 
-            {/* Action Bar (Responsive) */}
-            <div className="pt-4 border-t border-black/[0.06] flex items-center justify-between gap-2 flex-wrap">
+              <div className="pt-4 border-t border-black/[0.06] flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap flex-1">
                 <Link
                   href={`/dashboard/cards/${card.id}/edit`}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-bold transition shadow-xs"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
-                  <span>Edit Card</span>
+                  <span>Edit</span>
+                </Link>
+
+                <Link
+                  href={`/dashboard/cards/${card.id}/signature`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-neutral-200 text-black border border-black/[0.06] text-xs font-bold transition shadow-2xs"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Signature</span>
                 </Link>
 
                 <select

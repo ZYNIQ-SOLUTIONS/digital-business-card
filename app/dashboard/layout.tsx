@@ -14,7 +14,8 @@ import {
   Building2,
   ShoppingBag,
   ExternalLink,
-  Link2
+  Link2,
+  Trash2
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -41,6 +42,7 @@ export default function DashboardLayout({
     { href: "/dashboard/invites", label: "Invites", icon: Link2, active: pathname === "/dashboard/invites" },
     { href: "/dashboard/enterprise", label: "Enterprise", icon: Building2, active: pathname === "/dashboard/enterprise" },
     { href: "/store", label: "Store", icon: ShoppingBag, active: pathname.startsWith("/store") },
+    { href: "/dashboard/cards/trash", label: "Trash", icon: Trash2, active: pathname === "/dashboard/cards/trash" },
   ];
 
   return (

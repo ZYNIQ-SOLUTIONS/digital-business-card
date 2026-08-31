@@ -78,6 +78,16 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
     notFound();
   }
 
+  // Fetch network connection score
+  let connectionsCount = 0;
+  if (card) {
+    const { count } = await supabase
+      .from("card_connections")
+      .select("*", { count: "exact", head: true })
+      .eq("connected_card_id", card.id);
+    connectionsCount = count || 0;
+  }
+
   // Increment view counter asynchronously
   try {
     await supabase.from("card_events").insert({
@@ -92,5 +102,5 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
     // Silently continue
   }
 
-  return <PublicCardClient initialCard={card} slug={slug} fallbackMode={false} />;
+  return <PublicCardClient initialCard={card} slug={slug} fallbackMode={false} connectionsCount={connectionsCount} />;
 }

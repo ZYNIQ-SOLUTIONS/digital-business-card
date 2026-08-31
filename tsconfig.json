@@ -4,6 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -30,5 +31,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "test/*","node_modules", "zavatar/nft", "zavatar/dist", "zavatar/node_modules", "scripts"]
 }

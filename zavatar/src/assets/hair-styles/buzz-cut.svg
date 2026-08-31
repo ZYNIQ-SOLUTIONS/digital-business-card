@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-buzz-cut" class="hair-style">
+    <!-- Buzz Cut: Ultra-clean short fade hugging the cranium -->
+    <path class="hair-base" d="M 172 165 C 172 108, 340 108, 340 165 C 340 180, 336 185, 330 170 C 322 138, 298 126, 256 126 C 214 126, 190 138, 182 170 C 176 185, 172 180, 172 165 Z" fill="#252525" />
+    <path class="hair-texture" d="M 180 160 C 200 135, 312 135, 332 160 C 325 142, 295 130, 256 130 C 217 130, 187 142, 180 160 Z" fill="#181818" />
+  </g>
+</svg>

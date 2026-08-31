@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="expression-wink" class="expression">
+    <!-- Playful Eyebrows -->
+    <path d="M 195 194 C 210 190, 230 192, 240 198" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <path d="M 317 198 C 302 195, 282 196, 272 201" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <!-- Left Eye Open, Right Eye Winking -->
+    <g class="eyes">
+      <!-- Left Open Eye -->
+      <ellipse cx="215" cy="225" rx="14" ry="9" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="215" cy="225" r="6" fill="#1e293b" />
+      <circle cx="217" cy="223" r="2.2" fill="#ffffff" />
+      <!-- Right Winking Eye Arc -->
+      <path d="M 284 226 C 292 234, 304 234, 312 226" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+      <!-- Winking Eyelash Accent -->
+      <path d="M 312 226 L 318 223" stroke="#1f2937" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <!-- Playful Smirk Smile -->
+    <path d="M 232 312 C 245 324, 272 322, 282 308" stroke="#78350f" stroke-width="3.5" stroke-linecap="round" fill="none" />
+  </g>
+</svg>

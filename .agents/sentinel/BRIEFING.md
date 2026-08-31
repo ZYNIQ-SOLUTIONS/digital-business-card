@@ -1,28 +1,29 @@
-# BRIEFING — 2026-08-30T04:34:55Z
+# BRIEFING — 2026-08-31T06:24:45Z
 
 ## Mission
-Modernize and elevate the mobile responsive UI/UX across all non-landing product surfaces of the IZN Digital Business Card application to Apple HIG and UI Craft standards.
+Coordinate and monitor the full development and integration of the Zavatar avatar microservice.
 
 ## 🔒 My Identity
 - Archetype: sentinel
 - Working directory: /home/level-77/Desktop/digital_business_card/.agents/sentinel
-- Orchestrator: 36751a40-3694-402d-8b93-d1b2ee3d809c
-- Victory Auditor: [to be spawned on victory claim]
+- Orchestrator: 602e431e-730f-406c-a76c-b2a697ee9fe2
+- Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
 - Victory Audit is MANDATORY before reporting completion
-- Route: General -> teamwork_preview_orchestrator
+- Must not write code or make technical decisions
 
 ## User Context
-- **Last user request**: Modernize and elevate mobile responsive UI/UX across all non-landing product surfaces (Public Card Profiles, User Dashboard ecosystem, Store & Checkout flow, Admin Portal, Auth & Support pages) to Apple HIG & UI Craft standards.
+- **Last user request**: Build Zavatar avatar microservice (R1-R7) under /home/level-77/Desktop/digital_business_card/zavatar integrated with Next.js 16 host app.
 - **Pending clarifications**: none
-- **Delivered results**: none
+- **Delivered results**: Dispatched Project Orchestrator and initialized background monitoring crons.
 
 ## Project Status
 - **Phase**: in progress
-- **Cron 1 Task ID**: 407e3798-52e0-4943-99e4-cf6132da1cc9/task-15 (Progress Reporting)
-- **Cron 2 Task ID**: 407e3798-52e0-4943-99e4-cf6132da1cc9/task-17 (Liveness Check)
+- **Active Orchestrator ID**: 602e431e-730f-406c-a76c-b2a697ee9fe2
+- **Cron 1 Task ID**: 82a30bb1-37aa-4e27-961b-df627f2d3e4c/task-11 (Progress Reporting, */8)
+- **Cron 2 Task ID**: 82a30bb1-37aa-4e27-961b-df627f2d3e4c/task-13 (Liveness Check, */10)
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -30,4 +31,4 @@ Modernize and elevate the mobile responsive UI/UX across all non-landing product
 - **Retry count**: 0
 
 ## Artifact Index
-- /home/level-77/Desktop/digital_business_card/.agents/ORIGINAL_REQUEST.md — Original User Request
+- /home/level-77/Desktop/digital_business_card/.agents/ORIGINAL_REQUEST.md — Authoritative user request

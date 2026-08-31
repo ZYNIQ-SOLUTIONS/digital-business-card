@@ -36,6 +36,8 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { ErrorTracking } from "@/components/error-tracking";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,6 +52,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="min-h-full flex flex-col bg-[#F5F5F7] text-[#1D1D1F] selection:bg-[#0071E3] selection:text-white font-sans">
+        <ErrorTracking />
         <PageLoader />
         {children}
       </body>

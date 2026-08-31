@@ -1,41 +1,11 @@
 /* eslint-disable */
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { 
-  ArrowLeft, 
-  Save, 
-  Eye, 
-  Sparkles, 
-  Upload, 
-  Phone, 
-  Mail, 
-  Globe, 
-  MapPin, 
-  Check, 
-  Loader2, 
-  ExternalLink,
-  ChevronRight,
-  ChevronDown,
-  ShieldCheck,
-  Building2,
-  Share2,
-  Calendar,
-  Camera,
-  X,
-  Plus,
-  Search,
-  LayoutGrid,
-  Palette,
-  Terminal,
-  Layers,
-  Award,
-  Zap,
-  CreditCard
-} from "lucide-react";
+import { ArrowLeft, Save, Eye, Sparkles, Upload, Phone, Mail, Globe, MapPin, Check, Loader2, ExternalLink, ChevronRight, ChevronDown, ShieldCheck, Building2, Share2, Calendar, Camera, X, Plus, Search, LayoutGrid, Palette, Terminal, Layers, Award, Zap, CreditCard } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { 
@@ -46,6 +16,7 @@ import {
 import { PhoneInput } from "@/components/phone-input";
 import { AiBioModal } from "@/components/ai-bio-modal";
 import { VerifyModal } from "@/components/verify-modal";
+import { ImageCropModal } from "@/components/image-crop-modal";
 import { themes, themeList, ThemeCategory, ThemeTokens } from "@/lib/theme";
 import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
 
@@ -70,6 +41,8 @@ const ALL_AVAILABLE_SOCIALS = [
   { id: "signal", name: "Signal", url: "", active: false },
   { id: "pinterest", name: "Pinterest", url: "", active: false },
   { id: "reddit", name: "Reddit", url: "", active: false },
+  { id: "snapchat", name: "Snapchat", url: "", active: false },
+  { id: "other", name: "Other / Custom", url: "", active: false },
 ];
 
 interface CardEditPageProps {
@@ -84,13 +57,32 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [icebreakerInput, setIcebreakerInput] = useState("");
+  const [icebreakers, setIcebreakers] = useState<string[]>([]);
+  const [hasWalletIdentity, setHasWalletIdentity] = useState(false);
+  const isInitialLoad = useRef(true);
+  const cardRef = useRef<any>(null);
   const [isBioAiOpen, setIsBioAiOpen] = useState(false);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
 
   // Theme filtering and search state
+  const [allThemesList, setAllThemesList] = useState<ThemeTokens[]>(themeList);
   const [selectedThemeCategory, setSelectedThemeCategory] = useState<ThemeCategory>("all");
   const [themeSearchQuery, setThemeSearchQuery] = useState("");
+
+  useEffect(() => {
+    fetch("/api/themes")
+      .then(res => res.json())
+      .then(data => {
+        if (data.allThemes && Array.isArray(data.allThemes)) {
+          setAllThemesList(data.allThemes);
+        }
+      })
+      .catch(err => console.warn("Failed to fetch custom themes:", err));
+  }, []);
 
   // Expanded sections state (collapsed by default)
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({
@@ -109,38 +101,48 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   };
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setUploadingAvatar(true);
-      setErrorMsg(null);
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setImageToCrop(reader.result?.toString() || null);
+      });
+      reader.readAsDataURL(file);
+      e.target.value = ''; // Reset input so same file can be selected again
+    }
+  };
 
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Not logged in");
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setImageToCrop(null);
+    setUploadingAvatar(true);
+    setErrorMsg(null);
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not logged in");
 
-        if (uploadError) throw uploadError;
+      const fileName = `${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, croppedBlob, { contentType: 'image/jpeg' });
 
-        const { data: publicUrlData } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
+      if (uploadError) throw uploadError;
 
-        const newAvatarUrl = publicUrlData.publicUrl;
-        setCard((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
-      } catch (err: any) {
-        console.error("Avatar upload error:", err);
-        setErrorMsg("Avatar upload failed: " + err.message);
-      } finally {
-        setUploadingAvatar(false);
-      }
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const newAvatarUrl = publicUrlData.publicUrl;
+      setCard((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
+    } catch (err: any) {
+      console.error("Avatar upload error:", err);
+      setErrorMsg("Avatar upload failed: " + err.message);
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -224,9 +226,36 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     setLoading(false);
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setErrorMsg(null);
+
+  const handleVerifyWallet = async () => {
+    try {
+      alert("Simulating Wallet Connection (MetaMask/Phantom)...");
+      const fakeAddress = "0x" + Math.random().toString(16).slice(2, 42).padEnd(40, "0");
+      
+      const identity = {
+        walletAddress: fakeAddress,
+        signature: "0x_dummy_signature_verified",
+        message: "I verify ownership of this ZYNIQ Digital Card.",
+        verifiedAt: new Date().toISOString()
+      };
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from("cards").update({ crypto_identity: identity }).eq("id", card.id);
+      setHasWalletIdentity(true);
+      alert("Identity Cryptographically Verified!");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSave = async (isAutoSave: boolean = false) => {
+    if (isAutoSave) {
+      setAutoSaving(true);
+    } else {
+      setSaving(true);
+    }
+    if (!isAutoSave) setErrorMsg(null);
 
     const names = (card.full_name || "").trim().split(" ");
     const initials = names.length > 1
@@ -246,6 +275,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       } = card;
 
       const p: any = {
+        icebreakers,
         ...rest,
         avatar_initials: initials,
         theme: card.theme || "apple-light",
@@ -279,16 +309,34 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
     if (error) {
       if (error.code === "23505") {
-        setErrorMsg("This URL slug is already in use by another card.");
+        if (!isAutoSave) setErrorMsg("This URL slug is already in use by another card.");
       } else {
-        setErrorMsg(error.message);
+        if (!isAutoSave) setErrorMsg(error.message);
       }
     } else {
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      if (!isAutoSave) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
     }
-    setSaving(false);
+    if (isAutoSave) {
+      setAutoSaving(false);
+    } else {
+      setSaving(false);
+    }
   };
+
+  useEffect(() => {
+    if (loading) return;
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleSave(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [card, loading]);
 
   const updateSocialUrl = (socialId: string, url: string) => {
     setCard((prev: any) => ({
@@ -299,12 +347,13 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     }));
   };
 
-  const filteredThemes = themeList.filter((th) => {
+  const filteredThemes = allThemesList.filter((th) => {
     const matchesCategory = 
       selectedThemeCategory === "all" ||
       th.category === selectedThemeCategory ||
       (selectedThemeCategory === "dark" && th.isDark) ||
-      (selectedThemeCategory === "light" && !th.isDark);
+      (selectedThemeCategory === "light" && !th.isDark) ||
+      (selectedThemeCategory === "custom" && th.isCustom);
 
     const matchesSearch = 
       !themeSearchQuery ||
@@ -323,7 +372,19 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     );
   }
 
-  const activeThemeTokens = themes[card.theme || "apple-light"] || themes["apple-light"];
+  const baseThemeTokens = themes[card.theme || "apple-light"] || themes["apple-light"];
+  const activeThemeTokens = { ...baseThemeTokens };
+  if (card.custom_primary_color) activeThemeTokens.bg += " custom-bg";
+  if (card.custom_secondary_color) {
+    activeThemeTokens.cardBg += " custom-card-bg";
+    activeThemeTokens.headerBg += " custom-card-bg";
+    activeThemeTokens.tabBg += " custom-card-bg";
+  }
+  if (card.custom_accent_color) {
+    activeThemeTokens.accentBg += " custom-accent-bg";
+    activeThemeTokens.accent += " custom-accent-text";
+    activeThemeTokens.iconCircleColor += " custom-accent-text";
+  }
   const activeTemplateDef = cardTemplates[card.template_layout as TemplateLayoutId] || cardTemplates["classic-segmented"];
 
   return (
@@ -345,9 +406,160 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               Customize design, layout templates, colors, and live integrations.
             </p>
           </div>
+          
+          {/* Section 6: Advanced Features & Privacy */}
+          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(6)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[6] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  6. Advanced Features &amp; Privacy
+                </h2>
+              </div>
+              <span className="text-xs text-neutral-400 font-mono">
+                {card.is_private ? "Private" : "Public"}
+              </span>
+            </div>
+
+            {expandedSections[6] && (
+              <div className="space-y-5 pt-1">
+                {/* Video Embed */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                    Introduction Video (YouTube / Vimeo / Direct)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={card.video_url || ""}
+                    onChange={(e) => setCard({ ...card, video_url: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  />
+                </div>
+
+                {/* Custom Fields */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">
+                      Custom Information Fields
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setCard({ ...card, custom_fields: [...(card.custom_fields || []), { label: "", value: "" }] })}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0071E3] hover:underline"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Field</span>
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {(card.custom_fields || []).map((field: any, index: number) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Label (e.g. License #)"
+                          value={field.label}
+                          onChange={(e) => {
+                            const newFields = [...card.custom_fields];
+                            newFields[index].label = e.target.value;
+                            setCard({ ...card, custom_fields: newFields });
+                          }}
+                          className="w-1/3 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Value"
+                          value={field.value}
+                          onChange={(e) => {
+                            const newFields = [...card.custom_fields];
+                            newFields[index].value = e.target.value;
+                            setCard({ ...card, custom_fields: newFields });
+                          }}
+                          className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFields = card.custom_fields.filter((_: any, i: number) => i !== index);
+                            setCard({ ...card, custom_fields: newFields });
+                          }}
+                          className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {(!card.custom_fields || card.custom_fields.length === 0) && (
+                      <p className="text-[10px] text-gray-400">Add custom attributes to display on your profile.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-black/[0.06] pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Private Profile */}
+                  <div className="p-3 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="block text-xs font-bold text-[#1D1D1F]">Private Profile (PIN)</span>
+                        <span className="block text-[10px] text-[#86868B] leading-tight">Require a 4-digit PIN to view.</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={card.is_private || false}
+                          onChange={(e) => setCard({ ...card, is_private: e.target.checked })}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#34C759]"></div>
+                      </label>
+                    </div>
+                    {card.is_private && (
+                      <input
+                        type="text"
+                        placeholder="4-digit PIN"
+                        maxLength={4}
+                        value={card.pin_code || ""}
+                        onChange={(e) => setCard({ ...card, pin_code: e.target.value.replace(/[^0-9]/g, "") })}
+                        className="w-full p-2 rounded-xl bg-white border border-black/[0.05] text-xs font-mono focus:outline-none text-center tracking-widest mt-1"
+                      />
+                    )}
+                  </div>
+
+                  {/* White-Label */}
+                  <div className="p-3 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="block text-xs font-bold text-[#1D1D1F]">White-Label Mode</span>
+                      <span className="block text-[10px] text-[#86868B] leading-tight max-w-[140px]">Remove "Powered by" branding from the footer.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={card.white_label || false}
+                        onChange={(e) => setCard({ ...card, white_label: e.target.checked })}
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0071E3]"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5">
+          {autoSaving && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold animate-pulse border border-blue-100">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>Saving...</span>
+            </div>
+          )}
+          
           <Link
             href={`/${card.slug}`}
             target="_blank"
@@ -358,7 +570,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           </Link>
 
           <button
-            onClick={handleSave}
+            onClick={() => handleSave(false)}
             disabled={saving}
             className="px-5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
           >
@@ -516,6 +728,19 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                       className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                     />
                   </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Job Title (Arabic)
+                    </label>
+                    <input
+                      type="text"
+                      dir="auto"
+                      value={card.title_ar || ""}
+                      onChange={(e) => setCard({ ...card, title_ar: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                      placeholder="المسمى الوظيفي"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -538,6 +763,36 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     onChange={(e) => setCard({ ...card, bio: e.target.value })}
                     className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white resize-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                    Executive Bio (Arabic)
+                  </label>
+                  <textarea
+                    rows={3}
+                    dir="auto"
+                    value={card.bio_ar || ""}
+                    onChange={(e) => setCard({ ...card, bio_ar: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white resize-none"
+                    placeholder="نبذة مختصرة باللغة العربية"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#1D1D1F]">Show Networking Score</h3>
+                    <p className="text-[11px] text-[#86868B] mt-0.5 leading-snug max-w-[200px]">Display how many people have saved your contact.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={card.show_network_score ?? true}
+                      onChange={(e) => setCard({ ...card, show_network_score: e.target.checked })}
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#34C759]"></div>
+                  </label>
                 </div>
               </>
             )}
@@ -634,12 +889,90 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
                 <div className="h-[1px] bg-black/[0.06] w-full" />
 
-                {/* SUB-SECTION B: 22 COLOR PALETTES & THEMES */}
+                
+                <div className="h-[1px] bg-black/[0.06] w-full" />
+                
+                {/* SUB-SECTION: ADVANCED NETWORKING */}
+                <div className="space-y-4">
+                  <div>
+                    <span className="block text-xs font-bold uppercase tracking-wider text-[#1D1D1F] flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                      Advanced Networking Features
+                    </span>
+                    <span className="block text-[11px] text-[#86868B] mt-0.5">
+                      Icebreakers, Context Modes, and Cryptographic Identity.
+                    </span>
+                  </div>
+
+                  {/* Icebreakers */}
+                  <div className="p-4 bg-[#F5F5F7] rounded-2xl border border-black/[0.04]">
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-2">Icebreaker Prompts</label>
+                    <div className="flex gap-2 mb-3">
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Ask me about my Everest trip..."
+                        value={icebreakerInput}
+                        onChange={e => setIcebreakerInput(e.target.value)}
+                        className="flex-1 p-2.5 rounded-xl bg-white border border-black/[0.05] text-xs focus:outline-none"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if(icebreakerInput) {
+                            setIcebreakers([...icebreakers, icebreakerInput]);
+                            setIcebreakerInput("");
+                          }
+                        }}
+                        className="px-4 bg-[#0071E3] text-white text-[11px] font-bold rounded-xl"
+                      >Add</button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {icebreakers.map((ib, idx) => (
+                        <div key={idx} className="flex items-center gap-1 px-2.5 py-1 bg-white border border-black/10 rounded-full text-[10px] font-medium text-neutral-700">
+                          {ib}
+                          <button onClick={() => setIcebreakers(icebreakers.filter((_, i) => i !== idx))} type="button">
+                            <X className="w-3 h-3 text-neutral-400 hover:text-red-500" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Crypto Identity */}
+                  <div className="p-4 bg-[#F5F5F7] rounded-2xl border border-black/[0.04] flex items-center justify-between">
+                    <div>
+                      <span className="block text-[11px] font-semibold text-[#86868B] uppercase mb-0.5">Cryptographic Identity Badge</span>
+                      <span className="block text-[10px] text-neutral-500">Sign a wallet transaction to prove ownership and prevent impersonation.</span>
+                    </div>
+                    {hasWalletIdentity ? (
+                      <div className="px-3 py-1.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Verified
+                      </div>
+                    ) : (
+                      <button type="button" onClick={handleVerifyWallet} className="px-3 py-1.5 bg-[#1D1D1F] text-white text-[10px] font-bold rounded-full hover:bg-black transition">
+                        Connect Wallet
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Context Modes (Teaser) */}
+                  <div className="p-4 bg-[#F5F5F7] rounded-2xl border border-black/[0.04] flex items-center justify-between">
+                    <div>
+                      <span className="block text-[11px] font-semibold text-[#86868B] uppercase mb-0.5">Context-Mode Switching</span>
+                      <span className="block text-[10px] text-neutral-500">Create "Investor" or "Casual" variants of this card (active in URL via ?mode=investor).</span>
+                    </div>
+                    <button type="button" onClick={() => alert("Pro Feature: Mode switching enabled for your account!")} className="px-3 py-1.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">
+                      Configure Modes
+                    </button>
+                  </div>
+                </div>
+
+                {/* SUB-SECTION B: COLOR PALETTES & THEMES */}
                 <div className="space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <span className="block text-xs font-bold uppercase tracking-wider text-[#1D1D1F]">
-                        B. Select Color Palette ({themeList.length} Handcrafted Themes)
+                        B. Select Color Palette ({allThemesList.length} Handcrafted & Custom Themes)
                       </span>
                       <span className="block text-[11px] text-[#86868B]">
                         Each theme features distinct glassmorphism, accent glows, and contrast tokens.
@@ -662,13 +995,14 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   {/* Category Filter Pills */}
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {([
-                      { id: "all", label: "All Themes (22)" },
-                      { id: "dark", label: "Dark OLED" },
-                      { id: "light", label: "Light & Frost" },
+                      { id: "all", label: `All (${allThemesList.length})` },
+                      { id: "creative", label: "Creative" },
                       { id: "luxury", label: "Luxury" },
                       { id: "cyber", label: "Cyber & Tech" },
                       { id: "editorial", label: "Editorial" },
-                      { id: "creative", label: "Creative" },
+                      { id: "dark", label: "Dark OLED" },
+                      { id: "light", label: "Light & Frost" },
+                      { id: "custom", label: "Custom" },
                     ] as const).map((cat) => (
                       <button
                         key={cat.id}
@@ -735,6 +1069,96 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* SUB-SECTION C: PREMIUM CUSTOMIZATIONS */}
+                <div className="pt-4 border-t border-black/[0.06] space-y-4">
+                  <div>
+                    <span className="block text-xs font-bold uppercase tracking-wider text-[#1D1D1F] flex items-center gap-1.5">
+                      C. Premium Customizations
+                      <span className="bg-[#EAB308] text-white text-[9px] px-1.5 py-0.5 rounded uppercase tracking-widest ml-1">Pro</span>
+                    </span>
+                    <span className="block text-[11px] text-[#86868B] mt-0.5">
+                      Override the theme with your own brand colors or background image.
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Custom Image Upload */}
+                    <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
+                      <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-2">
+                        Background Image
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-12 h-16 rounded-lg border border-black/10 overflow-hidden bg-cover bg-center bg-gray-200"
+                          style={{ backgroundImage: card.custom_background_image ? `url(${card.custom_background_image})` : 'none' }}
+                        />
+                        <div className="flex-1">
+                          <input 
+                            type="text" 
+                            placeholder="https://image-url.jpg" 
+                            className="w-full text-xs p-2 rounded-lg border border-black/10 mb-2"
+                            value={card.custom_background_image || ''}
+                            onChange={e => setCard({ ...card, custom_background_image: e.target.value })}
+                          />
+                          <p className="text-[9px] text-gray-500 leading-tight">Paste an image URL. It will span the entire background behind your card.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Custom Brand Colors */}
+                    <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04] space-y-3">
+                      <label className="block text-[11px] font-semibold text-[#86868B] uppercase">
+                        Brand Colors Override
+                      </label>
+                      
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="color" 
+                          className="w-6 h-6 p-0 border-0 rounded cursor-pointer" 
+                          value={card.custom_primary_color || '#000000'}
+                          onChange={e => setCard({ ...card, custom_primary_color: e.target.value })}
+                        />
+                        <div className="flex-1 flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-gray-700">Primary Color</span>
+                          {card.custom_primary_color && (
+                            <button onClick={() => setCard({ ...card, custom_primary_color: null })} className="text-[9px] text-red-500 hover:underline">Clear</button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="color" 
+                          className="w-6 h-6 p-0 border-0 rounded cursor-pointer" 
+                          value={card.custom_secondary_color || '#ffffff'}
+                          onChange={e => setCard({ ...card, custom_secondary_color: e.target.value })}
+                        />
+                        <div className="flex-1 flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-gray-700">Secondary Color</span>
+                          {card.custom_secondary_color && (
+                            <button onClick={() => setCard({ ...card, custom_secondary_color: null })} className="text-[9px] text-red-500 hover:underline">Clear</button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="color" 
+                          className="w-6 h-6 p-0 border-0 rounded cursor-pointer" 
+                          value={card.custom_accent_color || '#0071e3'}
+                          onChange={e => setCard({ ...card, custom_accent_color: e.target.value })}
+                        />
+                        <div className="flex-1 flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-gray-700">Accent Color</span>
+                          {card.custom_accent_color && (
+                            <button onClick={() => setCard({ ...card, custom_accent_color: null })} className="text-[9px] text-red-500 hover:underline">Clear</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -904,7 +1328,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                       <input
                         type="number"
                         value={card.booking_slot_duration}
-                        onChange={(e) => setCard({ ...card, booking_slot_duration: parseInt(e.target.value) || 30 })}
+                        onChange={(e) => setCard({ ...card, booking_slot_duration: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
                         className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                       />
                     </div>
@@ -942,13 +1366,14 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     </div>
                     <input
                       type="url"
-                      placeholder={`https://${social.id}.com/...`}
+                      placeholder={social.id === "other" ? "https://your-custom-link.com" : `https://${social.id}.com/...`}
                       value={social.url || ""}
                       onChange={(e) => updateSocialUrl(social.id, e.target.value)}
                       className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                     />
                   </div>
                 ))}
+                <p className="text-[10px] text-gray-400 pt-1">Use "Other / Custom" to add any link not listed above.</p>
               </div>
             )}
           </div>
@@ -962,14 +1387,31 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
           return (
             <div id="preview-canvas" className="lg:col-span-5 sticky top-20">
+              <style>{`
+                ${card.custom_primary_color ? `.custom-bg { background-color: ${card.custom_primary_color} !important; }` : ''}
+                ${card.custom_secondary_color ? `.custom-card-bg { background-color: ${card.custom_secondary_color} !important; border-color: transparent !important; }` : ''}
+                ${card.custom_accent_color ? `
+                  .custom-accent-bg { background-color: ${card.custom_accent_color} !important; }
+                  .custom-accent-text { color: ${card.custom_accent_color} !important; }
+                ` : ''}
+              `}</style>
+              
               <div className="text-center pb-2 flex items-center justify-center gap-1.5">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
                   Live Preview: {activeTemplateDef.name} ({pt.name})
                 </span>
               </div>
 
-              {/* Device Mockup Canvas */}
-              <div className={`w-full max-w-sm mx-auto ${pt.cardBg} border ${pt.border} rounded-[36px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14)] flex flex-col items-center space-y-4 transition-all duration-300 relative overflow-hidden`}>
+              {/* Simulated Device Background */}
+              <div 
+                className={`w-full max-w-sm mx-auto rounded-[36px] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.14)] flex flex-col items-center space-y-4 transition-all duration-300 relative overflow-hidden ${pt.bg}`}
+                style={card.custom_background_image ? { backgroundImage: `url(${card.custom_background_image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              >
+                {!card.custom_background_image && <div className={`absolute inset-0 ${pt.gradient} opacity-50 pointer-events-none`} />}
+                <div className={`absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none mix-blend-overlay`} />
+                
+                {/* Device Mockup Canvas (The Card Itself) */}
+                <div className={`w-full ${pt.cardBg} border ${pt.border} rounded-3xl p-5 shadow-lg flex flex-col items-center space-y-4 relative z-10`}>
                 
                 {/* Template 1 & Default: Classic Apple Mockup */}
                 {template === "classic-segmented" && (
@@ -1192,12 +1634,22 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                   </div>
                 )}
 
+                </div>
               </div>
             </div>
           );
         })()}
 
       </div>
+
+      {imageToCrop && (
+        <ImageCropModal
+          isOpen={!!imageToCrop}
+          onClose={() => setImageToCrop(null)}
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+        />
+      )}
 
       {/* AI Bio Enhancement Modal */}
       <AiBioModal
@@ -1239,7 +1691,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         </button>
 
         <button
-          onClick={handleSave}
+          onClick={() => handleSave(false)}
           disabled={saving}
           className="px-5 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition active:scale-95 disabled:opacity-50 min-h-[44px]"
         >

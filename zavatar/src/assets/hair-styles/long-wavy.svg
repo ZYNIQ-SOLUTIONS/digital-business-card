@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-long-wavy" class="hair-style">
+    <!-- Back Hair Volume -->
+    <path class="hair-back" d="M 140 180 C 130 250, 110 360, 130 420 C 150 440, 170 380, 175 320 L 337 320 C 342 380, 362 440, 382 420 C 402 360, 382 250, 372 180 Z" fill="#181818" />
+    <!-- Top & Front Locks -->
+    <path class="hair-base" d="M 155 170 C 150 95, 205 70, 256 70 C 307 70, 362 95, 357 170 C 357 260, 368 350, 350 410 C 335 410, 330 330, 332 240 C 332 165, 310 135, 256 135 C 202 135, 180 165, 180 240 C 182 330, 177 410, 162 410 C 144 350, 155 260, 155 170 Z" fill="#1e1e1e" />
+    <!-- Wave Highlights -->
+    <path d="M 188 150 C 220 170, 240 145, 275 160 C 260 135, 220 125, 188 150 Z" fill="#2d2d2d" />
+  </g>
+</svg>

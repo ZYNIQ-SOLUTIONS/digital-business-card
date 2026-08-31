@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-side-part" class="hair-style">
+    <!-- Side Part: Asymmetrical suave executive comb-over -->
+    <path class="hair-base" d="M 155 170 C 150 90, 205 60, 256 60 C 310 60, 360 90, 355 170 C 355 195, 345 205, 335 185 C 330 150, 310 135, 256 135 C 205 135, 185 145, 178 185 C 172 205, 155 195, 155 170 Z" fill="#1e1e1e" />
+    <!-- Comb-over swoop -->
+    <path class="hair-swoop" d="M 180 130 C 230 90, 310 110, 342 155 C 325 130, 270 110, 220 120 C 195 125, 185 130, 180 130 Z" fill="#2d2d2d" />
+    <!-- Sideburns -->
+    <polygon points="166,170 176,170 174,215 168,215" fill="#1e1e1e" />
+    <polygon points="346,170 336,170 338,210 344,210" fill="#1e1e1e" />
+  </g>
+</svg>

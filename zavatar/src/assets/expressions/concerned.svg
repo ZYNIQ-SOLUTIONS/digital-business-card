@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="expression-concerned" class="expression">
+    <!-- Concerned Angled Eyebrows (upturned in center) -->
+    <path d="M 195 204 C 210 200, 230 190, 240 188" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <path d="M 317 204 C 302 200, 282 190, 272 188" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <!-- Concerned Eyes -->
+    <g class="eyes">
+      <ellipse cx="215" cy="225" rx="14" ry="10" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="215" cy="223" r="5.5" fill="#1e293b" />
+      <circle cx="217" cy="221" r="2" fill="#ffffff" />
+      <ellipse cx="297" cy="225" rx="14" ry="10" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="297" cy="223" r="5.5" fill="#1e293b" />
+      <circle cx="299" cy="221" r="2" fill="#ffffff" />
+    </g>
+    <!-- Slightly Downturned Concerned Mouth -->
+    <path d="M 235 320 C 245 314, 267 314, 277 320" stroke="#78350f" stroke-width="3.5" stroke-linecap="round" fill="none" />
+  </g>
+</svg>

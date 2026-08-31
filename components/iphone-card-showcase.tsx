@@ -178,7 +178,7 @@ export function IphoneCardShowcase() {
       </div>
 
       {/* REALISTIC TITANIUM APPLE iPHONE 16 PRO DEVICE FRAME */}
-      <div className="relative mx-auto flex items-center justify-center">
+      <div className="relative mx-auto flex items-center justify-center transform scale-[0.8] sm:scale-100 origin-top">
         
         {/* Dynamic Ambient Glow Behind iPhone Chassis */}
         <div 

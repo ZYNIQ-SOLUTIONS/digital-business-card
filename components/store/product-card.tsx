@@ -6,6 +6,7 @@ import { useStoreI18n, storeTranslations, PRODUCT_TRANSLATIONS } from '@/lib/sto
 import { Plus, Check, Star, Eye } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react';
+import { TiltCard } from '@/components/tilt-card';
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCartStore();
@@ -31,10 +32,10 @@ export function ProductCard({ product }: { product: Product }) {
   const productUrl = `/store/product?id=${product.id}`;
 
   return (
-    <div 
-      dir={isRTL ? "rtl" : "ltr"}
-      className="bg-white rounded-[28px] p-5 flex flex-col group border border-black/[0.06] hover:border-black/[0.18] shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden text-left"
+    <TiltCard 
+      className="bg-white rounded-[28px] p-5 flex flex-col group border border-black/[0.06] hover:border-black/[0.18] shadow-sm hover:shadow-2xl transition-all duration-300 relative overflow-hidden text-left"
     >
+      <div dir={isRTL ? "rtl" : "ltr"} className="flex flex-col h-full w-full">
       {/* Product Image & Link */}
       <Link href={productUrl} className="block relative aspect-square w-full mb-5 bg-[#F5F5F7] rounded-2xl overflow-hidden cursor-pointer">
         {product.image_url ? (
@@ -117,6 +118,7 @@ export function ProductCard({ product }: { product: Product }) {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </TiltCard>
   );
 }

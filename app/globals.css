@@ -62,3 +62,12 @@ body {
   transform: scale(1.5);
   fill: var(--color-text-main);
 }
+
+/* ── Zavatar Studio utilities ────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-short-straight" class="hair-style">
+    <!-- Short Straight: Clean cropped modern style with front texture -->
+    <path class="hair-base" d="M 160 175 C 155 105, 205 75, 256 75 C 307 75, 357 105, 352 175 C 352 195, 340 205, 335 185 C 330 150, 315 130, 256 130 C 197 130, 182 150, 177 185 C 172 205, 160 195, 160 175 Z" fill="#1e1e1e" />
+    <path class="hair-fringe" d="M 180 145 C 200 165, 220 145, 250 160 C 275 145, 305 160, 330 142 C 310 120, 275 110, 250 110 C 220 110, 195 125, 180 145 Z" fill="#2d2d2d" />
+    <!-- Sideburns -->
+    <polygon points="166,170 176,170 174,215 168,215" fill="#1e1e1e" />
+    <polygon points="346,170 336,170 338,215 344,215" fill="#1e1e1e" />
+  </g>
+</svg>

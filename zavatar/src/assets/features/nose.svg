@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="feature-nose" class="feature">
+    <!-- Nose Bridge & Nostril Curves -->
+    <path d="M 253 235 L 253 268 C 253 273, 245 275, 242 275" stroke="#000000" stroke-opacity="0.15" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <path d="M 242 275 C 248 279, 264 279, 270 275" stroke="#000000" stroke-opacity="0.2" stroke-width="2.5" stroke-linecap="round" fill="none" />
+    <!-- Nostril Accents -->
+    <circle cx="245" cy="273" r="1.8" fill="#000000" fill-opacity="0.2" />
+    <circle cx="267" cy="273" r="1.8" fill="#000000" fill-opacity="0.2" />
+  </g>
+</svg>

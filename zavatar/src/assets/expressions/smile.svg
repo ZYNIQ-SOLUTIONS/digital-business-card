@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="expression-smile" class="expression">
+    <!-- Smiling Eyebrows (gentle lift) -->
+    <path d="M 195 195 C 210 190, 230 192, 240 198" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <path d="M 317 195 C 302 190, 282 192, 272 198" stroke="#1f2937" stroke-width="4" stroke-linecap="round" fill="none" />
+    <!-- Smiling Eyes (friendly slight squint) -->
+    <g class="eyes">
+      <ellipse cx="215" cy="225" rx="14" ry="8.5" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="215" cy="224" r="6" fill="#1e293b" />
+      <circle cx="217" cy="222" r="2.2" fill="#ffffff" />
+      <ellipse cx="297" cy="225" rx="14" ry="8.5" fill="#ffffff" stroke="#1f2937" stroke-width="2" />
+      <circle cx="297" cy="224" r="6" fill="#1e293b" />
+      <circle cx="299" cy="222" r="2.2" fill="#ffffff" />
+    </g>
+    <!-- Warm Smile Mouth -->
+    <path d="M 230 310 C 242 328, 270 328, 282 310" stroke="#78350f" stroke-width="3.5" stroke-linecap="round" fill="none" />
+    <!-- Smile Dimples -->
+    <path d="M 226 308 C 228 312, 228 314, 226 316" stroke="#78350f" stroke-width="2" stroke-linecap="round" fill="none" />
+    <path d="M 286 308 C 284 312, 284 314, 286 316" stroke="#78350f" stroke-width="2" stroke-linecap="round" fill="none" />
+  </g>
+</svg>

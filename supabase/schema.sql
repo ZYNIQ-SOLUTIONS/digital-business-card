@@ -248,6 +248,8 @@ create table if not exists public.organizations (
   name text not null,
   domain text,
   logo_url text,
+  crm_webhook_url text,
+  crm_provider text,
   created_at timestamptz default now() not null
 );
 
@@ -502,3 +504,138 @@ create policy "Users can insert their own AI usage"
 
 -- Notify schema reload
 notify pgrst, 'reload schema';
+
+-- Add is_deleted to cards
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS is_deleted boolean DEFAULT false;
+
+
+-- Create card_connections table for saving cards
+create table if not exists public.card_connections (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  connected_card_id uuid references public.cards(id) on delete cascade not null,
+  created_at timestamptz default now() not null,
+  unique(user_id, connected_card_id)
+);
+
+
+-- Add premium custom color support
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS custom_primary_color text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS custom_secondary_color text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS custom_accent_color text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS custom_background_image text;
+
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS show_network_score boolean DEFAULT true;
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS crm_webhook_url text;
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS crm_provider text;
+-- =============================================================================
+-- CUSTOM THEMES SCHEMA & RLS POLICIES FOR ADMIN THEME STUDIO
+-- =============================================================================
+
+create table if not exists public.custom_themes (
+  id text primary key,
+  name text not null,
+  description text default '' not null,
+  is_dark boolean default true not null,
+  category text default 'creative' not null,
+  tokens jsonb not null,
+  layout_config jsonb default '{"style":"classic-segmented","sections":["hero","actions","contact","socials","nfc"]}'::jsonb,
+  is_published boolean default true not null,
+  is_featured boolean default false not null,
+  preview_bg text default '#0f172a',
+  preview_accent text default '#8b5cf6',
+  preview_secondary text default '#334155',
+  custom_css text default '',
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+-- Enable RLS
+alter table public.custom_themes enable row level security;
+
+-- 1. Public / Authenticated read for published themes
+drop policy if exists "Anyone can read published custom themes" on public.custom_themes;
+create policy "Anyone can read published custom themes"
+  on public.custom_themes for select
+  using (is_published = true or exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'admin'
+  ));
+
+-- 2. Admins can insert custom themes
+drop policy if exists "Admins can insert custom themes" on public.custom_themes;
+create policy "Admins can insert custom themes"
+  on public.custom_themes for insert
+  with check (exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'admin'
+  ));
+
+-- 3. Admins can update custom themes
+drop policy if exists "Admins can update custom themes" on public.custom_themes;
+create policy "Admins can update custom themes"
+  on public.custom_themes for update
+  using (exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'admin'
+  ));
+
+-- 4. Admins can delete custom themes
+drop policy if exists "Admins can delete custom themes" on public.custom_themes;
+create policy "Admins can delete custom themes"
+  on public.custom_themes for delete
+  using (exists (
+    select 1 from public.profiles
+    where profiles.id = auth.uid() and profiles.role = 'admin'
+  ));
+
+-- Add trigger for updated_at
+create or replace function public.handle_updated_at_custom_themes()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists set_custom_themes_updated_at on public.custom_themes;
+create trigger set_custom_themes_updated_at
+  before update on public.custom_themes
+  for each row execute function public.handle_updated_at_custom_themes();
+
+-- =============================================================================
+-- MIGRATION: ADD MARKET RESEARCH FEATURES
+-- =============================================================================
+
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS custom_fields jsonb DEFAULT []::jsonb;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS video_url text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS bio_ar text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS title_ar text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS white_label boolean DEFAULT false;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS custom_domain text;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS is_private boolean DEFAULT false;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS pin_code text;
+
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS brand_lock boolean DEFAULT false;
+
+-- Notify schema reload
+notify pgrst, reload schema;
+
+
+-- =============================================================================
+-- MIGRATION: ADVANCED NETWORKING FEATURES (7 NEW IDEAS)
+-- =============================================================================
+
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS modes jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS temporary_layers jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS crypto_identity jsonb DEFAULT null;
+ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS icebreakers jsonb DEFAULT '[]'::jsonb;
+
+-- For mutual connections & meeting memory:
+ALTER TABLE public.card_connections ADD COLUMN IF NOT EXISTS meeting_note text;
+ALTER TABLE public.card_connections ADD COLUMN IF NOT EXISTS meeting_location text;
+ALTER TABLE public.card_connections ADD COLUMN IF NOT EXISTS last_interacted_at timestamptz DEFAULT now();
+
+-- Notify schema reload
+notify pgrst, reload schema;

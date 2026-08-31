@@ -1,0 +1,1244 @@
+diff --git a/app/[slug]/public-card-client.tsx b/app/[slug]/public-card-client.tsx
+index 7840ae1..8a575ac 100644
+--- a/app/[slug]/public-card-client.tsx
++++ b/app/[slug]/public-card-client.tsx
+@@ -1,9 +1,21 @@
+ /* eslint-disable */
+ "use client";
+ 
++// Crypto Verified Badge Component
++const CryptoBadge = ({ identity }: { identity?: any }) => {
++  if (!identity || !identity.signature) return null;
++  return (
++    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 text-[9px] font-bold uppercase tracking-wider ml-2 align-middle cursor-help" title={`Verified Wallet: ${identity.walletAddress}`}>
++      <ShieldCheck className="w-3 h-3" />
++      Verified Identity
++    </div>
++  );
++};
++
+ import React, { useState } from "react";
+ import { QRCodeSVG } from "qrcode.react";
+ import Link from "next/link";
++import { useRouter, useSearchParams } from "next/navigation";
+ import {
+   Phone,
+   Mail,
+@@ -30,12 +42,18 @@ import {
+   Zap,
+   Award,
+   Layers,
+-  Send
++  Send,
++  Users
+ } from "lucide-react";
+ import { themes } from "@/lib/theme";
++import { createClient } from "@/lib/supabase/client";
+ import { ExchangeModal } from "@/components/exchange-modal";
+ import { BookingModal } from "@/components/booking-modal";
+-
++import { AddToHomescreenModal } from "@/components/add-to-homescreen-modal";
++import { AvatarDisplay } from "@/components/zavatar/AvatarDisplay";
++import { ZavatarUpsellCard } from "@/components/zavatar/ZavatarUpsellCard";
++import { WalletButtons } from "@/components/wallet-buttons";
++import { MeetingMemoryModal } from "@/components/meeting-memory-modal";
+ import {
+   AppleIcon,
+   AppleWalletIcon,
+@@ -68,13 +86,70 @@ interface PublicCardClientProps {
+   initialCard: any;
+   slug: string;
+   fallbackMode?: boolean;
++  connectionsCount?: number;
+ }
+ 
++const NetworkScorePill = ({ count, show, t }: { count: number, show: boolean, t: any }) => {
++  if (!show || count <= 0) return null;
++  return (
++    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${t.pillBg} border ${t.pillBorder} shadow-sm shrink-0 ml-1`} title={`${count} people have connected with this card`}>
++      <Users className={`w-3.5 h-3.5 ${t.accent}`} />
++      <span className={`text-[10px] font-bold ${t.textMain}`}>{count} Connections</span>
++    </div>
++  );
++};
++
++const getSocialDeepLink = (socialId: string, url: string, isAppleDevice: boolean): string | null => {
++  if (!url) return null;
++  let username = "";
++  try {
++    const urlObj = new URL(url);
++    const pathParts = urlObj.pathname.split('/').filter(Boolean);
++    username = pathParts[0] || "";
++    if (socialId === "whatsapp") {
++      const phone = urlObj.pathname.replace('/', '') || urlObj.searchParams.get('phone');
++      if (phone) return `whatsapp://send?phone=${phone}`;
++    }
++  } catch {
++    username = url.replace('@', '');
++  }
++
++  if (!username) return null;
++
++  switch (socialId) {
++    case "instagram": return isAppleDevice ? `instagram://user?username=${username}` : `intent://instagram.com/_u/${username}/#Intent;package=com.instagram.android;scheme=https;end`;
++    case "x":
++    case "twitter": return isAppleDevice ? `twitter://user?screen_name=${username}` : `intent://twitter.com/${username}#Intent;package=com.twitter.android;scheme=https;end`;
++    case "linkedin": return isAppleDevice ? `linkedin://profile/${username}` : `intent://linkedin.com/in/${username}#Intent;package=com.linkedin.android;scheme=https;end`;
++    case "facebook": return isAppleDevice ? `fb://profile/${username}` : `intent://facebook.com/${username}#Intent;package=com.facebook.katana;scheme=https;end`;
++    case "tiktok": return isAppleDevice ? `snssdk1233://user/profile/${username}` : `intent://tiktok.com/@${username}#Intent;package=com.zhiliaoapp.musically;scheme=https;end`;
++    case "youtube": return isAppleDevice ? `youtube://www.youtube.com/${username}` : `intent://youtube.com/${username}#Intent;package=com.google.android.youtube;scheme=https;end`;
++    default: return null;
++  }
++};
++
++const handleSocialClick = (e: React.MouseEvent<HTMLAnchorElement>, socialId: string, url: string, isAppleDevice: boolean) => {
++  const deepLink = getSocialDeepLink(socialId, url, isAppleDevice);
++  if (!deepLink) return; // Fallback to standard href
++  
++  e.preventDefault();
++  window.location.href = deepLink;
++  
++  setTimeout(() => {
++    if (document.visibilityState !== "hidden") {
++      window.open(url, "_blank");
++    }
++  }, 750);
++};
++
+ export default function PublicCardClient({
+   initialCard,
+   slug,
+   fallbackMode,
++  connectionsCount = 0,
+ }: PublicCardClientProps) {
++  const searchParams = useSearchParams();
++  const modeId = searchParams?.get("mode");
+   const card = initialCard || {
+     id: "demo-card",
+     full_name: "Ibrahim El Khalil",
+@@ -113,9 +188,37 @@ export default function PublicCardClient({
+       { id: "medium", name: "Medium", url: "https://medium.com/@", active: true },
+     ],
+   };
++  // Apply context mode overrides if a mode is active
++  if (modeId && card.modes && Array.isArray(card.modes)) {
++    const activeMode = card.modes.find((m: any) => m.id === modeId && m.active);
++    if (activeMode && activeMode.profileOverrides) {
++      Object.assign(card, activeMode.profileOverrides);
++    }
++  }
++
++  // Filter self-expiring layers
++  const activeLayers = (card.temporary_layers || []).filter((layer: any) => {
++    return !layer.expiresAt || new Date(layer.expiresAt) > new Date();
++  });
++  
+ 
+   const activeTheme = card.theme || "apple-light";
+-  const t = themes[activeTheme] || themes["apple-light"];
++  const baseTheme = themes[activeTheme] || themes["apple-light"];
++  
++  // Patch theme tokens to inject custom premium classes if defined
++  const t = { ...baseTheme };
++  if (card.custom_primary_color) t.bg += " custom-bg";
++  if (card.custom_secondary_color) {
++    t.cardBg += " custom-card-bg";
++    t.headerBg += " custom-card-bg";
++    t.tabBg += " custom-card-bg";
++  }
++  if (card.custom_accent_color) {
++    t.accentBg += " custom-accent-bg";
++    t.accent += " custom-accent-text";
++    t.iconCircleColor += " custom-accent-text";
++  }
++  
+   const templateLayout = card.template_layout || "classic-segmented";
+ 
+   const [activeTab, setActiveTab] = useState<"card" | "about" | "contact" | "nfc">("card");
+@@ -124,36 +227,47 @@ export default function PublicCardClient({
+   const [isWalletLoading, setIsWalletLoading] = useState(false);
+   const [walletFeedback, setWalletFeedback] = useState<string | null>(null);
+   const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
++  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+   const [isAppleDevice, setIsAppleDevice] = useState(true);
++  const [visitor, setVisitor] = useState<any>(null);
++  const [isConnecting, setIsConnecting] = useState(false);
++  const [connectionSuccess, setConnectionSuccess] = useState(false);
++  const [hasUnlocked, setHasUnlocked] = useState(card.is_private !== true);
++  const [enteredPin, setEnteredPin] = useState("");
++  const [pinError, setPinError] = useState(false);
++  
++  const supabase = createClient();
++  const router = useRouter();
+ 
+   React.useEffect(() => {
+     setIsAppleDevice(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent));
+-  }, []);
+-
+-  // Generate RFC vCard 3.0 String from dynamic card
+-  const vCardString = [
+-    "BEGIN:VCARD",
+-    "VERSION:3.0",
+-    `FN:${card.full_name}`,
+-    `ORG:${card.company}`,
+-    `TITLE:${card.title}`,
+-    `TEL;TYPE=CELL,VOICE:${card.phone_primary}`,
+-    `EMAIL;TYPE=INTERNET,WORK:${card.email_work}`,
+-    `URL:${card.website_primary}`,
+-    card.office_address && card.office_address.street
+-      ? `ADR;TYPE=WORK:;;${card.office_address.street};${card.office_address.city};${card.office_address.region};${card.office_address.postalCode};${card.office_address.country}`
+-      : "",
+-    Array.isArray(card.socials)
+-      ? card.socials
+-          .filter((s: any) => s.active && s.url)
+-          .map((s: any) => `X-SOCIALPROFILE;type=${s.id}:${s.url}`)
+-          .join("\n")
+-      : "",
+-    "END:VCARD",
+-  ]
+-    .filter(Boolean)
+-    .join("\n");
++    
++    // Check if visitor is logged in
++    supabase.auth.getUser().then(({ data: { user } }) => {
++      if (user) setVisitor(user);
++    });
++  }, [supabase.auth]);
++
++  const handleConnectClick = async () => {
++    if (!visitor) {
++      router.push(`/auth?returnTo=${encodeURIComponent(slug)}`);
++      return;
++    }
++    
++    setIsConnecting(true);
++    // Insert into the new card_connections table
++    const { error } = await supabase.from('card_connections').insert({
++      user_id: visitor.id,
++      connected_card_id: card.id
++    });
++    
++    if (!error || error.code === '23505') { // 23505 is unique violation (already connected)
++      setConnectionSuccess(true);
++      setTimeout(() => setConnectionSuccess(false), 3000);
++    }
++    setIsConnecting(false);
++  };
+ 
+   const handleCopyText = async (text: string, key: string) => {
+     try {
+@@ -165,7 +279,51 @@ export default function PublicCardClient({
+     }
+   };
+ 
+-  const handleDownloadVCard = () => {
++
++  const handleDownloadVCard = async () => {
++    let photoStr = "";
++    if (card.avatar_url) {
++      try {
++        const res = await fetch(card.avatar_url);
++        const blob = await res.blob();
++        const reader = new FileReader();
++        const base64Promise = new Promise<string>((resolve) => {
++          reader.onloadend = () => resolve(reader.result as string);
++        });
++        reader.readAsDataURL(blob);
++        const base64data = await base64Promise;
++        // Strip out the data URL prefix e.g. "data:image/jpeg;base64,"
++        const b64 = base64data.split(',')[1];
++        if (b64) {
++          photoStr = `PHOTO;ENCODING=b;TYPE=JPEG:${b64}`;
++        }
++      } catch (err) {
++        console.warn("Could not fetch or encode avatar for vCard", err);
++      }
++    }
++
++    const vCardString = [
++      "BEGIN:VCARD",
++      "VERSION:3.0",
++      `FN:${card.full_name}`,
++      `ORG:${card.company}`,
++      `TITLE:${card.title}`,
++      photoStr,
++      `TEL;TYPE=CELL,VOICE:${card.phone_primary}`,
++      `EMAIL;TYPE=INTERNET,WORK:${card.email_work}`,
++      `URL:${card.website_primary}`,
++      card.office_address && card.office_address.street
++        ? `ADR;TYPE=WORK:;;${card.office_address.street};${card.office_address.city};${card.office_address.region};${card.office_address.postalCode};${card.office_address.country}`
++        : "",
++      Array.isArray(card.socials)
++        ? card.socials
++            .filter((s: any) => s.active && s.url)
++            .map((s: any) => `X-SOCIALPROFILE;type=${s.id}:${s.url}`)
++            .join("\n")
++        : "",
++      "END:VCARD",
++    ].filter(Boolean).join("\n");
++
+     const blob = new Blob([vCardString], { type: "text/vcard;charset=utf-8" });
+     const url = URL.createObjectURL(blob);
+     const link = document.createElement("a");
+@@ -262,20 +420,77 @@ export default function PublicCardClient({
+ 
+   const avatarElement = (
+     <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-[2.5rem] ${t.avatarBg} border-4 ${t.avatarBorder} shadow-[0_16px_40px_rgba(0,0,0,0.15)] flex items-center justify-center relative overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.25)]`}>
+-      {card.avatar_url || card.profile_image_url ? (
+-        <img src={card.avatar_url || card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+-      ) : (
+-        <span className={`text-4xl sm:text-5xl font-bold tracking-tighter ${t.textMain}`}>
+-          {card.avatar_initials || "IK"}
+-        </span>
+-      )}
++      <AvatarDisplay
++        avatarId={card.avatar_id}
++        fallbackUrl={card.avatar_url || card.profile_image_url}
++        initials={card.avatar_initials || "IK"}
++        alt={card.full_name}
++        initialsClassName={`text-4xl sm:text-5xl font-bold tracking-tighter ${t.textMain}`}
++      />
+       <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+     </div>
+   );
+ 
++  if (!hasUnlocked) {
++    return (
++      <div className={`min-h-screen ${t.bg} flex flex-col items-center justify-center p-6 text-center selection:bg-black selection:text-white font-sans`}>
++        <div className={`w-full max-w-sm ${t.cardBg} rounded-[32px] p-8 border ${t.border} shadow-[0_20px_50px_rgba(0,0,0,0.12)] space-y-6 relative overflow-hidden`}>
++           <div className={`w-20 h-20 mx-auto rounded-2xl ${t.avatarBg} border-2 ${t.avatarBorder} overflow-hidden shadow-md flex items-center justify-center relative z-10`}>
++              <ShieldCheck className={`w-8 h-8 ${t.accent}`} />
++           </div>
++           <div className="relative z-10">
++              <h2 className={`text-xl font-bold tracking-tight ${t.textMain}`}>Private Profile</h2>
++              <><p className={`text-sm font-medium ${t.textSecondary} mt-2`}>Enter PIN to view {card.full_name}'s card</p>
++           </div>
++           <div className="space-y-4 relative z-10 pt-2">
++              <input
++                 type="password"
++                 maxLength={4}
++                 value={enteredPin}
++                 onChange={(e) => {
++                   setEnteredPin(e.target.value.replace(/[^0-9]/g, ""));
++                   setPinError(false);
++                 }}
++                 className={`w-full p-4 rounded-2xl text-center text-3xl font-mono tracking-widest border border-black/10 focus:outline-none focus:border-black bg-black/5 dark:bg-white/5 ${t.textMain}`}
++                 placeholder="••••"
++                 pattern="[0-9]*"
++                 inputMode="numeric"
++              />
++              {pinError && <p className="text-red-500 text-xs font-semibold uppercase tracking-wider">Incorrect PIN</p>}
++              <button
++                 onClick={() => {
++                   if (enteredPin === card.pin_code) {
++                     setHasUnlocked(true);
++                   } else {
++                     setPinError(true);
++                     setEnteredPin("");
++                   }
++                 }}
++                 className={`w-full py-4 rounded-xl ${t.accentBg} text-white font-bold text-[15px] shadow-sm transition active:scale-95`}
++              >
++                Unlock Card
++              </button>
++           </div>
++        </div>
++      </div>
++    );
++  }
++
+   return (
+-    <div className={`min-h-screen ${t.bg} selection:bg-black selection:text-white flex flex-col font-sans relative pb-16`}>
+-      <div className={`fixed inset-0 ${t.gradient} opacity-50 pointer-events-none`} />
++    <div 
++      className={`min-h-screen ${t.bg} selection:bg-black selection:text-white flex flex-col font-sans relative pb-16`}
++      style={card.custom_background_image ? { backgroundImage: `url(${card.custom_background_image})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' } : undefined}
++    >
++      <style>{`
++        ${card.custom_primary_color ? `.custom-bg { background-color: ${card.custom_primary_color} !important; }` : ''}
++        ${card.custom_secondary_color ? `.custom-card-bg { background-color: ${card.custom_secondary_color} !important; border-color: transparent !important; }` : ''}
++        ${card.custom_accent_color ? `
++          .custom-accent-bg { background-color: ${card.custom_accent_color} !important; }
++          .custom-accent-text { color: ${card.custom_accent_color} !important; }
++        ` : ''}
++      `}</style>
++      
++      {!card.custom_background_image && <div className={`fixed inset-0 ${t.gradient} opacity-50 pointer-events-none`} />}
+       <div className={`fixed inset-0 bg-[url('/noise.png')] opacity-[0.03] pointer-events-none mix-blend-overlay`} />
+ 
+       <header className="w-full max-w-md mx-auto h-6 z-20 sticky top-2" />
+@@ -293,10 +508,10 @@ export default function PublicCardClient({
+             </div>
+           </div>
+ 
+-          {/* Identity & Subtitle Header */}
++          {/* Identity & Subtitle Header — Waterflow sizing: name → position → company */}
+           <div className="text-center space-y-1">
+             <div className="flex items-center justify-center gap-1.5">
+-              <h1 className={`text-2xl sm:text-[28px] font-semibold tracking-tight ${t.textMain}`}>
++              <h1 className={`text-[26px] sm:text-[30px] font-bold tracking-tight leading-tight ${t.textMain}`}>
+                 {card.full_name}
+               </h1>
+               {card.is_verified ? (
+@@ -306,13 +521,14 @@ export default function PublicCardClient({
+               ) : (
+                 <ShieldCheck className={`w-5 h-5 ${t.accent}`} />
+               )}
++              <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+             </div>
+ 
+-            <p className={`text-sm font-medium ${t.accent} tracking-normal`}>
++            <p className={`text-[15px] font-semibold ${t.accent} tracking-normal`}>
+               {card.title}
+             </p>
+ 
+-            <div className={`inline-flex items-center gap-1 text-xs ${t.textSecondary} font-medium pt-0.5`}>
++            <div className={`inline-flex items-center gap-1 text-[13px] ${t.textSecondary} font-medium pt-0.5`}>
+               <Building2 className="w-3.5 h-3.5" />
+               <span>{card.company}</span>
+             </div>
+@@ -407,6 +623,7 @@ export default function PublicCardClient({
+                           <a
+                             key={social.id}
+                             href={social.url}
++                            onClick={(e) => handleSocialClick(e, social.id, social.url, isAppleDevice)}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             aria-label={social.name}
+@@ -489,17 +706,75 @@ export default function PublicCardClient({
+             </div>
+           )}
+ 
+-          {/* TAB 2: BIO & PROFESSIONAL SKILLS */}
++          {/* TAB 2: BIO, SKILLS & DETAILS */}
+           {activeTab === "about" && (
+             <div className="w-full space-y-4 animate-in fade-in-50 duration-200 text-left">
+-              {card.bio && (
+-                <div className={`${t.pillBg} rounded-2xl p-4 border ${t.pillBorder} space-y-2`}>
+-                  <span className={`text-[11px] font-semibold uppercase ${t.textSecondary} tracking-wider block`}>
+-                    Executive Bio
++              {card.video_url && (
++                <div className={`${t.pillBg} rounded-2xl overflow-hidden border ${t.pillBorder}`}>
++                  <div className="aspect-video w-full bg-black">
++                    <iframe
++                      src={card.video_url.includes("watch?v=") ? card.video_url.replace("watch?v=", "embed/") : card.video_url}
++                      className="w-full h-full"
++                      frameBorder="0"
++                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
++                      allowFullScreen
++                    ></iframe>
++                  </div>
++                </div>
++              )}
++
++              {(card.bio || card.bio_ar || card.title_ar) && (
++                <div className={`${t.pillBg} rounded-2xl p-4 border ${t.pillBorder} space-y-4`}>
++                  {(card.bio || card.title_ar) && (
++                    <div className="space-y-2">
++                      <span className={`text-[11px] font-semibold uppercase ${t.textSecondary} tracking-wider block`}>
++                        Executive Bio
++                      </span>
++                      <><p className={`text-xs ${t.textMain} leading-relaxed`}>
++                        {card.bio}
++                        </p>
++{card.icebreakers && card.icebreakers.length > 0 && (
++                          <div className="mt-4 space-y-2">
++                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Icebreakers — Ask me about:</span>
++                            <div className="flex flex-wrap gap-2">
++                              {card.icebreakers.map((prompt: string, idx: number) => (
++                                <button key={idx} className="px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-100 transition shadow-sm flex items-center gap-1.5 text-left">
++                                  <Sparkles className="w-3 h-3 text-blue-500" />
++                                  "{prompt}"
++                                </button>
++                              ))}
++                            </div>
++                          </div>
++                        )}
++                    </div>
++                  )}
++
++                  {(card.bio_ar || card.title_ar) && (
++                    <div className="space-y-2 border-t border-black/5 pt-3" dir="rtl">
++                      {card.title_ar && (
++                        <p className={`text-sm font-bold ${t.accent}`}>{card.title_ar}</p>
++                      )}
++                      {card.bio_ar && (
++                        <p className={`text-xs ${t.textMain} leading-relaxed`}>
++                          {card.bio_ar}
++                        </p>
++                      )}
++                    </div>
++                  )}
++                </div>
++              )}
++
++              {Array.isArray(card.custom_fields) && card.custom_fields.length > 0 && (
++                <div className={`${t.pillBg} rounded-2xl p-4 border ${t.pillBorder} space-y-3`}>
++                  <span className={`text-[11px] font-semibold uppercase ${t.textSecondary} tracking-wider block mb-1`}>
++                    Additional Details
+                   </span>
+-                  <p className={`text-xs ${t.textMain} leading-relaxed`}>
+-                    {card.bio}
+-                  </p>
++                  {card.custom_fields.map((field: any, index: number) => (
++                    <div key={index} className="flex flex-col border-b border-black/5 pb-2 last:border-0 last:pb-0">
++                      <span className={`text-[10px] font-medium ${t.textSecondary} uppercase tracking-wide`}>{field.label}</span>
++                      <span className={`text-xs font-semibold ${t.textMain}`}>{field.value}</span>
++                    </div>
++                  ))}
+                 </div>
+               )}
+ 
+@@ -627,8 +902,9 @@ export default function PublicCardClient({
+                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping inline-block mr-0.5" />
+                   Available for Connect
+                 </div>
+-                <h1 className={`text-2xl font-bold tracking-tight ${t.textMain}`}>
++                <h1 className={`text-2xl font-bold tracking-tight ${t.textMain} flex items-center gap-2 flex-wrap`}>
+                   {card.full_name}
++                  <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+                 </h1>
+                 <p className={`text-xs font-semibold ${t.accent}`}>
+                   {card.title}
+@@ -641,11 +917,13 @@ export default function PublicCardClient({
+ 
+               <div className="relative shrink-0">
+                 <div className={`w-20 h-20 rounded-2xl ${t.avatarBg} border-2 ${t.avatarBorder} overflow-hidden shadow-md flex items-center justify-center`}>
+-                  {card.avatar_url || card.profile_image_url ? (
+-                    <img src={card.avatar_url || card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+-                  ) : (
+-                    <span className={`text-2xl font-bold ${t.textMain}`}>{card.avatar_initials || "IK"}</span>
+-                  )}
++                  <AvatarDisplay
++                    avatarId={card.avatar_id}
++                    fallbackUrl={card.avatar_url || card.profile_image_url}
++                    initials={card.avatar_initials || "IK"}
++                    alt={card.full_name}
++                    initialsClassName={`text-2xl font-bold ${t.textMain}`}
++                  />
+                 </div>
+                 {card.is_verified && (
+                   <VerifiedBadgeIcon className="w-5 h-5 text-green-500 absolute -bottom-1 -right-1 drop-shadow-sm" />
+@@ -726,7 +1004,20 @@ export default function PublicCardClient({
+               {card.bio && (
+                 <p className={`text-xs ${t.textMain} leading-relaxed`}>
+                   {card.bio}
+-                </p>
++                        </p>
++                        {card.icebreakers && card.icebreakers.length > 0 && (
++                          <div className="mt-4 space-y-2">
++                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Icebreakers — Ask me about:</span>
++                            <div className="flex flex-wrap gap-2">
++                              {card.icebreakers.map((prompt: string, idx: number) => (
++                                <button key={idx} className="px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-100 transition shadow-sm flex items-center gap-1.5 text-left">
++                                  <Sparkles className="w-3 h-3 text-blue-500" />
++                                  "{prompt}"
++                                </button>
++                              ))}
++                            </div>
++                          </div>
++                        )}
+               )}
+ 
+               {Array.isArray(card.skills) && card.skills.length > 0 && (
+@@ -755,6 +1046,7 @@ export default function PublicCardClient({
+                     <a
+                       key={social.id}
+                       href={social.url}
++                      onClick={(e) => handleSocialClick(e, social.id, social.url, isAppleDevice)}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className={`p-3 rounded-2xl ${t.pillBg} ${t.pillHover} border ${t.pillBorder} flex items-center gap-2.5 transition group`}
+@@ -768,7 +1060,7 @@ export default function PublicCardClient({
+                       </div>
+                     </a>
+                   );
+-                })}
++                })}</></>
+               </div>
+             </div>
+           )}
+@@ -783,19 +1075,22 @@ export default function PublicCardClient({
+           {/* Minimal Header with Serif / Display Balance */}
+           <div className="flex items-center gap-4 border-b pb-5 border-black/[0.08] dark:border-white/[0.1]">
+             <div className={`w-16 h-16 rounded-2xl ${t.avatarBg} border-2 ${t.avatarBorder} overflow-hidden shadow-sm flex items-center justify-center shrink-0`}>
+-              {card.avatar_url || card.profile_image_url ? (
+-                <img src={card.avatar_url || card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+-              ) : (
+-                <span className={`text-2xl font-serif font-bold ${t.textMain}`}>{card.avatar_initials || "IK"}</span>
+-              )}
++              <AvatarDisplay
++                avatarId={card.avatar_id}
++                fallbackUrl={card.avatar_url || card.profile_image_url}
++                initials={card.avatar_initials || "IK"}
++                alt={card.full_name}
++                initialsClassName={`text-2xl font-serif font-bold ${t.textMain}`}
++              />
+             </div>
+ 
+             <div className="space-y-0.5">
+-              <div className="flex items-center gap-1.5">
++              <div className="flex items-center gap-1.5 flex-wrap">
+                 <h1 className={`text-xl font-bold font-serif tracking-tight ${t.textMain}`}>
+                   {card.full_name}
+                 </h1>
+                 {card.is_verified && <VerifiedBadgeIcon className="w-4 h-4 text-green-500" />}
++                <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+               </div>
+               <p className={`text-xs font-semibold ${t.accent} uppercase tracking-wider`}>
+                 {card.title}
+@@ -924,11 +1219,13 @@ export default function PublicCardClient({
+             <div className="flex justify-center my-3">
+               <div className={`w-24 h-24 rounded-2xl border-2 border-cyan-400/60 p-1 shadow-[0_0_20px_rgba(6,182,212,0.3)] relative`}>
+                 <div className={`w-full h-full rounded-xl ${t.avatarBg} overflow-hidden flex items-center justify-center`}>
+-                  {card.avatar_url || card.profile_image_url ? (
+-                    <img src={card.avatar_url || card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+-                  ) : (
+-                    <span className="text-3xl font-bold text-cyan-400">{card.avatar_initials || "IK"}</span>
+-                  )}
++                  <AvatarDisplay
++                    avatarId={card.avatar_id}
++                    fallbackUrl={card.avatar_url || card.profile_image_url}
++                    initials={card.avatar_initials || "IK"}
++                    alt={card.full_name}
++                    initialsClassName="text-3xl font-bold text-cyan-400"
++                  />
+                 </div>
+               </div>
+             </div>
+@@ -1012,31 +1309,50 @@ export default function PublicCardClient({
+             {/* Elevated Overlapping Avatar */}
+             <div className="flex items-end justify-between -mt-12 mb-2">
+               <div className={`w-24 h-24 rounded-3xl ${t.avatarBg} border-4 ${t.avatarBorder} shadow-lg overflow-hidden flex items-center justify-center`}>
+-                {card.avatar_url || card.profile_image_url ? (
+-                  <img src={card.avatar_url || card.profile_image_url} alt={card.full_name} className="w-full h-full object-cover" />
+-                ) : (
+-                  <span className={`text-3xl font-bold ${t.textMain}`}>{card.avatar_initials || "IK"}</span>
+-                )}
++                <AvatarDisplay
++                  avatarId={card.avatar_id}
++                  fallbackUrl={card.avatar_url || card.profile_image_url}
++                  initials={card.avatar_initials || "IK"}
++                  alt={card.full_name}
++                  initialsClassName={`text-3xl font-bold ${t.textMain}`}
++                />
+               </div>
+ 
+               <button
+-                onClick={() => setIsExchangeModalOpen(true)}
+-                className={`px-4 py-2 rounded-2xl ${t.accentBg} text-white font-semibold text-xs shadow-md active:scale-95 transition flex items-center gap-1.5`}
++                onClick={handleConnectClick}
++                disabled={isConnecting}
++                className={`px-4 py-2 rounded-2xl ${t.accentBg} text-white font-semibold text-xs shadow-md active:scale-95 transition flex items-center gap-1.5 disabled:opacity-70`}
+               >
+-                <QrCode className="w-4 h-4" />
+-                <span>Connect</span>
++                {isConnecting ? (
++                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
++                ) : connectionSuccess ? (
++                  <Check className="w-4 h-4" />
++                ) : (
++                  <QrCode className="w-4 h-4" />
++                )}
++                <span>{connectionSuccess ? "Connected" : "Connect"}</span>
+               </button>
+             </div>
+ 
+             {/* Identity Info */}
+             <div className="space-y-1">
+-              <div className="flex items-center gap-1.5">
++              <div className="flex items-center gap-1.5 flex-wrap">
+                 <h1 className={`text-2xl font-bold tracking-tight ${t.textMain}`}>{card.full_name}</h1>
+                 {card.is_verified && <VerifiedBadgeIcon className="w-5 h-5 text-green-500" />}
++                <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+               </div>
+               <p className={`text-xs font-semibold ${t.accent}`}>{card.title} • {card.company}</p>
+               {card.tagline && (
+-                <p className={`text-xs ${t.textSecondary} pt-1 font-medium`}>{card.tagline}</p>
++                <p className={`text-xs ${t.textSecondary} pt-1 font-medium`}>{card.tagline}
++                        </p>
++                        {mutualCount > 0 && (
++                          <div className="mt-3 py-1.5 px-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-2">
++                            <Users className="w-3.5 h-3.5 text-blue-600" />
++                            <span className="text-[11px] font-medium text-blue-800">
++                              You and {card.full_name.split(' ')[0]} both know {mutualCount} people
++                            </span>
++                          </div>
++                        )}
+               )}
+             </div>
+ 
+@@ -1080,6 +1396,7 @@ export default function PublicCardClient({
+                     <a
+                       key={social.id}
+                       href={social.url}
++                      onClick={(e) => handleSocialClick(e, social.id, social.url, isAppleDevice)}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className={`p-3 rounded-2xl ${t.pillBg} ${t.pillHover} border ${t.pillBorder} flex flex-col items-center justify-center text-center transition group`}
+@@ -1113,6 +1430,511 @@ export default function PublicCardClient({
+         </section>
+       )}
+ 
++      {/* 6. NEO-BRUTALIST BOLD ARCHITECTURE */}
++      {templateLayout === "neobrutalist-bold" && (
++        <section className="w-full max-w-md mx-auto z-10 animate-fade-in p-3 space-y-4">
++          <div className="bg-white border-[3px] border-black rounded-3xl p-6 shadow-[6px_6px_0px_#000000] relative space-y-5">
++            
++            {/* Top Raw Sticker Badge */}
++            <div className="flex items-center justify-between">
++              <span className="px-3 py-1 bg-[#FDE047] text-black font-black text-[10px] uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000000] rounded-lg rotate-[-1deg]">
++                ★ Verified NFC Identity
++              </span>
++              <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
++            </div>
++
++            {/* Profile Row */}
++            <div className="flex items-start gap-4 pt-1">
++              <div className="w-20 h-20 rounded-2xl bg-[#FDE047] border-[3px] border-black shadow-[3px_3px_0px_#000000] overflow-hidden shrink-0">
++                <AvatarDisplay
++                  avatarId={card.avatar_id}
++                  fallbackUrl={card.avatar_url || card.profile_image_url}
++                  initials={card.avatar_initials || "IK"}
++                  alt={card.full_name}
++                  initialsClassName="text-2xl font-black text-black"
++                />
++              </div>
++
++              <div className="space-y-1">
++                <h1 className="text-xl font-black text-black tracking-tight flex items-center gap-1.5 flex-wrap">
++                  {card.full_name}
++                  {card.is_verified && <VerifiedBadgeIcon className="w-4 h-4 text-black" />}
++                </h1>
++                <p className="text-xs font-bold text-[#432DD7]">
++                  {card.title}
++                </p>
++                <p className="text-xs font-semibold text-[#475569] flex items-center gap-1">
++                  <Building2 className="w-3.5 h-3.5" />
++                  {card.company}
++                </p>
++              </div>
++            </div>
++
++            {/* Bio Callout */}
++            {card.bio && (
++              <div className="p-3.5 bg-[#FEF08A] border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000]">
++                <p className="text-xs font-bold text-black leading-relaxed">
++                  "{card.bio}"
++                </p>
++              </div>
++            )}
++
++            {/* Chunky Action 4-Grid */}
++            <div className="grid grid-cols-2 gap-2.5">
++              <a
++                href={`tel:${card.phone_primary}`}
++                className="p-3 bg-[#F8FAFC] hover:bg-[#FDE047] border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2.5"
++              >
++                <div className="w-7 h-7 bg-white border-2 border-black rounded-lg flex items-center justify-center">
++                  <Phone className="w-3.5 h-3.5 text-black" />
++                </div>
++                <div className="min-w-0">
++                  <span className="block text-[9px] font-black uppercase text-gray-500">Call</span>
++                  <span className="block text-xs font-black text-black truncate">{card.phone_primary || 'Phone'}</span>
++                </div>
++              </a>
++
++              <a
++                href={`mailto:${card.email_work}`}
++                className="p-3 bg-[#F8FAFC] hover:bg-[#FDE047] border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2.5"
++              >
++                <div className="w-7 h-7 bg-white border-2 border-black rounded-lg flex items-center justify-center">
++                  <Mail className="w-3.5 h-3.5 text-black" />
++                </div>
++                <div className="min-w-0">
++                  <span className="block text-[9px] font-black uppercase text-gray-500">Email</span>
++                  <span className="block text-xs font-black text-black truncate">{card.email_work || 'Inbox'}</span>
++                </div>
++              </a>
++
++              {card.website_primary && (
++                <a
++                  href={card.website_primary}
++                  target="_blank"
++                  rel="noopener noreferrer"
++                  className="p-3 bg-[#F8FAFC] hover:bg-[#FDE047] border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2.5"
++                >
++                  <div className="w-7 h-7 bg-white border-2 border-black rounded-lg flex items-center justify-center">
++                    <Globe className="w-3.5 h-3.5 text-black" />
++                  </div>
++                  <div className="min-w-0">
++                    <span className="block text-[9px] font-black uppercase text-gray-500">Web</span>
++                    <span className="block text-xs font-black text-black truncate">Website</span>
++                  </div>
++                </a>
++              )}
++
++              <button
++                onClick={() => setIsBookingModalOpen(true)}
++                className="p-3 bg-[#F8FAFC] hover:bg-[#FDE047] border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2.5 text-left"
++              >
++                <div className="w-7 h-7 bg-white border-2 border-black rounded-lg flex items-center justify-center">
++                  <Calendar className="w-3.5 h-3.5 text-black" />
++                </div>
++                <div className="min-w-0">
++                  <span className="block text-[9px] font-black uppercase text-gray-500">Meet</span>
++                  <span className="block text-xs font-black text-black truncate">Schedule</span>
++                </div>
++              </button>
++            </div>
++
++            {/* Social Grid */}
++            {Array.isArray(card.socials) && card.socials.some((s: any) => s.url) && (
++              <div className="grid grid-cols-4 gap-2 pt-1">
++                {card.socials.filter((s: any) => s.url).map((social: any) => {
++                  const Icon = getSocialIcon(social.id);
++                  return (
++                    <a
++                      key={social.id}
++                      href={social.url}
++                      onClick={(e) => handleSocialClick(e, social.id, social.url, isAppleDevice)}
++                      target="_blank"
++                      rel="noopener noreferrer"
++                      className="p-2.5 bg-white hover:bg-[#FDE047] border-2 border-black rounded-xl shadow-[2px_2px_0px_#000000] flex flex-col items-center justify-center text-center transition active:shadow-none"
++                    >
++                      <Icon className="w-4 h-4 text-black mb-0.5" />
++                      <span className="text-[9px] font-black text-black truncate max-w-full">{social.name.split(" ")[0]}</span>
++                    </a>
++                  );
++                })}
++              </div>
++            )}
++
++            {/* Save Buttons */}
++            <div className="space-y-2 pt-2">
++              <button
++                onClick={handleDownloadVCard}
++                className="w-full py-3.5 bg-[#432DD7] hover:bg-[#321EB8] text-white font-black text-xs uppercase tracking-wider border-2 border-black rounded-xl shadow-[4px_4px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition flex items-center justify-center gap-2"
++              >
++                <Check className="w-4 h-4" />
++                <span>Save Contact Card (.VCF)</span>
++              </button>
++              <button
++                onClick={handleDownloadWalletPass}
++                className="w-full py-3 bg-black hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition flex items-center justify-center gap-2"
++              >
++                <AppleIcon className="w-4 h-4 fill-white" />
++                <span>{isAppleDevice ? "Add to Apple Wallet" : "Download Pass"}</span>
++              </button>
++            </div>
++          </div>
++        </section>
++      )}
++
++      {/* 7. CLAUDE WARM EDITORIAL ARCHITECTURE */}
++      {templateLayout === "claude-editorial" && (
++        <section className="w-full max-w-md mx-auto z-10 animate-fade-in p-3 space-y-4">
++          <div className="bg-[#FAF9F5] border border-[#E5E3DB] rounded-2xl p-7 shadow-sm space-y-6">
++            
++            {/* Minimal Header with Razor Lines */}
++            <div className="border-b border-[#E5E3DB] pb-5 space-y-4">
++              <div className="flex items-start justify-between">
++                <div className="w-16 h-16 rounded-xl bg-[#F3F1EB] border border-[#E5E3DB] overflow-hidden shrink-0">
++                  <AvatarDisplay
++                    avatarId={card.avatar_id}
++                    fallbackUrl={card.avatar_url || card.profile_image_url}
++                    initials={card.avatar_initials || "IK"}
++                    alt={card.full_name}
++                    initialsClassName="text-2xl font-bold text-[#141413]"
++                  />
++                </div>
++                <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
++              </div>
++
++              <div>
++                <h1 className="text-2xl font-bold text-[#141413] tracking-tight flex items-center gap-2">
++                  {card.full_name}
++                  {card.is_verified && <VerifiedBadgeIcon className="w-4 h-4 text-[#CC5A36]" />}
++                </h1>
++                <p className="text-xs font-semibold text-[#CC5A36] mt-0.5">
++                  {card.title}
++                </p>
++                <p className="text-xs text-[#4D4C47] mt-0.5">
++                  {card.company}
++                </p>
++              </div>
++            </div>
++
++            {/* Editorial Bio Quote */}
++            {card.bio && (
++              <div className="border-l-2 border-[#CC5A36] pl-4 py-1">
++                <p className="text-xs text-[#141413] leading-relaxed italic">
++                  "{card.bio}"
++                </p>
++              </div>
++            )}
++
++            {/* Flat Minimal Contact Strips */}
++            <div className="space-y-2">
++              <a
++                href={`tel:${card.phone_primary}`}
++                className="w-full p-3 rounded-xl bg-[#F3F1EB] hover:bg-[#EBE8E0] border border-[#E5E3DB] flex items-center justify-between text-xs font-medium text-[#141413] transition"
++              >
++                <div className="flex items-center gap-2.5">
++                  <Phone className="w-4 h-4 text-[#CC5A36]" />
++                  <span>{card.phone_primary || 'Direct Phone'}</span>
++                </div>
++                <ChevronRight className="w-3.5 h-3.5 text-[#7B7A74]" />
++              </a>
++
++              <a
++                href={`mailto:${card.email_work}`}
++                className="w-full p-3 rounded-xl bg-[#F3F1EB] hover:bg-[#EBE8E0] border border-[#E5E3DB] flex items-center justify-between text-xs font-medium text-[#141413] transition"
++              >
++                <div className="flex items-center gap-2.5">
++                  <Mail className="w-4 h-4 text-[#CC5A36]" />
++                  <span className="truncate">{card.email_work || 'Work Email'}</span>
++                </div>
++                <ChevronRight className="w-3.5 h-3.5 text-[#7B7A74]" />
++              </a>
++
++              {card.website_primary && (
++                <a
++                  href={card.website_primary}
++                  target="_blank"
++                  rel="noopener noreferrer"
++                  className="w-full p-3 rounded-xl bg-[#F3F1EB] hover:bg-[#EBE8E0] border border-[#E5E3DB] flex items-center justify-between text-xs font-medium text-[#141413] transition"
++                >
++                  <div className="flex items-center gap-2.5">
++                    <Globe className="w-4 h-4 text-[#CC5A36]" />
++                    <span className="truncate">{card.website_primary}</span>
++                  </div>
++                  <ChevronRight className="w-3.5 h-3.5 text-[#7B7A74]" />
++                </a>
++              )}
++            </div>
++
++            {/* Action CTAs */}
++            <div className="space-y-2 pt-2">
++              <button
++                onClick={handleDownloadVCard}
++                className="w-full py-3.5 bg-[#CC5A36] hover:bg-[#B84E2E] text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2"
++              >
++                <Check className="w-4 h-4" />
++                <span>Save Contact Details (.vcf)</span>
++              </button>
++
++              <button
++                onClick={() => setIsBookingModalOpen(true)}
++                className="w-full py-3 bg-[#F3F1EB] hover:bg-[#EBE8E0] border border-[#E5E3DB] text-[#141413] font-bold text-xs rounded-xl transition flex items-center justify-center gap-2"
++              >
++                <Calendar className="w-4 h-4 text-[#CC5A36]" />
++                <span>Schedule an Appointment</span>
++              </button>
++            </div>
++          </div>
++        </section>
++      )}
++
++      {/* 8. MATRIX CYBER TERMINAL ARCHITECTURE */}
++      {templateLayout === "matrix-terminal" && (
++        <section className="w-full max-w-md mx-auto z-10 animate-fade-in p-3 space-y-4 font-mono">
++          <div className="bg-[#0A0F0D]/95 border border-[#14532D]/60 rounded-2xl p-6 shadow-[0_0_30px_rgba(45,181,138,0.15)] space-y-5 text-emerald-400">
++            
++            {/* Terminal Header */}
++            <div className="border-b border-[#14532D]/40 pb-3 flex items-center justify-between text-[10px]">
++              <span className="text-[#00FF66] flex items-center gap-1.5">
++                <span className="w-2 h-2 rounded-full bg-[#00FF66] animate-pulse" />
++                [0x01_SYS: NFC_BEAM_ACTIVE]
++              </span>
++              <span className="text-[#2DB58A]/60">PORT 443 // SSL</span>
++            </div>
++
++            {/* Profile Block */}
++            <div className="flex items-start gap-4">
++              <div className="w-18 h-18 rounded-xl bg-[#0E1713] border border-[#00FF66]/60 shadow-[0_0_15px_rgba(0,255,102,0.3)] overflow-hidden shrink-0">
++                <AvatarDisplay
++                  avatarId={card.avatar_id}
++                  fallbackUrl={card.avatar_url || card.profile_image_url}
++                  initials={card.avatar_initials || "IK"}
++                  alt={card.full_name}
++                  initialsClassName="text-2xl font-mono font-bold text-[#00FF66]"
++                />
++              </div>
++
++              <div className="space-y-1 min-w-0">
++                <h1 className="text-lg font-bold text-white tracking-tight truncate flex items-center gap-1.5">
++                  {card.full_name}
++                  {card.is_verified && <VerifiedBadgeIcon className="w-3.5 h-3.5 text-[#00FF66]" />}
++                </h1>
++                <p className="text-xs font-semibold text-[#00FF66]">
++                  {card.title}
++                </p>
++                <p className="text-[11px] text-[#2DB58A]/80">
++                  // {card.company}
++                </p>
++              </div>
++            </div>
++
++            {/* Telemetry Matrix Grid */}
++            <div className="grid grid-cols-2 gap-2 text-[10px] p-2.5 rounded-xl bg-[#0E1713] border border-[#14532D]/40">
++              <div>
++                <span className="text-[#2DB58A]/60 block">PROTOCOL</span>
++                <span className="text-white font-bold">NFC PASSKIT 3.5</span>
++              </div>
++              <div>
++                <span className="text-[#2DB58A]/60 block">NETWORK SCORE</span>
++                <span className="text-[#00FF66] font-bold">{connectionsCount} CONNECTIONS</span>
++              </div>
++            </div>
++
++            {/* Actions */}
++            <div className="space-y-2 pt-1">
++              <button
++                onClick={handleDownloadVCard}
++                className="w-full py-3 bg-[#2DB58A] hover:bg-[#00FF66] hover:text-black text-black font-bold text-xs rounded-xl shadow-[0_0_20px_rgba(45,181,138,0.4)] transition flex items-center justify-center gap-2"
++              >
++                <Check className="w-4 h-4" />
++                <span>EXECUTE: SAVE_VCARD()</span>
++              </button>
++              
++              <div className="grid grid-cols-2 gap-2">
++                <a
++                  href={`tel:${card.phone_primary}`}
++                  className="p-2.5 rounded-xl bg-[#0E1713] hover:bg-[#15231D] border border-[#14532D]/60 text-center text-xs text-[#00FF66] transition"
++                >
++                  CALL_PHONE
++                </a>
++                <a
++                  href={`mailto:${card.email_work}`}
++                  className="p-2.5 rounded-xl bg-[#0E1713] hover:bg-[#15231D] border border-[#14532D]/60 text-center text-xs text-[#00FF66] transition"
++                >
++                  SEND_EMAIL
++                </a>
++              </div>
++            </div>
++          </div>
++        </section>
++      )}
++
++      {/* 9. CLAYMORPHIC 3D PUFF ARCHITECTURE */}
++      {templateLayout === "clay-3d" && (
++        <section className="w-full max-w-md mx-auto z-10 animate-fade-in p-3 space-y-4">
++          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-[2.5rem] p-7 shadow-[0_20px_40px_rgba(139,92,246,0.15),inset_0_2px_4px_rgba(255,255,255,0.9)] space-y-6 text-center">
++            
++            {/* Puffy Avatar Ring */}
++            <div className="flex flex-col items-center">
++              <div className="w-22 h-22 rounded-full bg-gradient-to-b from-[#FAF5FF] to-[#E9D5FF] p-1 shadow-[0_10px_25px_rgba(139,92,246,0.25)] border-2 border-white mb-3">
++                <div className="w-full h-full rounded-full overflow-hidden">
++                  <AvatarDisplay
++                    avatarId={card.avatar_id}
++                    fallbackUrl={card.avatar_url || card.profile_image_url}
++                    initials={card.avatar_initials || "IK"}
++                    alt={card.full_name}
++                    initialsClassName="text-2xl font-bold text-[#6B21A8]"
++                  />
++                </div>
++              </div>
++
++              <h1 className="text-xl font-black text-[#3B0764] tracking-tight flex items-center justify-center gap-1.5">
++                {card.full_name}
++                {card.is_verified && <VerifiedBadgeIcon className="w-4 h-4 text-purple-600" />}
++              </h1>
++              <p className="text-xs font-bold text-[#7C3AED] mt-0.5">
++                {card.title}
++              </p>
++              <p className="text-xs font-medium text-[#9333EA]/80 mt-0.5">
++                {card.company}
++              </p>
++            </div>
++
++            {/* Puffy Action Buttons */}
++            <div className="grid grid-cols-2 gap-2.5">
++              <a
++                href={`tel:${card.phone_primary}`}
++                className="p-3 bg-[#FAF5FF] hover:bg-[#F3E8FF] border border-purple-200/80 rounded-2xl shadow-[0_4px_12px_rgba(147,51,234,0.08),inset_0_1px_2px_rgba(255,255,255,1)] flex items-center justify-center gap-2 text-xs font-bold text-[#6B21A8] transition hover:scale-102"
++              >
++                <Phone className="w-4 h-4 text-[#7C3AED]" />
++                <span>Call Phone</span>
++              </a>
++
++              <a
++                href={`mailto:${card.email_work}`}
++                className="p-3 bg-[#FAF5FF] hover:bg-[#F3E8FF] border border-purple-200/80 rounded-2xl shadow-[0_4px_12px_rgba(147,51,234,0.08),inset_0_1px_2px_rgba(255,255,255,1)] flex items-center justify-center gap-2 text-xs font-bold text-[#6B21A8] transition hover:scale-102"
++              >
++                <Mail className="w-4 h-4 text-[#7C3AED]" />
++                <span>Send Email</span>
++              </a>
++            </div>
++
++            {/* Primary Save CTA */}
++            <button
++              onClick={handleDownloadVCard}
++              className="w-full py-3.5 bg-gradient-to-r from-[#8B5CF6] to-[#A855F7] text-white font-bold text-xs rounded-2xl shadow-[0_8px_20px_rgba(139,92,246,0.35)] hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2"
++            >
++              <Check className="w-4 h-4" />
++              <span>Save Contact Card (.vcf)</span>
++            </button>
++          </div>
++        </section>
++      )}
++
++      {/* 10. JAPANESE RISO DUOTONE ARCHITECTURE */}
++      {templateLayout === "riso-duotone" && (
++        <section className="w-full max-w-md mx-auto z-10 animate-fade-in p-3 space-y-4">
++          <div className="bg-white border-2 border-[#111625] rounded-2xl p-6 shadow-[5px_5px_0px_#FF4A3D] space-y-5">
++            
++            {/* Header Stamp */}
++            <div className="flex items-center justify-between border-b-2 border-[#111625] pb-3">
++              <span className="text-[10px] font-black uppercase tracking-wider text-[#FF4A3D]">
++                [ RISO PRINT // 2-COLOR SPOT INK ]
++              </span>
++              <span className="text-[10px] font-bold text-[#00A8B5]">
++                DUBAI STUDIO
++              </span>
++            </div>
++
++            {/* Profile Row */}
++            <div className="flex items-start gap-4">
++              <div className="w-18 h-18 rounded-xl bg-[#F7F4EE] border-2 border-[#111625] shadow-[3px_3px_0px_#00A8B5] overflow-hidden shrink-0">
++                <AvatarDisplay
++                  avatarId={card.avatar_id}
++                  fallbackUrl={card.avatar_url || card.profile_image_url}
++                  initials={card.avatar_initials || "IK"}
++                  alt={card.full_name}
++                  initialsClassName="text-2xl font-black text-[#111625]"
++                />
++              </div>
++
++              <div>
++                <h1 className="text-xl font-black text-[#111625] tracking-tight">
++                  {card.full_name}
++                </h1>
++                <p className="text-xs font-bold text-[#FF4A3D]">
++                  {card.title}
++                </p>
++                <p className="text-xs font-semibold text-[#00A8B5]">
++                  {card.company}
++                </p>
++              </div>
++            </div>
++
++            {/* Actions */}
++            <div className="space-y-2 pt-2">
++              <button
++                onClick={handleDownloadVCard}
++                className="w-full py-3.5 bg-[#FF4A3D] text-white font-black text-xs uppercase tracking-wider border-2 border-[#111625] rounded-xl shadow-[3px_3px_0px_#111625] hover:bg-[#00A8B5] transition flex items-center justify-center gap-2"
++              >
++                <Check className="w-4 h-4" />
++                <span>Save Contact Details (.vcf)</span>
++              </button>
++            </div>
++          </div>
++        </section>
++      )}
++
++      {/* 11. SEGA 8-BIT RETRO ARCADE ARCHITECTURE */}
++      {templateLayout === "retro-arcade" && (
++        <section className="w-full max-w-md mx-auto z-10 animate-fade-in p-3 space-y-4 font-mono">
++          <div className="bg-[#101442] border-4 border-[#38BDF8] rounded-xl p-6 shadow-[0_0_25px_rgba(56,189,248,0.4)] space-y-5 text-white">
++            
++            {/* Arcade Banner */}
++            <div className="text-center border-b-2 border-[#38BDF8] pb-3">
++              <div className="text-[10px] font-black text-[#F43F5E] animate-pulse">
++                ★ 1-PLAYER START // INSERT COIN ★
++              </div>
++              <h1 className="text-lg font-black text-white mt-1 uppercase">
++                {card.full_name}
++              </h1>
++              <p className="text-xs font-bold text-[#38BDF8]">
++                CLASS: {card.title ? card.title.toUpperCase() : 'CREATOR'}
++              </p>
++            </div>
++
++            {/* Power Stats */}
++            <div className="p-3 bg-[#0A0E31] border border-[#38BDF8]/60 rounded-lg text-[10px] space-y-1">
++              <div className="flex justify-between">
++                <span className="text-[#38BDF8]">EXP POINTS:</span>
++                <span className="text-[#F43F5E] font-bold">{connectionsCount * 100 + 450} PTS</span>
++              </div>
++              <div className="flex justify-between">
++                <span className="text-[#38BDF8]">GUILD / ORG:</span>
++                <span className="text-white font-bold">{card.company ? card.company.toUpperCase() : 'ZYNIQ'}</span>
++              </div>
++            </div>
++
++            {/* Chunky 3D Pushable Arcade Buttons */}
++            <div className="space-y-2.5 pt-1">
++              <button
++                onClick={handleDownloadVCard}
++                className="w-full py-3 bg-[#F43F5E] text-white font-black text-xs uppercase tracking-wider rounded-lg shadow-[0_5px_0_#9F1239] active:translate-y-[3px] active:shadow-[0_2px_0_#9F1239] transition flex items-center justify-center gap-2"
++              >
++                <Check className="w-4 h-4" />
++                <span>SAVE CONTACT VCF [PRESS A]</span>
++              </button>
++
++              <button
++                onClick={handleDownloadWalletPass}
++                className="w-full py-2.5 bg-[#38BDF8] text-black font-black text-xs uppercase tracking-wider rounded-lg shadow-[0_4px_0_#0284C7] active:translate-y-[2px] active:shadow-[0_2px_0_#0284C7] transition flex items-center justify-center gap-2"
++              >
++                <AppleIcon className="w-4 h-4 fill-black" />
++                <span>WALLET NFC [PRESS B]</span>
++              </button>
++            </div>
++          </div>
++        </section>
++      )}
++
+       {/* Floating Share Info Back CTA */}
+       <div className="fixed bottom-6 right-6 z-40">
+         <button
+@@ -1124,7 +1946,22 @@ export default function PublicCardClient({
+         </button>
+       </div>
+ 
++      {/* Floating Add to Home Screen CTA */}
++      <div className="fixed bottom-6 left-6 z-40">
++        <button
++          onClick={() => setIsInstallModalOpen(true)}
++          className={`w-16 h-16 rounded-full bg-white text-black shadow-2xl active:scale-[0.98] hover:scale-105 transition-all flex items-center justify-center border border-black/10`}
++          title="Add to Home Screen"
++        >
++          <Smartphone className="w-7 h-7 text-[#0071E3]" />
++        </button>
++      </div>
++
+       <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3 pb-8 pt-6 z-20">
++        <div className="w-full max-w-[90%] pb-3">
++          <WalletButtons slug={slug} t={t} />
++        </div>
++        <ZavatarUpsellCard avatarId={card.avatar_id} className="w-full max-w-[90%]" />
+         <Link
+           href="/auth"
+           className={`w-full max-w-[90%] py-4 rounded-2xl ${t.pillBg} ${t.pillHover} text-[15px] font-semibold ${t.textMain} border ${t.pillBorder} shadow-sm active:scale-95 transition text-center flex items-center justify-center gap-2`}
+@@ -1154,12 +1991,24 @@ export default function PublicCardClient({
+         card={card}
+       />
+ 
++      <AddToHomescreenModal
++        isOpen={isInstallModalOpen}
++        onClose={() => setIsInstallModalOpen(false)}
++        target={{
++          type: "card",
++          title: card.full_name,
++          url: `/${slug}`
++        }}
++      />
++
+       {/* Footer */}
+-      <footer className="w-full max-w-md mx-auto text-center py-3 z-10">
+-        <p className={`text-[11px] ${t.textSecondary} font-normal tracking-tight`}>
+-          Designed for iOS &amp; Modern Web • Universal Digital Business Card
+-        </p>
+-      </footer>
++      {!card.white_label && (
++        <footer className="w-full max-w-md mx-auto text-center py-3 z-10">
++          <p className={`text-[11px] ${t.textSecondary} font-normal tracking-tight`}>
++            Designed for iOS &amp; Modern Web • Universal Digital Business Card
++          </p>
++        </footer>
++      )}
+     </div>
+   );
+ }

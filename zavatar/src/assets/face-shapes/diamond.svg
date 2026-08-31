@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="face-shape-diamond" class="face-shape">
+    <!-- Base Head & Jaw: Diamond -->
+    <path class="skin-base" d="M 186 160 C 190 115, 322 115, 326 160 C 352 230, 325 330, 256 378 C 187 330, 160 230, 186 160 Z" fill="#F5CBA7" stroke="#000000" stroke-opacity="0.1" stroke-width="2" />
+    <!-- Angular Cheek Shading -->
+    <polygon points="175,230 215,265 195,290" fill="#000000" fill-opacity="0.04" />
+    <polygon points="337,230 297,265 317,290" fill="#000000" fill-opacity="0.04" />
+    <!-- Tapered Chin Highlight -->
+    <path d="M 238 358 C 248 365, 264 365, 274 358 C 268 368, 244 368, 238 358 Z" fill="#000000" fill-opacity="0.06" />
+  </g>
+</svg>

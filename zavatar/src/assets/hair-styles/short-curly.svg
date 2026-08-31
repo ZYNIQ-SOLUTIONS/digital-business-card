@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-short-curly" class="hair-style">
+    <!-- Short Curly: Voluminous curls and loops -->
+    <path class="hair-base" d="M 155 175 C 145 140, 160 100, 195 85 C 220 70, 290 70, 315 85 C 350 100, 365 140, 355 175 C 362 195, 345 205, 335 185 C 330 145, 315 125, 256 125 C 197 125, 182 145, 177 185 C 167 205, 150 195, 155 175 Z" fill="#1e1e1e" />
+    <!-- Curl clusters -->
+    <circle cx="185" cy="115" r="24" fill="#1e1e1e" />
+    <circle cx="225" cy="95" r="26" fill="#2d2d2d" />
+    <circle cx="270" cy="90" r="28" fill="#1e1e1e" />
+    <circle cx="315" cy="100" r="25" fill="#2d2d2d" />
+    <circle cx="340" cy="130" r="22" fill="#1e1e1e" />
+    <circle cx="170" cy="135" r="22" fill="#2d2d2d" />
+    <!-- Front curls -->
+    <circle cx="205" cy="140" r="18" fill="#1e1e1e" />
+    <circle cx="240" cy="135" r="19" fill="#2d2d2d" />
+    <circle cx="275" cy="140" r="18" fill="#1e1e1e" />
+    <circle cx="310" cy="145" r="17" fill="#2d2d2d" />
+  </g>
+</svg>

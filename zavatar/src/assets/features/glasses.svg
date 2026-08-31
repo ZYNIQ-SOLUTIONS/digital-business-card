@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="feature-glasses" class="accessory">
+    <!-- Modern Designer Frames -->
+    <rect x="190" y="210" width="50" height="32" rx="8" fill="none" stroke="#18181b" stroke-width="4" />
+    <rect x="272" y="210" width="50" height="32" rx="8" fill="none" stroke="#18181b" stroke-width="4" />
+    <!-- Bridge -->
+    <line x1="240" y1="222" x2="272" y2="222" stroke="#18181b" stroke-width="4" stroke-linecap="round" />
+    <!-- Temples -->
+    <line x1="190" y1="220" x2="168" y2="216" stroke="#18181b" stroke-width="3" stroke-linecap="round" />
+    <line x1="322" y1="220" x2="344" y2="216" stroke="#18181b" stroke-width="3" stroke-linecap="round" />
+    <!-- Lens Glare -->
+    <line x1="198" y1="216" x2="212" y2="216" stroke="#ffffff" stroke-opacity="0.6" stroke-width="2" stroke-linecap="round" />
+    <line x1="280" y1="216" x2="294" y2="216" stroke="#ffffff" stroke-opacity="0.6" stroke-width="2" stroke-linecap="round" />
+  </g>
+</svg>

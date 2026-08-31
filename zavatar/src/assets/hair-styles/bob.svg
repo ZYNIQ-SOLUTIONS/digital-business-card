@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-bob" class="hair-style">
+    <!-- Bob: Structured chic chin-length cut with bangs -->
+    <path class="hair-base" d="M 152 170 C 150 90, 205 65, 256 65 C 307 65, 362 90, 360 170 C 362 260, 345 320, 335 325 C 325 330, 320 290, 324 230 C 324 165, 305 138, 256 138 C 207 138, 188 165, 188 230 C 192 290, 187 330, 177 325 C 167 320, 150 260, 152 170 Z" fill="#1e1e1e" />
+    <!-- Straight Bangs -->
+    <path class="hair-bangs" d="M 175 140 C 200 155, 312 155, 337 140 C 325 125, 290 115, 256 115 C 222 115, 187 125, 175 140 Z" fill="#2d2d2d" />
+  </g>
+</svg>

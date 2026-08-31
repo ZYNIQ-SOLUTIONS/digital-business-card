@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <g id="hair-afro" class="hair-style">
+    <!-- Afro: Large rounded halo silhouette -->
+    <path class="hair-base" d="M 130 180 C 115 110, 175 45, 256 45 C 337 45, 397 110, 382 180 C 392 230, 370 270, 345 260 C 335 210, 320 145, 256 145 C 192 145, 177 210, 167 260 C 142 270, 120 230, 130 180 Z" fill="#181818" />
+    <circle cx="160" cy="120" r="30" fill="#1e1e1e" />
+    <circle cx="210" cy="80" r="36" fill="#252525" />
+    <circle cx="260" cy="70" r="38" fill="#1e1e1e" />
+    <circle cx="310" cy="80" r="36" fill="#252525" />
+    <circle cx="355" cy="120" r="30" fill="#1e1e1e" />
+    <circle cx="370" cy="170" r="28" fill="#202020" />
+    <circle cx="142" cy="170" r="28" fill="#202020" />
+  </g>
+</svg>

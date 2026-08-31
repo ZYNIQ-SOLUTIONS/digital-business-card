@@ -5,6 +5,33 @@ import { GoogleGenAI } from "@google/genai";
 
 export const dynamic = "force-dynamic";
 
+async function triggerCrmWebhook(supabase: any, ownerId: string, leadData: any) {
+  try {
+    const { data: orgMember } = await supabase
+      .from("organization_members")
+      .select("org_id, organizations(crm_webhook_url, crm_provider)")
+      .eq("user_id", ownerId)
+      .single();
+      
+    const orgs = orgMember?.organizations as any;
+    if (orgs && orgs.crm_webhook_url) {
+      const url = orgs.crm_webhook_url;
+      
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: "izn_digital_card",
+          lead: leadData,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(e => console.error("CRM Webhook failed:", e));
+    }
+  } catch (err) {
+    console.error("Error triggering CRM webhook:", err);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const data = await request.json();
@@ -17,22 +44,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Anonymous visitor submitting public card exchange — use SECURITY DEFINER RPC
-    if (!user && cardId) {
-      const { data: rpcResult, error: rpcError } = await supabase.rpc("submit_public_lead", {
-        p_card_id: cardId,
-        p_name: name,
-        p_email: email || "",
-        p_phone: phone || null,
-        p_company: company || null,
-        p_title: title || null,
-      });
-
-      if (rpcError) throw rpcError;
-      return NextResponse.json({ success: true, connection: rpcResult });
-    }
-
-    // Authenticated flow: resolve card owner and generate AI follow-up
+    // Pre-fetch owner ID for both flows
     let ownerId = userIdOverride || user?.id;
     let ownerName = "I";
     let ownerCompany = "my company";
@@ -49,6 +61,25 @@ export async function POST(request: Request) {
         ownerName = cardData.full_name || ownerName;
         ownerCompany = cardData.company || ownerCompany;
       }
+    }
+
+    // Anonymous visitor submitting public card exchange — use SECURITY DEFINER RPC
+    if (!user && cardId) {
+      const { data: rpcResult, error: rpcError } = await supabase.rpc("submit_public_lead", {
+        p_card_id: cardId,
+        p_name: name,
+        p_email: email || "",
+        p_phone: phone || null,
+        p_company: company || null,
+        p_title: title || null,
+      });
+
+      if (rpcError) throw rpcError;
+      
+      // Trigger Webhook
+      if (ownerId) await triggerCrmWebhook(supabase, ownerId, data);
+      
+      return NextResponse.json({ success: true, connection: rpcResult });
     }
 
     // Draft follow-up message using Gemini
@@ -89,6 +120,9 @@ Do not include subject line, just the body.`;
       .single();
 
     if (insertError) throw insertError;
+    
+    // Trigger Webhook
+    if (ownerId) await triggerCrmWebhook(supabase, ownerId, data);
 
     return NextResponse.json({ success: true, connection: insertData });
   } catch (error: any) {
