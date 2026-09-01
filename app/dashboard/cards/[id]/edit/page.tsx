@@ -21,29 +21,30 @@ import { themes, themeList, ThemeCategory, ThemeTokens } from "@/lib/theme";
 import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
 
 const ALL_AVAILABLE_SOCIALS = [
-  { id: "linkedin", name: "LinkedIn", url: "", active: true },
-  { id: "whatsapp", name: "WhatsApp", url: "", active: true },
-  { id: "telegram", name: "Telegram", url: "", active: true },
-  { id: "x", name: "X (Twitter)", url: "", active: true },
-  { id: "github", name: "GitHub", url: "", active: true },
-  { id: "instagram", name: "Instagram", url: "", active: true },
-  { id: "tiktok", name: "TikTok", url: "", active: true },
-  { id: "threads", name: "Threads", url: "", active: true },
-  { id: "facebook", name: "Facebook", url: "", active: false },
-  { id: "spotify", name: "Spotify", url: "", active: false },
-  { id: "youtube", name: "YouTube", url: "", active: true },
-  { id: "discord", name: "Discord", url: "", active: true },
-  { id: "calendly", name: "Calendly", url: "", active: true },
-  { id: "medium", name: "Medium", url: "", active: true },
-  { id: "behance", name: "Behance", url: "", active: false },
-  { id: "dribbble", name: "Dribbble", url: "", active: false },
-  { id: "substack", name: "Substack", url: "", active: false },
-  { id: "signal", name: "Signal", url: "", active: false },
-  { id: "pinterest", name: "Pinterest", url: "", active: false },
-  { id: "reddit", name: "Reddit", url: "", active: false },
-  { id: "snapchat", name: "Snapchat", url: "", active: false },
-  { id: "other", name: "Other / Custom", url: "", active: false },
+  { id: "linkedin", name: "LinkedIn", url: "", active: true, icon_style: "colorful" },
+  { id: "whatsapp", name: "WhatsApp", url: "", active: true, icon_style: "colorful" },
+  { id: "telegram", name: "Telegram", url: "", active: true, icon_style: "colorful" },
+  { id: "x", name: "X (Twitter)", url: "", active: true, icon_style: "colorful" },
+  { id: "github", name: "GitHub", url: "", active: true, icon_style: "colorful" },
+  { id: "instagram", name: "Instagram", url: "", active: true, icon_style: "colorful" },
+  { id: "tiktok", name: "TikTok", url: "", active: true, icon_style: "colorful" },
+  { id: "threads", name: "Threads", url: "", active: true, icon_style: "colorful" },
+  { id: "facebook", name: "Facebook", url: "", active: false, icon_style: "colorful" },
+  { id: "spotify", name: "Spotify", url: "", active: false, icon_style: "colorful" },
+  { id: "youtube", name: "YouTube", url: "", active: true, icon_style: "colorful" },
+  { id: "discord", name: "Discord", url: "", active: true, icon_style: "colorful" },
+  { id: "calendly", name: "Calendly", url: "", active: true, icon_style: "colorful" },
+  { id: "medium", name: "Medium", url: "", active: true, icon_style: "colorful" },
+  { id: "behance", name: "Behance", url: "", active: false, icon_style: "colorful" },
+  { id: "dribbble", name: "Dribbble", url: "", active: false, icon_style: "colorful" },
+  { id: "substack", name: "Substack", url: "", active: false, icon_style: "colorful" },
+  { id: "signal", name: "Signal", url: "", active: false, icon_style: "colorful" },
+  { id: "pinterest", name: "Pinterest", url: "", active: false, icon_style: "colorful" },
+  { id: "reddit", name: "Reddit", url: "", active: false, icon_style: "colorful" },
+  { id: "snapchat", name: "Snapchat", url: "", active: false, icon_style: "colorful" },
+  { id: "other", name: "Other / Custom", url: "", active: false, icon_style: "colorful" },
 ];
+
 
 interface CardEditPageProps {
   params: Promise<{ id: string }>;
@@ -101,7 +102,9 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   };
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -145,6 +148,41 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       setUploadingAvatar(false);
     }
   };
+
+  const handleBgImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+    e.target.value = '';
+
+    setUploadingBg(true);
+    setErrorMsg(null);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not logged in");
+
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `backgrounds/${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars') // reuse the same public bucket
+        .upload(fileName, file, { contentType: file.type, upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      setCard((prev: any) => ({ ...prev, custom_background_image: publicUrlData.publicUrl }));
+    } catch (err: any) {
+      console.error("Background upload error:", err);
+      setErrorMsg("Background upload failed: " + err.message);
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
+
 
   // Card Form State
   const [card, setCard] = useState<any>({
@@ -338,14 +376,47 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     return () => clearTimeout(timer);
   }, [card, loading]);
 
-  const updateSocialUrl = (socialId: string, url: string) => {
+  const updateSocial = (socialId: string, fields: Record<string, any>) => {
     setCard((prev: any) => ({
       ...prev,
       socials: prev.socials.map((s: any) =>
-        s.id === socialId ? { ...s, url, active: !!url } : s
+        s.id === socialId
+          ? { ...s, ...fields, active: fields.url !== undefined ? !!fields.url : s.active }
+          : s
       ),
     }));
   };
+
+  // Legacy alias kept for any other callers
+  const updateSocialUrl = (socialId: string, url: string) => updateSocial(socialId, { url });
+
+  /** Platform base URLs used by the "Connect" button */
+  const SOCIAL_CONNECT_URLS: Record<string, string> = {
+    linkedin: "https://linkedin.com/in/",
+    twitter: "https://twitter.com/",
+    x: "https://x.com/",
+    instagram: "https://instagram.com/",
+    facebook: "https://facebook.com/",
+    tiktok: "https://tiktok.com/@",
+    threads: "https://threads.net/@",
+    youtube: "https://youtube.com/@",
+    github: "https://github.com/",
+    discord: "https://discord.com/users/",
+    reddit: "https://reddit.com/u/",
+    medium: "https://medium.com/@",
+    substack: "https://substack.com/@",
+    behance: "https://behance.net/",
+    dribbble: "https://dribbble.com/",
+    pinterest: "https://pinterest.com/",
+    snapchat: "https://snapchat.com/add/",
+    spotify: "https://open.spotify.com/user/",
+    whatsapp: "https://wa.me/",
+    telegram: "https://t.me/",
+    signal: "https://signal.me/#p/",
+    calendly: "https://calendly.com/",
+  };
+
+
 
   const filteredThemes = allThemesList.filter((th) => {
     const matchesCategory = 
@@ -372,7 +443,11 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     );
   }
 
-  const baseThemeTokens = themes[card.theme || "apple-light"] || themes["apple-light"];
+  const baseThemeTokens = 
+    themes[card.theme || "apple-light"] ||
+    allThemesList.find((t) => t.id === card.theme) ||
+    themes["apple-light"];
+
   const activeThemeTokens = { ...baseThemeTokens };
   if (card.custom_primary_color) activeThemeTokens.bg += " custom-bg";
   if (card.custom_secondary_color) {
@@ -1091,22 +1166,57 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                         Background Image
                       </label>
                       <div className="flex items-center gap-3">
-                        <div 
-                          className="w-12 h-16 rounded-lg border border-black/10 overflow-hidden bg-cover bg-center bg-gray-200"
-                          style={{ backgroundImage: card.custom_background_image ? `url(${card.custom_background_image})` : 'none' }}
-                        />
-                        <div className="flex-1">
-                          <input 
-                            type="text" 
-                            placeholder="https://image-url.jpg" 
-                            className="w-full text-xs p-2 rounded-lg border border-black/10 mb-2"
-                            value={card.custom_background_image || ''}
-                            onChange={e => setCard({ ...card, custom_background_image: e.target.value })}
-                          />
-                          <p className="text-[9px] text-gray-500 leading-tight">Paste an image URL. It will span the entire background behind your card.</p>
+                        {/* Preview thumbnail */}
+                        <div
+                          className="w-12 h-16 rounded-lg border border-black/10 overflow-hidden bg-gray-200 shrink-0 flex items-center justify-center"
+                          style={{
+                            backgroundImage: card.custom_background_image
+                              ? `url(${card.custom_background_image})`
+                              : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        >
+                          {!card.custom_background_image && (
+                            <Upload className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 space-y-2">
+                          {uploadingBg ? (
+                            <div className="flex items-center gap-2 text-[11px] text-[#0071E3]">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Uploading...</span>
+                            </div>
+                          ) : (
+                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-black/[0.1] text-[11px] font-medium text-[#1D1D1F] hover:bg-neutral-50 shadow-2xs transition">
+                              <Upload className="w-3.5 h-3.5 text-[#0071E3]" />
+                              <span>{card.custom_background_image ? 'Change Image' : 'Upload Image'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleBgImageChange}
+                                disabled={uploadingBg}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                          {card.custom_background_image && (
+                            <button
+                              type="button"
+                              onClick={() => setCard({ ...card, custom_background_image: null })}
+                              className="text-[10px] text-red-500 hover:underline block"
+                            >
+                              Remove background
+                            </button>
+                          )}
+                          <p className="text-[9px] text-gray-400 leading-tight">
+                            Upload JPG, PNG or WebP. Spans the full card background.
+                          </p>
                         </div>
                       </div>
                     </div>
+
 
                     {/* Custom Brand Colors */}
                     <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04] space-y-3">
@@ -1358,25 +1468,83 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             </div>
 
             {expandedSections[5] && (
-              <div className="space-y-3 pt-1">
-                {card.socials.map((social: any) => (
-                  <div key={social.id} className="flex items-center gap-2">
-                    <div className="w-24 shrink-0">
-                      <span className="text-xs font-semibold text-[#1D1D1F]">{social.name}</span>
+              <div className="space-y-1 pt-1">
+                {/* Legend */}
+                <div className="flex items-center gap-2 px-1 mb-2">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider w-24 shrink-0">Platform</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex-1">Profile URL</span>
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider w-28 text-center shrink-0">Icon Style</span>
+                </div>
+
+                {card.socials.map((social: any) => {
+                  const connectUrl = SOCIAL_CONNECT_URLS[social.id];
+                  const iconStyle: "black" | "white" | "colorful" = social.icon_style || "colorful";
+                  return (
+                    <div key={social.id} className="flex items-center gap-2 p-2 rounded-2xl hover:bg-[#F5F5F7] transition group">
+                      {/* Platform name + connect button */}
+                      <div className="w-24 shrink-0 flex flex-col gap-0.5">
+                        <span className="text-[11px] font-semibold text-[#1D1D1F] truncate">{social.name}</span>
+                        {connectUrl && social.id !== "other" && (
+                          <a
+                            href={connectUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Open ${social.name} to copy your profile link`}
+                            className="inline-flex items-center gap-0.5 text-[9px] font-bold text-[#0071E3] hover:underline"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            <span>Connect</span>
+                          </a>
+                        )}
+                      </div>
+
+                      {/* URL input */}
+                      <input
+                        type="url"
+                        placeholder={
+                          social.id === "other"
+                            ? "https://your-custom-link.com"
+                            : connectUrl
+                            ? `${connectUrl}yourprofile`
+                            : `https://${social.id}.com/...`
+                        }
+                        value={social.url || ""}
+                        onChange={(e) => updateSocial(social.id, { url: e.target.value })}
+                        className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white min-w-0"
+                      />
+
+                      {/* Icon Style Picker: Black / White / Color */}
+                      <div className="w-28 shrink-0 flex items-center rounded-xl overflow-hidden border border-black/[0.08] bg-[#F5F5F7]">
+                        {(["black", "white", "colorful"] as const).map((style) => (
+                          <button
+                            key={style}
+                            type="button"
+                            title={`${style.charAt(0).toUpperCase() + style.slice(1)} icon`}
+                            onClick={() => updateSocial(social.id, { icon_style: style })}
+                            className={`flex-1 py-1.5 text-[9px] font-bold transition capitalize flex items-center justify-center gap-0.5 ${
+                              iconStyle === style
+                                ? style === "black"
+                                  ? "bg-[#1D1D1F] text-white"
+                                  : style === "white"
+                                  ? "bg-white text-[#1D1D1F] shadow-xs"
+                                  : "bg-gradient-to-r from-[#0071E3] to-[#BF5AF2] text-white"
+                                : "text-gray-400 hover:text-gray-600"
+                            }`}
+                          >
+                            {style === "black" ? "B" : style === "white" ? "W" : "🎨"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <input
-                      type="url"
-                      placeholder={social.id === "other" ? "https://your-custom-link.com" : `https://${social.id}.com/...`}
-                      value={social.url || ""}
-                      onChange={(e) => updateSocialUrl(social.id, e.target.value)}
-                      className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                    />
-                  </div>
-                ))}
-                <p className="text-[10px] text-gray-400 pt-1">Use "Other / Custom" to add any link not listed above.</p>
+                  );
+                })}
+                <p className="text-[10px] text-gray-400 pt-2 px-1">
+                  Click <strong>Connect</strong> to open the platform — copy your profile URL and paste it above. Icon style controls how the icon appears on your public card.
+                </p>
               </div>
             )}
           </div>
+
 
         </div>
 

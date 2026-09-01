@@ -1,13 +1,26 @@
 /* eslint-disable */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Sparkles, ArrowRight, Loader2, Check } from "lucide-react";
-import { themeList } from "@/lib/theme";
-import { templateList } from "@/lib/templates";
+import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
+
+/** Generates a URL-safe slug from a name */
+function nameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Appends a 4-char random suffix to ensure uniqueness */
+function withSuffix(base: string): string {
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return base ? `${base}-${suffix}` : `card-${suffix}`;
+}
 
 export default function NewCardPage() {
   const router = useRouter();
@@ -16,32 +29,9 @@ export default function NewCardPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    title: "",
-    company: "",
-    slug: "",
-    theme: "apple-light",
-    template_layout: "classic-segmented",
-    phonePrimary: "",
-    emailWork: "",
-    websitePrimary: "https://",
-    tagline: "",
-  });
-
-  const handleNameChange = (name: string) => {
-    const generatedSlug = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-
-    setFormData((prev) => ({
-      ...prev,
-      fullName: name,
-      slug: prev.slug === "" || prev.slug.startsWith(generatedSlug.slice(0, 3)) ? generatedSlug : prev.slug,
-    }));
-  };
+  const [fullName, setFullName] = useState("");
+  const [title, setTitle] = useState("");
+  const [company, setCompany] = useState("");
 
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,36 +48,43 @@ export default function NewCardPage() {
         return;
       }
 
-      // Proactively ensure profile exists to satisfy foreign key constraint
+      // Ensure profile exists (satisfies FK constraint)
       await supabase.from("profiles").upsert(
         {
           id: user.id,
           email: user.email || "",
-          full_name: formData.fullName || user.user_metadata?.full_name || "",
+          full_name: fullName || user.user_metadata?.full_name || "",
           updated_at: new Date().toISOString(),
         },
         { onConflict: "id" }
       );
 
-      const names = formData.fullName.trim().split(" ");
-      const avatarInitials = names.length > 1
-        ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
-        : (names[0] ? names[0].slice(0, 2).toUpperCase() : "IK");
+      const names = fullName.trim().split(" ");
+      const avatarInitials =
+        names.length > 1
+          ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+          : names[0]
+          ? names[0].slice(0, 2).toUpperCase()
+          : "IK";
+
+      // Generate a unique slug: name-based + 4-char random suffix
+      const slug = withSuffix(nameToSlug(fullName));
 
       const newCard = {
         user_id: user.id,
-        slug: formData.slug || `card-${Date.now().toString(36)}`,
+        slug,
         is_published: true,
-        theme: formData.theme || "apple-light",
-        template_layout: formData.template_layout || "classic-segmented",
-        full_name: formData.fullName,
+        // Default theme & layout — user can change later in the editor
+        theme: "apple-light",
+        template_layout: "classic-segmented",
+        full_name: fullName,
         avatar_initials: avatarInitials,
-        title: formData.title,
-        company: formData.company,
-        tagline: formData.tagline || "",
-        phone_primary: formData.phonePrimary || "",
-        email_work: formData.emailWork || user.email || "",
-        website_primary: formData.websitePrimary || "https://",
+        title,
+        company,
+        tagline: "",
+        phone_primary: "",
+        email_work: user.email || "",
+        website_primary: "https://",
         socials: [
           { id: "linkedin", name: "LinkedIn", url: "", active: true },
           { id: "whatsapp", name: "WhatsApp", url: "", active: true },
@@ -119,9 +116,11 @@ export default function NewCardPage() {
         .select()
         .single();
 
-      // Fallback: If template_layout column is missing from Supabase schema cache, retry without it
-      if (error && (error.message?.includes("template_layout") || error.code === "PGRST204")) {
-        console.warn("Retrying card insert without template_layout column:", error.message);
+      // Fallback: retry without template_layout if column missing from schema cache
+      if (
+        error &&
+        (error.message?.includes("template_layout") || error.code === "PGRST204")
+      ) {
         const { template_layout: _tpl, ...cardWithoutTemplate } = newCard;
         const retryResult = await supabase
           .from("cards")
@@ -134,7 +133,10 @@ export default function NewCardPage() {
 
       if (error) {
         if (error.code === "23505") {
-          throw new Error("This custom URL slug is already taken. Please choose another slug.");
+          // Extremely unlikely with a suffix, but handle gracefully
+          throw new Error(
+            "A card with a similar name already exists. Please try again."
+          );
         }
         throw new Error(error.message);
       }
@@ -148,7 +150,7 @@ export default function NewCardPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto py-6">
+    <div className="max-w-md mx-auto py-6">
       <Link
         href="/dashboard"
         className="inline-flex items-center gap-1.5 text-xs text-[#86868B] hover:text-[#1D1D1F] font-medium mb-6 transition"
@@ -158,12 +160,18 @@ export default function NewCardPage() {
       </Link>
 
       <div className="bg-white rounded-[32px] p-6 sm:p-8 border border-black/[0.06] shadow-xs space-y-6">
+        {/* Header */}
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
-            Create a New Smart Business Card
-          </h1>
-          <p className="text-xs text-[#86868B] pt-0.5">
-            Choose your profile details, layout architecture, and color palette.
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-[#0071E3]/10 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#0071E3]" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
+              Create Your Card
+            </h1>
+          </div>
+          <p className="text-xs text-[#86868B] pl-10">
+            Fill in the basics — you can customize everything else in the editor.
           </p>
         </div>
 
@@ -173,7 +181,8 @@ export default function NewCardPage() {
           </div>
         )}
 
-        <form onSubmit={handleCreateCard} className="space-y-5 text-xs">
+        <form onSubmit={handleCreateCard} className="space-y-4 text-xs">
+          {/* Full Name */}
           <div>
             <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
               Full Name *
@@ -181,124 +190,47 @@ export default function NewCardPage() {
             <input
               type="text"
               required
-              value={formData.fullName}
-              onChange={(e) => handleNameChange(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g. Ibrahim El Khalil"
-              className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus:outline-none focus:bg-white"
+              className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus:outline-none focus:bg-white text-sm transition"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                Job Title *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. Founder & AI Architect"
-                className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus:outline-none focus:bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                Company *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                placeholder="e.g. ZYNIQ"
-                className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus:outline-none focus:bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Template Layout Selection */}
+          {/* Job Title */}
           <div>
-            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
-              Select UI Layout Template
+            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+              Job Title *
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {templateList.map((tpl) => {
-                const isSelected = formData.template_layout === tpl.id;
-                return (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, template_layout: tpl.id })}
-                    className={`p-3 rounded-2xl text-left border transition-all relative flex flex-col justify-between ${
-                      isSelected
-                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/30"
-                        : "border-black/[0.06] hover:border-black/[0.15] bg-[#F8F9FA]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-700">
-                        {tpl.badge}
-                      </span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3]" />}
-                    </div>
-                    <div className="mt-1.5">
-                      <span className="block text-xs font-bold text-[#1D1D1F]">{tpl.name}</span>
-                      <span className="block text-[10px] text-[#86868B] line-clamp-1">{tpl.description}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Founder & AI Architect"
+              className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus:outline-none focus:bg-white text-sm transition"
+            />
           </div>
 
-          {/* Initial Theme Palette Selection */}
+          {/* Company */}
           <div>
-            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1.5">
-              Choose Color Theme ({themeList.length} Palettes)
+            <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+              Company *
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
-              {themeList.map((th) => {
-                const isSelected = formData.theme === th.id;
-                return (
-                  <button
-                    key={th.id}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, theme: th.id })}
-                    className={`p-2.5 rounded-xl text-left border transition-all relative flex flex-col justify-between min-h-[64px] ${
-                      isSelected
-                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 bg-blue-50/30"
-                        : "border-black/[0.05] hover:border-black/[0.12] bg-[#F5F5F7]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-1.5">
-                        <div
-                          className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-2xs shrink-0"
-                          style={{ backgroundColor: th.previewBg }}
-                        />
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shadow-2xs shrink-0"
-                          style={{ backgroundColor: th.previewAccent }}
-                        />
-                        {th.previewSecondary && (
-                          <div
-                            className="w-2 h-2 rounded-full shadow-2xs shrink-0"
-                            style={{ backgroundColor: th.previewSecondary }}
-                          />
-                        )}
-                      </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-[#0071E3]" />}
-                    </div>
-                    <span className="block text-[11px] font-semibold text-[#1D1D1F] truncate mt-1">
-                      {th.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <input
+              type="text"
+              required
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="e.g. ZYNIQ"
+              className="w-full p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus:outline-none focus:bg-white text-sm transition"
+            />
           </div>
+
+          {/* Hint about slug */}
+          <p className="text-[10px] text-[#86868B] bg-[#F5F5F7] rounded-xl px-3 py-2 border border-black/[0.04]">
+            🔗 A unique public URL will be auto-generated from your name. You can change it anytime in the editor.
+          </p>
 
           <button
             type="submit"
@@ -312,7 +244,7 @@ export default function NewCardPage() {
               </>
             ) : (
               <>
-                <span>Create &amp; Open Editor</span>
+                <span>Create & Open Editor</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

@@ -64,18 +64,34 @@ export default function DashboardPage() {
       return;
     }
 
-    const { data, error } = await supabase
+    // Try with is_deleted filter first; fall back if the column doesn't exist yet
+    let { data, error } = await supabase
       .from("cards")
       .select("*")
       .eq("user_id", user.id)
-      .is("is_deleted", false)
+      .neq("is_deleted", true)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
+    if (error) {
+      // Column may not exist (PGRST204 or schema cache miss) — retry without filter
+      const retry = await supabase
+        .from("cards")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      data = retry.data;
+      // If still erroring, just show empty (error logged for debugging)
+      if (retry.error) {
+        console.error("fetchCards error:", retry.error.message);
+      }
+    }
+
+    if (data) {
       setCards(data);
     }
     setLoading(false);
   };
+
 
   useEffect(() => {
     fetchCards();
