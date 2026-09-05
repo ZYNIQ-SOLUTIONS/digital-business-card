@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -421,6 +420,11 @@ export function BookingModal({ isOpen, onClose, card }: BookingModalProps) {
                   {errorMsg}
                 </div>
               )}
+
+              <label className="flex items-start gap-2 text-[10px] text-neutral-500 my-4 cursor-pointer px-1">
+                <input type="checkbox" required className="mt-0.5 rounded border-neutral-300 text-[#0071E3] focus:ring-[#0071E3]" />
+                <span>I agree to share my contact information and meeting details with the card owner in accordance with the Privacy Policy.</span>
+              </label>
 
               <button
                 type="submit"

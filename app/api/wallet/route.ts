@@ -1,16 +1,47 @@
-/* eslint-disable */
 import { NextResponse } from "next/server";
 import { PKPass } from "passkit-generator";
 import { createClient } from "@/lib/supabase/server";
 import path from "path";
 import fs from "fs";
 
+interface WalletCardData {
+  id?: string;
+  full_name: string;
+  company: string;
+  title: string;
+  phone_primary: string;
+  email_work: string;
+  website_primary: string;
+  geofence_locations?: Array<{ latitude: number; longitude: number; relevantText?: string }>;
+  tagline?: string;
+  bio?: string;
+  [key: string]: unknown;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const cardIdOrSlug = searchParams.get("cardId") || searchParams.get("slug");
+    const rawCardId = searchParams.get("cardId");
+    const rawSlug = searchParams.get("slug");
 
-    let cardData: any = {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const SLUG_REGEX = /^[a-z0-9-_]{1,100}$/i;
+
+    if (rawCardId !== null) {
+      if (!UUID_REGEX.test(rawCardId) && !SLUG_REGEX.test(rawCardId)) {
+        return NextResponse.json({ error: "Invalid cardId or slug parameter" }, { status: 400 });
+      }
+    }
+
+    if (rawSlug !== null) {
+      if (!UUID_REGEX.test(rawSlug) && !SLUG_REGEX.test(rawSlug)) {
+        return NextResponse.json({ error: "Invalid cardId or slug parameter" }, { status: 400 });
+      }
+    }
+
+    const cardIdOrSlug = rawCardId || rawSlug;
+
+    let cardData: WalletCardData = {
       full_name: "Ibrahim El Khalil",
       company: "ZYNIQ",
       title: "Founder & AI Architect",
@@ -20,21 +51,21 @@ export async function GET(request: Request) {
     };
 
     if (cardIdOrSlug) {
-      // Validate input to prevent PostgREST filter injection
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cardIdOrSlug);
-      const isSlug = /^[a-z0-9][a-z0-9-_]{1,98}[a-z0-9]$/i.test(cardIdOrSlug);
-
-      if (!isUUID && !isSlug) {
-        return NextResponse.json({ error: "Invalid card identifier format" }, { status: 400 });
-      }
-
       try {
         const supabase = await createClient();
         let query = supabase.from("cards").select("*");
-        if (isUUID) {
-          query = query.eq("id", cardIdOrSlug);
-        } else {
-          query = query.eq("slug", cardIdOrSlug);
+        if (rawCardId) {
+          if (UUID_REGEX.test(rawCardId)) {
+            query = query.eq("id", rawCardId);
+          } else {
+            query = query.eq("slug", rawCardId);
+          }
+        } else if (rawSlug) {
+          if (UUID_REGEX.test(rawSlug)) {
+            query = query.eq("id", rawSlug);
+          } else {
+            query = query.eq("slug", rawSlug);
+          }
         }
         const { data: fetchedCard } = await query.single();
 
@@ -73,10 +104,7 @@ END:VCARD`;
     if (!hasCertificates) {
       return NextResponse.json(
         {
-          error: "Apple Wallet Certificates Missing",
-          message:
-            "To generate a valid signed .pkpass file, place wwdr.pem, signerCert.pem, and signerKey.pem in ./certificates and configure APPLE_PASS_TYPE_IDENTIFIER & APPLE_TEAM_IDENTIFIER in .env.local",
-          vCardPreview: vCardString,
+          error: "Apple Wallet Certificates Missing: place wwdr.pem, signerCert.pem, and signerKey.pem in ./certificates",
         },
         { status: 501 }
       );
@@ -106,14 +134,14 @@ END:VCARD`;
       }
     );
 
-    // @ts-ignore
-    pass.locations = Array.isArray(cardData.geofence_locations) && cardData.geofence_locations.length > 0 
-      ? cardData.geofence_locations.map((loc: any) => ({
-          latitude: loc.latitude,
-          longitude: loc.longitude,
-          relevantText: loc.relevantText || "Your digital card is ready to share."
-        }))
-      : undefined;
+    (pass as unknown as { locations?: unknown }).locations =
+      Array.isArray(cardData.geofence_locations) && cardData.geofence_locations.length > 0
+        ? cardData.geofence_locations.map((loc) => ({
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+            relevantText: loc.relevantText || "Your digital card is ready to share.",
+          }))
+        : undefined;
 
     pass.type = "generic";
 
@@ -174,7 +202,7 @@ END:VCARD`;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: "Failed to generate Apple Wallet pass", details: message },
+      { error: message || "Failed to generate Apple Wallet pass" },
       { status: 500 }
     );
   }

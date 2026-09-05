@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Camera, X, Loader2, CheckCircle2 } from "lucide-react";
 import { PhoneInput } from "@/components/phone-input";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOpen: boolean; onClose: () => void; cardOwnerName: string; cardId: string }) {
   const [mode, setMode] = useState<"choose" | "camera" | "manual" | "success">("choose");
@@ -8,6 +9,7 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "", title: "" });
+  const [cfToken, setCfToken] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -43,13 +45,18 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !cfToken) {
+      alert("Please complete the security check.");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // Save to connections
-      await fetch("/api/connections", {
+      const response = await fetch("/api/connections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, cardId }),
+        body: JSON.stringify({ ...formData, cardId, cfToken }),
       });
       setMode("success");
     } catch {
@@ -109,6 +116,15 @@ export function ExchangeModal({ isOpen, onClose, cardOwnerName, cardId }: { isOp
                 <input type="text" placeholder="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-1/2 p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none" />
               </div>
             </div>
+            <label className="flex items-start gap-2 text-[10px] text-neutral-500 mt-4 cursor-pointer px-1">
+              <input type="checkbox" required className="mt-0.5 rounded border-neutral-300 text-[#0071E3] focus:ring-[#0071E3]" />
+              <span>I agree to share my contact information with the card owner in accordance with the Privacy Policy.</span>
+            </label>
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+              <div className="flex justify-center mt-2 mb-2">
+                <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} onSuccess={setCfToken} />
+              </div>
+            )}
             <button type="submit" disabled={isLoading} className="w-full p-4 rounded-2xl bg-black text-white font-semibold flex justify-center items-center gap-2 mt-4">
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>Share Contact</span>}
             </button>

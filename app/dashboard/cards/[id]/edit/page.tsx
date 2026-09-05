@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 
 import React, { useEffect, useState, use, useRef } from "react";
@@ -17,6 +16,7 @@ import { PhoneInput } from "@/components/phone-input";
 import { AiBioModal } from "@/components/ai-bio-modal";
 import { VerifyModal } from "@/components/verify-modal";
 import { ImageCropModal } from "@/components/image-crop-modal";
+import { WalletPassButtons } from "@/components/wallet-pass-buttons";
 import { themes, themeList, ThemeCategory, ThemeTokens } from "@/lib/theme";
 import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
 
@@ -63,6 +63,32 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
   const [icebreakerInput, setIcebreakerInput] = useState("");
   const [icebreakers, setIcebreakers] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
+
+  const handleAddSkill = (skillText: string) => {
+    const trimmed = skillText.trim();
+    if (!trimmed) return;
+    const newSkills = trimmed
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    setCard((prev: any) => {
+      const existing = Array.isArray(prev.skills) ? prev.skills : [];
+      const combined = Array.from(new Set([...existing, ...newSkills]));
+      return { ...prev, skills: combined };
+    });
+    setSkillInput("");
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setCard((prev: any) => ({
+      ...prev,
+      skills: (Array.isArray(prev.skills) ? prev.skills : []).filter(
+        (s: string) => s !== skillToRemove
+      ),
+    }));
+  };
   const [hasWalletIdentity, setHasWalletIdentity] = useState(false);
   const isInitialLoad = useRef(true);
   const cardRef = useRef<any>(null);
@@ -127,11 +153,11 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
-      const fileName = `${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
+      const fileName = `${user.id}/avatar-${Date.now()}.jpg`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, croppedBlob, { contentType: 'image/jpeg' });
+        .upload(fileName, croppedBlob, { contentType: 'image/jpeg', upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -141,6 +167,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
       const newAvatarUrl = publicUrlData.publicUrl;
       setCard((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
+      await supabase.from("cards").update({ avatar_url: newAvatarUrl }).eq("id", id);
     } catch (err: any) {
       console.error("Avatar upload error:", err);
       setErrorMsg("Avatar upload failed: " + err.message);
@@ -243,7 +270,9 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         ...data,
         template_layout: data.template_layout || "classic-segmented",
         theme: data.theme || "apple-light",
-        skills: data.skills || [],
+        skills: Array.isArray(data.skills) ? data.skills : [],
+        work_location: data.work_location || "",
+        portfolio_url: data.portfolio_url || "",
         office_address: data.office_address || {
           street: "",
           city: "",
@@ -481,150 +510,6 @@ export default function CardEditPage({ params }: CardEditPageProps) {
               Customize design, layout templates, colors, and live integrations.
             </p>
           </div>
-          
-          {/* Section 6: Advanced Features & Privacy */}
-          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
-            <div 
-              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
-              onClick={() => toggleSection(6)}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">
-                  {expandedSections[6] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                </span>
-                <h2 className="text-sm font-semibold text-[#1D1D1F]">
-                  6. Advanced Features &amp; Privacy
-                </h2>
-              </div>
-              <span className="text-xs text-neutral-400 font-mono">
-                {card.is_private ? "Private" : "Public"}
-              </span>
-            </div>
-
-            {expandedSections[6] && (
-              <div className="space-y-5 pt-1">
-                {/* Video Embed */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
-                    Introduction Video (YouTube / Vimeo / Direct)
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={card.video_url || ""}
-                    onChange={(e) => setCard({ ...card, video_url: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                  />
-                </div>
-
-                {/* Custom Fields */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">
-                      Custom Information Fields
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setCard({ ...card, custom_fields: [...(card.custom_fields || []), { label: "", value: "" }] })}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0071E3] hover:underline"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Add Field</span>
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {(card.custom_fields || []).map((field: any, index: number) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="Label (e.g. License #)"
-                          value={field.label}
-                          onChange={(e) => {
-                            const newFields = [...card.custom_fields];
-                            newFields[index].label = e.target.value;
-                            setCard({ ...card, custom_fields: newFields });
-                          }}
-                          className="w-1/3 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Value"
-                          value={field.value}
-                          onChange={(e) => {
-                            const newFields = [...card.custom_fields];
-                            newFields[index].value = e.target.value;
-                            setCard({ ...card, custom_fields: newFields });
-                          }}
-                          className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newFields = card.custom_fields.filter((_: any, i: number) => i !== index);
-                            setCard({ ...card, custom_fields: newFields });
-                          }}
-                          className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    {(!card.custom_fields || card.custom_fields.length === 0) && (
-                      <p className="text-[10px] text-gray-400">Add custom attributes to display on your profile.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t border-black/[0.06] pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Private Profile */}
-                  <div className="p-3 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <span className="block text-xs font-bold text-[#1D1D1F]">Private Profile (PIN)</span>
-                        <span className="block text-[10px] text-[#86868B] leading-tight">Require a 4-digit PIN to view.</span>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          checked={card.is_private || false}
-                          onChange={(e) => setCard({ ...card, is_private: e.target.checked })}
-                        />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#34C759]"></div>
-                      </label>
-                    </div>
-                    {card.is_private && (
-                      <input
-                        type="text"
-                        placeholder="4-digit PIN"
-                        maxLength={4}
-                        value={card.pin_code || ""}
-                        onChange={(e) => setCard({ ...card, pin_code: e.target.value.replace(/[^0-9]/g, "") })}
-                        className="w-full p-2 rounded-xl bg-white border border-black/[0.05] text-xs font-mono focus:outline-none text-center tracking-widest mt-1"
-                      />
-                    )}
-                  </div>
-
-                  {/* White-Label */}
-                  <div className="p-3 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl flex items-center justify-between">
-                    <div>
-                      <span className="block text-xs font-bold text-[#1D1D1F]">White-Label Mode</span>
-                      <span className="block text-[10px] text-[#86868B] leading-tight max-w-[140px]">Remove "Powered by" branding from the footer.</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={card.white_label || false}
-                        onChange={(e) => setCard({ ...card, white_label: e.target.checked })}
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0071E3]"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -647,37 +532,14 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="px-5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-[#1D1D1F] text-white text-xs font-semibold hover:bg-black/80 disabled:opacity-50 flex items-center gap-1.5 transition shadow-[0_4px_14px_rgba(0,0,0,0.1)]"
           >
-            {saving ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : saveSuccess ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>Saved!</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                <span>Save Changes</span>
-              </>
-            )}
+            <Save className="w-3.5 h-3.5" />
+            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
       </div>
-
-      {errorMsg && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-center justify-between">
-          <span>{errorMsg}</span>
-          <button onClick={() => setErrorMsg(null)} className="text-red-400 hover:text-red-600">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
+      
       {/* Main Grid: Form Sections (Left 7 cols) & Live Preview Mockup (Right 5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
@@ -815,6 +677,75 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                       className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                       placeholder="المسمى الوظيفي"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                      Work Location
+                    </label>
+                    <select
+                      value={card.work_location || ""}
+                      onChange={(e) => setCard({ ...card, work_location: e.target.value })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white text-[#1D1D1F]"
+                    >
+                      <option value="">Select location...</option>
+                      <option value="remote">Remote</option>
+                      <option value="hybrid">Hybrid</option>
+                      <option value="onsite">On-site</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Skills & Expertise */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">
+                      Skills &amp; Expertise
+                    </label>
+                    <span className="text-[10px] text-[#86868B]">Type and press Enter or comma</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] focus-within:bg-white focus-within:border-black/[0.15] transition">
+                    {(Array.isArray(card.skills) && card.skills.length > 0) && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {card.skills.map((skill: string, idx: number) => (
+                          <span
+                            key={`${skill}-${idx}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-black/[0.08] text-xs font-medium text-[#1D1D1F] shadow-2xs"
+                          >
+                            {skill}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSkill(skill)}
+                              className="text-[#86868B] hover:text-red-500 transition"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={skillInput}
+                        onChange={(e) => setSkillInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === ",") {
+                            e.preventDefault();
+                            handleAddSkill(skillInput);
+                          }
+                        }}
+                        placeholder="Add skill (e.g. Next.js, Strategy)..."
+                        className="flex-1 bg-transparent text-xs focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddSkill(skillInput)}
+                        disabled={!skillInput.trim()}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-black/[0.1] text-xs font-medium text-[#1D1D1F] hover:bg-neutral-50 disabled:opacity-40 transition shadow-2xs"
+                      >
+                        Add
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1330,7 +1261,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     </label>
                     <input
                       type="url"
-                      value={card.website_primary}
+                      value={card.website_primary || ""}
                       onChange={(e) => setCard({ ...card, website_primary: e.target.value })}
                       placeholder="https://example.com"
                       className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
@@ -1343,7 +1274,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     </label>
                     <input
                       type="url"
-                      value={card.portfolio_url}
+                      value={card.portfolio_url || ""}
                       onChange={(e) => setCard({ ...card, portfolio_url: e.target.value })}
                       placeholder="https://dribbble.com/..."
                       className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
@@ -1545,6 +1476,176 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             )}
           </div>
 
+          {/* Section 6: Digital Wallet Passes */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-black/[0.04]">
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(6)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[6] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  6. Digital Wallet Passes
+                </h2>
+              </div>
+            </div>
+
+            {expandedSections[6] && (
+              <div className="pt-4 px-2 space-y-4">
+                <p className="text-xs text-neutral-500 text-center">
+                  Generate Apple Wallet and Google Wallet passes for this card so you can quickly share it directly from your device's native wallet app.
+                </p>
+                <WalletPassButtons cardId={card.id} isPublic={false} />
+              </div>
+            )}
+          </div>
+
+          {/* Section 7. Advanced Features & Privacy */}
+          <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
+            <div 
+              className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+              onClick={() => toggleSection(7)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">
+                  {expandedSections[7] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </span>
+                <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                  7. Advanced Features &amp; Privacy
+                </h2>
+              </div>
+              <span className="text-xs text-neutral-400 font-mono">
+                {card.is_private ? "Private" : "Public"}
+              </span>
+            </div>
+
+            {expandedSections[7] && (
+              <div className="space-y-5 pt-1">
+                {/* Video Embed */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#86868B] uppercase mb-1">
+                    Introduction Video (YouTube / Vimeo / Direct)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={card.video_url || ""}
+                    onChange={(e) => setCard({ ...card, video_url: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                  />
+                </div>
+
+                {/* Custom Fields */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-[11px] font-semibold text-[#86868B] uppercase">
+                      Custom Information Fields
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setCard({ ...card, custom_fields: [...(card.custom_fields || []), { label: "", value: "" }] })}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0071E3] hover:underline"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Add Field</span>
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {(card.custom_fields || []).map((field: any, index: number) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Label (e.g. License #)"
+                          value={field.label}
+                          onChange={(e) => {
+                            const newFields = [...card.custom_fields];
+                            newFields[index].label = e.target.value;
+                            setCard({ ...card, custom_fields: newFields });
+                          }}
+                          className="w-1/3 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Value"
+                          value={field.value}
+                          onChange={(e) => {
+                            const newFields = [...card.custom_fields];
+                            newFields[index].value = e.target.value;
+                            setCard({ ...card, custom_fields: newFields });
+                          }}
+                          className="flex-1 p-2 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFields = card.custom_fields.filter((_: any, i: number) => i !== index);
+                            setCard({ ...card, custom_fields: newFields });
+                          }}
+                          className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {(!card.custom_fields || card.custom_fields.length === 0) && (
+                      <p className="text-[10px] text-gray-400">Add custom attributes to display on your profile.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-black/[0.06] pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Private Profile */}
+                  <div className="p-3 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="block text-xs font-bold text-[#1D1D1F]">Private Profile (PIN)</span>
+                        <span className="block text-[10px] text-[#86868B] leading-tight">Require a 4-digit PIN to view.</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={card.is_private || false}
+                          onChange={(e) => setCard({ ...card, is_private: e.target.checked })}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#34C759]"></div>
+                      </label>
+                    </div>
+                    {card.is_private && (
+                      <input
+                        type="text"
+                        placeholder="4-digit PIN"
+                        maxLength={4}
+                        value={card.pin_code || ""}
+                        onChange={(e) => setCard({ ...card, pin_code: e.target.value.replace(/[^0-9]/g, "") })}
+                        className="w-full p-2 rounded-xl bg-white border border-black/[0.05] text-xs font-mono focus:outline-none text-center tracking-widest mt-1"
+                      />
+                    )}
+                  </div>
+
+                  {/* White-Label */}
+                  <div className="p-3 bg-[#FBFBFD] border border-black/[0.04] rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="block text-xs font-bold text-[#1D1D1F]">White-Label Mode</span>
+                      <span className="block text-[10px] text-[#86868B] leading-tight max-w-[140px]">Remove "Powered by" branding from the footer.</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={card.white_label || false}
+                        onChange={(e) => setCard({ ...card, white_label: e.target.checked })}
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0071E3]"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
 
         </div>
 
@@ -1555,13 +1656,14 @@ export default function CardEditPage({ params }: CardEditPageProps) {
 
           return (
             <div id="preview-canvas" className="lg:col-span-5 sticky top-20">
-              <style>{`
+                            <style>{`
                 ${card.custom_primary_color ? `.custom-bg { background-color: ${card.custom_primary_color} !important; }` : ''}
                 ${card.custom_secondary_color ? `.custom-card-bg { background-color: ${card.custom_secondary_color} !important; border-color: transparent !important; }` : ''}
                 ${card.custom_accent_color ? `
                   .custom-accent-bg { background-color: ${card.custom_accent_color} !important; }
                   .custom-accent-text { color: ${card.custom_accent_color} !important; }
                 ` : ''}
+                ${pt.customCss || ''}
               `}</style>
               
               <div className="text-center pb-2 flex items-center justify-center gap-1.5">
@@ -1609,6 +1711,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                       </p>
                       <p className={`text-[11px] ${pt.textSecondary}`}>
                         {card.company || "Company Name"}
+                        {card.work_location && ` • ${card.work_location.charAt(0).toUpperCase() + card.work_location.slice(1)}`}
                       </p>
                     </div>
 

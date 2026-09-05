@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -6,18 +5,24 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const {
       cardId,
       visitorName,
+      name = visitorName,
       visitorEmail,
+      email = visitorEmail,
       visitorPhone = "",
+      phone = visitorPhone,
+      company = null,
+      title = null,
       meetingDate,
       meetingTime,
       meetingNotes = "",
+      notes = meetingNotes,
     } = body;
 
-    if (!cardId || !visitorName || !visitorEmail || !meetingDate || !meetingTime) {
+    if (!cardId || !name || !email || !meetingDate || !meetingTime) {
       return NextResponse.json(
         { error: "Missing required booking details." },
         { status: 400 }
@@ -26,48 +31,60 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Fetch the card owner to connect
-    const { data: card } = await supabase
+    // Verify card exists and is published
+    const { data: card, error: cardError } = await supabase
       .from("cards")
-      .select("id, user_id, full_name, email_work")
+      .select("id, user_id, full_name, email_work, is_published")
       .eq("id", cardId)
       .single();
 
-    // Create a connection lead entry for the card owner
-    if (card?.user_id) {
-      try {
-        const { error: rpcError } = await supabase.rpc("submit_public_lead", {
-          p_card_id: card.id,
-          p_name: visitorName,
-          p_email: visitorEmail,
-          p_phone: visitorPhone || null,
-          p_meeting_date: meetingDate,
-          p_meeting_time: meetingTime,
-          p_notes: meetingNotes || null,
-        });
-        if (rpcError) {
-          console.warn("Booking RPC warning:", rpcError.message);
-        }
-      } catch (connErr) {
-        console.warn("Could not record booking lead:", connErr);
-      }
+    if (cardError || !card || !card.is_published) {
+      return NextResponse.json(
+        { error: "Card not found or is not published." },
+        { status: 404 }
+      );
+    }
+
+    // Create a connection lead entry for the card owner via SECURITY DEFINER RPC
+    const { data: rpcResult, error: rpcError } = await supabase.rpc("submit_public_lead", {
+      p_card_id: card.id,
+      p_name: name,
+      p_email: email,
+      p_phone: phone || null,
+      p_company: company,
+      p_job_title: null,
+      p_notes: notes || null,
+      p_lead_type: "meeting",
+      p_location: "Digital Calendar Booking",
+      p_title: title,
+      p_meeting_date: meetingDate,
+      p_meeting_time: meetingTime,
+    });
+
+    if (rpcError) {
+      console.error("Booking RPC error:", rpcError);
+      return NextResponse.json(
+        { error: rpcError.message || "Failed to record booking lead" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       booking: {
-        id: `bk_${Date.now()}`,
-        visitorName,
-        visitorEmail,
+        id: (rpcResult as { connection_id?: string } | null)?.connection_id || `bk_${Date.now()}`,
+        visitorName: name,
+        visitorEmail: email,
         meetingDate,
         meetingTime,
-        cardHost: card?.full_name || "Card Host",
+        cardHost: card.full_name || "Card Host",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to record booking";
     console.error("Booking API error:", error);
     return NextResponse.json(
-      { error: "Failed to record booking", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }

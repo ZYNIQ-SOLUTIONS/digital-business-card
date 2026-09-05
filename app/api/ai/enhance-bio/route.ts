@@ -1,19 +1,63 @@
-/* eslint-disable */
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { bio = "", fullName = "", title = "", company = "", skills = [], tagline = "" } = body;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    
+    // Rate Limiting: 50 AI bio requests per 24 hours
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+
+    const { count, error: countError } = await supabase
+      .from('ai_usage_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('endpoint', 'enhance-bio')
+      .gte('created_at', yesterday.toISOString());
+
+    if (!countError && count !== null && count >= 50) {
+      return NextResponse.json(
+        { error: "AI rate limit exceeded. You can use bio generation up to 50 times per 24 hours." },
+        { status: 429 }
+      );
+    }
+
+    // Log the usage
+    await supabase.from('ai_usage_logs').insert({
+      user_id: user.id,
+      endpoint: 'enhance-bio',
+    });
+
+    const rawBio = typeof body.bio === "string" ? body.bio : "";
+    const rawFullName = typeof body.fullName === "string" ? body.fullName : "";
+    const rawTitle = typeof body.title === "string" ? body.title : "";
+    const rawCompany = typeof body.company === "string" ? body.company : "";
+    const rawTagline = typeof body.tagline === "string" ? body.tagline : "";
+
+    const bio = rawBio.trim().slice(0, 500);
+    const fullName = rawFullName.trim().slice(0, 100);
+    const title = rawTitle.trim().slice(0, 100);
+    const company = rawCompany.trim().slice(0, 100);
+    const tagline = rawTagline.trim().slice(0, 500);
+    const skills = Array.isArray(body.skills)
+      ? body.skills.slice(0, 10).map((s: unknown) => String(s || "").trim().slice(0, 50)).filter(Boolean)
+      : [];
 
     const apiKey = process.env.GEMINI_API_KEY || process.env["GEMINI_" + "API_KEY"];
 
     // If no API key configured, use high-craft structured fallbacks
     if (!apiKey || apiKey.includes("placeholder")) {
-      const nameStr = fullName || "Executive";
       const titleStr = title ? `${title}` : "Professional Leader";
       const compStr = company ? ` at ${company}` : "";
       const skillsStr = Array.isArray(skills) && skills.length > 0 ? skills.slice(0, 3).join(", ") : "strategic growth and innovation";
@@ -92,7 +136,7 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
     try {
       const cleaned = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
       jsonData = JSON.parse(cleaned);
-    } catch (parseErr) {
+    } catch {
       console.error("Failed to parse Gemini bio JSON response:", resultText);
       return NextResponse.json({
         success: true,
@@ -111,10 +155,11 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
       source: "gemini",
       variations: jsonData.variations || [],
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to enhance bio";
     console.error("Error generating bio enhancement:", error);
     return NextResponse.json(
-      { error: "Failed to enhance bio", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }

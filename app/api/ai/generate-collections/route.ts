@@ -1,9 +1,30 @@
-/* eslint-disable */
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+interface ConnectionRecord {
+  id: string;
+  contact_name?: string;
+  contact_title?: string;
+  contact_company?: string;
+  met_at_location?: string;
+  contact_email?: string;
+  status?: string;
+  ai_drafted_message?: string;
+  [key: string]: unknown;
+}
+
+interface CardRecord {
+  full_name?: string;
+  title?: string;
+  company?: string;
+  industry?: string;
+  skills?: string[];
+  bio?: string;
+  [key: string]: unknown;
+}
 
 interface GeneratedCollection {
   name: string;
@@ -67,7 +88,7 @@ export async function POST(request: Request) {
       existingCollections = []
     } = body;
 
-    const existingNames = existingCollections.map((c: any) => (c.name || "").toLowerCase());
+    const existingNames = (existingCollections as Array<{ name?: string }>).map((c) => (c.name || "").toLowerCase());
 
     const apiKey = process.env.GEMINI_API_KEY || process.env["GEMINI_" + "API_KEY"];
 
@@ -80,9 +101,9 @@ export async function POST(request: Request) {
 
         let prompt = "";
 
-        if (mode === "connections" && connections.length > 0) {
+        if (mode === "connections" && (connections as ConnectionRecord[]).length > 0) {
           // Prepare connection summary for prompt
-          const connectionsSummary = connections.map((c: any, i: number) => ({
+          const connectionsSummary = (connections as ConnectionRecord[]).map((c) => ({
             id: c.id,
             name: c.contact_name || "Unknown",
             title: c.contact_title || "Professional",
@@ -116,7 +137,7 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
 }`;
         } else {
           // Profile & Cards mode
-          const userCards = Array.isArray(cards) && cards.length > 0 ? cards : [];
+          const userCards = (Array.isArray(cards) && cards.length > 0 ? cards : []) as CardRecord[];
           const userTitle = userCards[0]?.title || profile?.full_name || "Professional";
           const userCompany = userCards[0]?.company || "";
           const userIndustry = userCards[0]?.industry || "";
@@ -163,7 +184,7 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
         const parsed = JSON.parse(cleaned);
 
         if (Array.isArray(parsed.collections) && parsed.collections.length > 0) {
-          const validatedCollections: GeneratedCollection[] = parsed.collections.map((col: any, index: number) => ({
+          const validatedCollections: GeneratedCollection[] = (parsed.collections as Array<Partial<GeneratedCollection>>).map((col, index: number) => ({
             name: col.name || `Smart Collection ${index + 1}`,
             description: col.description || "Organized contacts group",
             color: col.color && col.color.startsWith("#") ? col.color : PRESET_COLORS[index % PRESET_COLORS.length],
@@ -178,8 +199,9 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
             collections: validatedCollections,
           });
         }
-      } catch (geminiError: any) {
-        console.warn("Gemini generation failed, using intelligent heuristics:", geminiError.message);
+      } catch (geminiError: unknown) {
+        const geminiMsg = geminiError instanceof Error ? geminiError.message : "Error";
+        console.warn("Gemini generation failed, using intelligent heuristics:", geminiMsg);
       }
     }
 
@@ -196,10 +218,9 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
       const eventLeads: string[] = [];
       const highPriority: string[] = [];
 
-      connections.forEach((c: any) => {
+      (connections as ConnectionRecord[]).forEach((c) => {
         const title = (c.contact_title || "").toLowerCase();
         const location = (c.met_at_location || "").toLowerCase();
-        const company = (c.contact_company || "").toLowerCase();
 
         if (title.includes("ceo") || title.includes("founder") || title.includes("director") || title.includes("vp") || title.includes("head") || title.includes("chief")) {
           executives.push(c.id);
@@ -304,10 +325,11 @@ Return ONLY valid JSON (no markdown formatting, no codeblocks) with this exact s
       mode,
       collections: fallbackCollections,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to generate collections";
     console.error("Error generating collections:", error);
     return NextResponse.json(
-      { error: "Failed to generate collections", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }

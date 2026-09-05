@@ -1,69 +1,58 @@
-# BRIEFING — 2026-08-31T06:36:00Z
+# BRIEFING — 2026-09-04T12:54:00Z
 
 ## Mission
-Scaffold the Zavatar sub-project, define core TypeScript types, build modular parametric SVG asset library, implement TemplateAdapter (using Sharp for multi-LOD 2D composites), MetaPersonAdapter stub, AdapterRegistry with fallback, and main exports under `zavatar/`.
+Milestone M1: Database Foundation & Security DDL. Implement required database schema, functions, triggers, and RLS policies in `supabase/schema.sql` and `supabase/migrations/002_p0_security_hardening.sql`.
 
 ## 🔒 My Identity
 - Archetype: implementer
 - Roles: implementer, qa, specialist
 - Working directory: /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m1
-- Original parent: 602e431e-730f-406c-a76c-b2a697ee9fe2
-- Milestone: M1 (Requirement R1)
+- Original parent: b6269969-8d18-4aa6-8910-4a283e6cac6b
+- Milestone: M1: Database Foundation & Security DDL
 
 ## 🔒 Key Constraints
-- Write ownership: `zavatar/` EXCEPT `zavatar/supabase/` and `zavatar/nft/`.
-- No dummy/facade implementations or hardcoded test values.
-- `package.json` must have `build`, `test`, `typecheck` scripts and install cleanly.
-- `tsconfig.json` must have `strict: true`.
-- Bundled modular SVG assets: >=5 face-shape variants × 6 skin-tone variants × 8 hairstyle variants + 5 outfit variants + 6 expressions.
-- `TemplateAdapter` must use `sharp` to composite SVG/PNG parametric avatars across multi-LOD (high: 512px, mid: 256px, low: 64px, svg data URLs) and implement `healthCheck()`.
-- `MetaPersonAdapter` must throw descriptive error if `METAPERSON_API_KEY` is not set, with structured TODO comments.
-- `AdapterRegistry` must read `ACTIVE_ADAPTER` (default: 'template') with automatic fallback to `TemplateAdapter`.
+- EXCLUSIVELY own: `/home/level-77/Desktop/digital_business_card/supabase/schema.sql` and `/home/level-77/Desktop/digital_business_card/supabase/migrations/*`.
+- Do NOT modify any other files.
+- DO NOT CHEAT. Genuine implementations only.
+- P0-2: Enable RLS on `organizations` and `organization_members`. Add non-recursive `SECURITY DEFINER` functions (`is_org_member`, `is_org_admin`) with `SET search_path = public` to avoid PostgreSQL error 42P17. Add complete SELECT/INSERT/UPDATE/DELETE policies.
+- P0-3: Implement `submit_public_lead(p_card_id uuid, p_name text, p_email text, p_phone text, p_company text, p_job_title text, p_notes text, p_lead_type text, p_location text)` with `SECURITY DEFINER` and `SET search_path = public`. Verify card is published before inserting into `connections`.
+- P0-5: Update storage policies for `avatars` bucket in `schema.sql` enforcing `(storage.foldername(name))[1] = auth.uid()::text` for SELECT, INSERT, UPDATE, DELETE.
+- P0-6: Implement `protect_verification_columns()` trigger function and attach trigger to `cards` table before update, ensuring only `service_role` can modify `is_verified`, `verification_badge`, and `verified_at`.
+- P2-2: Implement `increment_card_views(p_slug text)` `SECURITY DEFINER` function with `SET search_path = public` that increments `views_count` on `cards` and inserts a view event into `card_events`.
+- P1-1: Add `org_invitations` table definition to `supabase/schema.sql` with columns `(id uuid primary key, org_id uuid references organizations(id), email text, role text, card_id uuid references cards(id), token text, created_at timestamptz, expires_at timestamptz)` and complete RLS.
+- Ensure all SQL is valid, idempotent, syntax-checked, and properly placed.
 
 ## Current Parent
-- Conversation ID: 602e431e-730f-406c-a76c-b2a697ee9fe2
-- Updated: 2026-08-31T06:36:00Z
+- Conversation ID: b6269969-8d18-4aa6-8910-4a283e6cac6b
+- Updated: 2026-09-04T12:54:00Z
 
 ## Task Summary
-- **What to build**: Complete Zavatar scaffold, types, SVG asset library, and generation adapters in `zavatar/`.
-- **Success criteria**:
-  - `npm install` and `npx tsc --noEmit` pass cleanly in `zavatar/`.
-  - `TemplateAdapter.healthCheck()` returns `true`.
-  - `TemplateAdapter.generateFromTemplate(...)` returns an `AvatarMeshResult` with high, mid, low PNG data/URLs and metadata.
-  - Automated tests pass.
-- **Interface contracts**: PROJECT.md § Interface Contracts
-- **Code layout**: PROJECT.md § Code Layout
+- **What to build**: Full DDL schema updates and hardening in `supabase/schema.sql` and migration `supabase/migrations/002_p0_security_hardening.sql`.
+- **Success criteria**: SQL syntax valid, fully idempotent, satisfies all 6 requirements (P0-2, P0-3, P0-5, P0-6, P2-2, P1-1). Verified with Python test script and production Next.js build.
+- **Interface contracts**: PROJECT.md, AUDIT_REPORT.md, ORIGINAL_REQUEST.md.
+- **Code layout**: `supabase/schema.sql`, `supabase/migrations/`
 
 ## Key Decisions Made
-- Implemented real in-memory parametric SVG compositing via `SvgBuilder` and high-speed multi-LOD PNG rendering via `sharp`.
-- Asset library constructed across 5 face shapes, 8 hairstyles, 5 outfits, 6 expressions, and 4 modular feature sets.
-- Implemented `MetaPersonAdapter` stub with `METAPERSON_API_KEY` validation throwing descriptive errors.
-- `AdapterRegistry` handles `ACTIVE_ADAPTER` resolution and seamlessly falls back to `TemplateAdapter`.
+- Used `SECURITY DEFINER` functions with `SET search_path = public stable` (`is_org_member`, `is_org_admin`, `org_has_no_members`) to avoid PostgreSQL error 42P17 recursion.
+- Added complete CRUD policies (SELECT, INSERT, UPDATE, DELETE) for `organizations`, `organization_members`, `org_invitations`, and `avatars` bucket storage objects.
+- Structured `submit_public_lead` to support all 9 required parameters positionally and by name, while providing aliases/defaults for meeting and title fields so backward and forward compatibility are guaranteed without overloading PostgREST ambiguity.
+- Guarded `protect_verification_columns` with both `auth.role()` and `current_setting('role', true)` checks against `service_role`.
+- Implemented `increment_card_views(p_slug text)` `SECURITY DEFINER` function updating `views_count` and inserting `'view'` into `card_events`.
+
+## Artifact Index
+- `supabase/schema.sql` — Authoritative updated schema file.
+- `supabase/migrations/002_p0_security_hardening.sql` — Standalone idempotent migration script.
+- `.agents/teamwork_preview_worker_m1/handoff.md` — 5-component completion handoff report.
 
 ## Change Tracker
-- **Files created**:
-  - `zavatar/package.json`
-  - `zavatar/tsconfig.json`
-  - `zavatar/.env.example`
-  - `zavatar/README.md`
-  - `zavatar/src/index.ts`
-  - `zavatar/src/types/index.ts`
-  - `zavatar/src/adapters/AvatarGenerationAdapter.ts`
-  - `zavatar/src/adapters/TemplateAdapter.ts`
-  - `zavatar/src/adapters/MetaPersonAdapter.ts`
-  - `zavatar/src/adapters/AdapterRegistry.ts`
-  - `zavatar/src/utils/svgBuilder.ts`
-  - `zavatar/src/utils/faceDetection.ts`
-  - `zavatar/src/assets/face-shapes/*` (5 SVGs)
-  - `zavatar/src/assets/hair-styles/*` (8 SVGs)
-  - `zavatar/src/assets/outfits/*` (5 SVGs)
-  - `zavatar/src/assets/expressions/*` (6 SVGs)
-  - `zavatar/src/assets/features/*` (4 SVGs)
-  - `zavatar/test/test_adapter.js`
-- **Build status**: PASS (`npm run typecheck`, `npm run build`, `npm test` exit code 0)
-- **Pending issues**: none
+- **Files modified**: `supabase/schema.sql`, `supabase/migrations/002_p0_security_hardening.sql`.
+- **Build status**: `npm run build` passed (exit code 0, 0 TypeScript errors).
+- **Pending issues**: none.
 
 ## Quality Status
-- **Build/test result**: All 6 verification suites passing
-- **Lint status**: clean
-- **Tests added/modified**: `zavatar/test/test_adapter.js`
+- **Build/test result**: PASS (Python syntax & integrity validator passed 100%; Next.js 16 webpack production build passed).
+- **Lint status**: zero syntax or build errors introduced.
+- **Tests added/modified**: Python validation script for all 32 DDL/policy assertions.
+
+## Loaded Skills
+- None

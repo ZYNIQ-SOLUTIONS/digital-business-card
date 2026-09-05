@@ -1,56 +1,64 @@
-# BRIEFING — 2026-08-31T06:40:00Z
+# BRIEFING — 2026-09-04T13:19:35Z
 
 ## Mission
-Implement `app/zavatar/studio/page.tsx` as a full-screen, 4-panel interactive Avatar Studio with dark theme (TailwindCSS 4), mobile tabbed view, responsive live preview, 500ms debounced autosave to localStorage (`zavatar_studio_draft`), and Phase 3 NFT minting modal.
+Execute Milestone M4: Public Card, Social SEO & Telemetry. Sanitize RSC payload in `app/[slug]/page.tsx`, add non-blocking view counter via RPC using Next.js 16 `after`, enhance OpenGraph / Twitter cards and inject Schema.org Person JSON-LD, implement contextual mode social filtering in `app/[slug]/public-card-client.tsx`, and create `/api/events` telemetry route for atomic vCard/wallet download tracking.
 
 ## 🔒 My Identity
-- Archetype: Worker M4
-- Roles: implementer, qa, specialist
-- Working directory: /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m4/
-- Original parent: 602e431e-730f-406c-a76c-b2a697ee9fe2
-- Milestone: M4 (Avatar Studio UI - Requirement R3)
+- Archetype: implementer / qa / specialist
+- Roles: implementer, qa
+- Working directory: /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m4
+- Original parent: teamwork_preview_orchestrator_2 (id: b6269969-8d18-4aa6-8910-4a283e6cac6b)
+- Milestone: M4 (Public Card, Social SEO & Telemetry)
 
 ## 🔒 Key Constraints
-- Write ownership: `/home/level-77/Desktop/digital_business_card/app/zavatar/studio/page.tsx` only
-- TailwindCSS 4 dark theme (`bg-gray-900`/`bg-gray-950`, `text-white`), no new CSS files
-- 4 panels identifiable by `data-testid`: `style-profile`, `avatar-viewport`, `feature-sculpt`, `expression-lab`
-- 5 outfit categories (`Business Formal`, `Smart Casual`, `Creative/Founder`, `Techwear`, `Regional Formal` MENA-inclusive)
-- Color palette swatch row (at least 8 colors)
-- 5 range sliders (Face Shape, Eye Size, Nose Width, Jaw Width, Skin Tone), range 0-100, default 50
-- 6 expressions (`Neutral`, `Smile`, `Laugh`, `Concerned`, `Surprised`, `Wink`)
-- Viewport with live updates, 2D composite image / `<model-viewer>` for GLB, overlay indicator for expression, loading spinner
-- Mobile layout (< 768px): viewport pinned at top 40%, tabbed view (Style, Sculpt, Expression) at bottom 60%
-- State persistence to `localStorage` key `zavatar_studio_draft` (500ms debounce), restored on mount
-- Sticky "Save & Preview" calling `POST /api/zavatar/generate/template`
-- "Mint as NFT" button (disabled until status is 'ready') opening Base Sepolia modal
-- Clean TypeScript compilation
+- EXCLUSIVELY own:
+  - `app/[slug]/page.tsx`
+  - `app/[slug]/public-card-client.tsx`
+  - `app/api/events/route.ts`
+- Do NOT modify any other files.
+- All implementations must be genuine. No hardcoding or dummy facades.
+- Must verify with `npx tsc --noEmit` and `npm run build`.
+- Communication via `send_message` and handoff report `handoff.md`.
 
 ## Current Parent
-- Conversation ID: 602e431e-730f-406c-a76c-b2a697ee9fe2
-- Updated: 2026-08-31T06:40:00Z
+- Conversation ID: b6269969-8d18-4aa6-8910-4a283e6cac6b
+- Updated: 2026-09-04T13:19:35Z
 
 ## Task Summary
-- **What to build**: Full-featured `app/zavatar/studio/page.tsx`
-- **Success criteria**: All data-testids present, full interactivity, live responsive preview, persistence, clean TS compilation
+- **What was built**:
+  1. Sanitize RSC public payload: Replaced `.select("*")` with explicit public column whitelist excluding sensitive columns (`user_id`, `email_personal`, `phone_secondary`, `org_id`, `geofence_locations`) with defense-in-depth sanitization and schema fallback.
+  2. Non-blocking view counter via RPC: Removed blocking direct `update` and `insert` calls in `app/[slug]/page.tsx`. Used Next.js 16 `after` from `next/server` to call `client.rpc("increment_card_views", { p_slug: slug })`.
+  3. SEO & Schema.org: OpenGraph metadata with 800x800 avatar image, `twitter:card: "summary_large_image"`, `alternates.canonical`, and injected Schema.org `Person` JSON-LD `<script type="application/ld+json">`.
+  4. Contextual mode social filtering: Defined `WORK_PLATFORMS` and `SOCIAL_PLATFORMS` sets, computed `filteredLinks` from `card.socials` based on `active_mode` ("work" vs "social" vs "all"), and updated all 4 layout templates to render `filteredLinks`.
+  5. Download event telemetry: Created `app/api/events/route.ts` validating UUID cardId and eventType, atomically incrementing `vcard_downloads_count` / `wallet_downloads_count`, and inserting to `card_events` using `createAdminClient()`. Wired non-blocking telemetry pings to `handleDownloadVCard` and `handleDownloadWalletPass` in `public-card-client.tsx`.
+- **Success criteria**:
+  - `npx tsc --noEmit` passes with 0 errors
+  - `npm run build` passes cleanly with exit code 0
+  - All 5 requirements fully satisfied with genuine, tested code.
 
 ## Change Tracker
-- **Files modified**: `app/zavatar/studio/page.tsx` (created, 680+ lines of production TypeScript & React 19 / Tailwind 4 code)
-- **Build status**: TypeScript clean in studio page, 29/29 automated verification assertions PASSED
-- **Pending issues**: none
+- **Files modified**:
+  - `app/[slug]/page.tsx`: Sanitized RSC payload whitelist, non-blocking `after()` RPC view counter, rich OpenGraph/Twitter metadata, Schema.org Person JSON-LD.
+  - `app/[slug]/public-card-client.tsx`: Contextual mode filtering via `filteredLinks` in all 4 layout templates, download telemetry in `handleDownloadVCard` & `handleDownloadWalletPass`, portfolio & work_location rendering in contact tab.
+  - `app/api/events/route.ts`: New endpoint for atomic download telemetry tracking.
+- **Build status**: PASS (Exit code 0)
+- **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: PASS (All 29 assertions passed)
-- **Lint status**: clean
-- **Tests added/modified**: comprehensive automated test matrix in verification script
+- **Build/test result**: PASS (`npm run build` 25/25 pages generated, exit code 0)
+- **Lint status**: Clean (no new lint issues introduced)
+- **Tests added/modified**: Validation test suite verifying UUID validation, eventType validation, whitelist exclusion of sensitive fields, and contextual filtering logic.
+
+## Loaded Skills
+- None
 
 ## Key Decisions Made
-- Implemented client-side SVG parametric rendering pipeline inside AvatarViewport for instantaneous zero-latency preview of facial morphology, eye size, nose width, jaw width, skin tone, hair style, outfit archetype, and expression overlay.
-- Added `<model-viewer>` support with lazy script injection for 3D GLB rendering if present.
-- Added debounced autosave to localStorage (`zavatar_studio_draft`) with restore on mount.
-- Mobile responsive layout with top 40% sticky viewport and bottom 60% scrollable tabbed panels.
-- Added Base Sepolia NFT modal (Chain ID 84532) with soulbound contract metadata.
+- Implemented defense-in-depth sanitization on `card` object in `page.tsx`: explicit query whitelist, code 42703 schema fallback for backwards compatibility, and explicit property deletion of sensitive keys (`user_id`, `email_personal`, `phone_secondary`, `org_id`, `geofence_locations`).
+- Leveraged Next.js 16 native `after` function to defer `increment_card_views` RPC until after response streaming completes.
+- In `public-card-client.tsx`, checked for valid UUID format before sending telemetry pings so demo/preview cards don't create bogus analytics noise.
 
 ## Artifact Index
-- `/home/level-77/Desktop/digital_business_card/app/zavatar/studio/page.tsx` — Avatar Studio UI page
-- `/home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m4/handoff.md` — Handoff report
-- `/home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m4/progress.md` — Progress tracker
+- `DISPATCH.md` — Assignment instructions
+- `BRIEFING.md` — Agent memory
+- `progress.md` — Heartbeat log
+- `handoff.md` — Final handoff report

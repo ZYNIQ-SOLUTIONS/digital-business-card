@@ -1,7 +1,6 @@
-/* eslint-disable */
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -107,8 +106,9 @@ Respond with ONLY valid JSON (no markdown fences, no extra text) conforming to t
             badge: "ai_verified_executive",
           };
         }
-      } catch (geminiErr: any) {
-        console.error("Gemini vision analysis failed:", geminiErr.message);
+      } catch (geminiErr: unknown) {
+        const geminiMsg = geminiErr instanceof Error ? geminiErr.message : "Error";
+        console.error("Gemini vision analysis failed:", geminiMsg);
         // Fail closed — do NOT auto-approve on error
         verificationResult = {
           verified: false,
@@ -121,18 +121,19 @@ Respond with ONLY valid JSON (no markdown fences, no extra text) conforming to t
       }
     }
 
-    // If verified and cardId provided, update card in Supabase
+    // If verified and cardId provided, update card in Supabase via service_role
     if (verificationResult.verified && cardId) {
       try {
-        const supabase = await createClient();
-        await supabase
+        const adminClient = createAdminClient();
+        await adminClient
           .from("cards")
           .update({
             is_verified: true,
             verified_at: new Date().toISOString(),
-            verification_badge: verificationResult.badge,
+            verification_badge: verificationResult.badge || "ai_verified_executive",
           })
-          .eq("id", cardId);
+          .eq("id", cardId)
+          .eq("user_id", user.id);
       } catch (dbErr) {
         console.warn("Could not persist verification to database:", dbErr);
       }
@@ -143,10 +144,11 @@ Respond with ONLY valid JSON (no markdown fences, no extra text) conforming to t
       ...verificationResult,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to process photo verification";
     console.error("Identity verification error:", error);
     return NextResponse.json(
-      { error: "Failed to process photo verification", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }

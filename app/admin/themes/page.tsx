@@ -88,6 +88,7 @@ export default function AdminThemesPage() {
         tokens: theme,
         layoutConfig,
         isPublished,
+        customCss: layoutConfig?.customCss || '',
       })
     });
 

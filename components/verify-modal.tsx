@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -169,24 +168,26 @@ export function VerifyModal({
           reason: data.reason || "AI Identity verified.",
         });
       } else {
-        setVerificationResult({
+        const failureResult = {
           verified: false,
-          confidence: data.confidence || 40,
-          reason: data.reason || "Could not confirm liveness. Please try again in good lighting.",
+          confidence: data.confidence || 0,
+          reason: data.reason || data.error || "Could not confirm identity. Please try again in good lighting.",
           badge: "unverified",
-        });
+        };
+        setVerificationResult(failureResult);
+        onVerified(failureResult);
       }
     } catch (err) {
       console.error("AI verification failed:", err);
-      // Fallback approval for seamless user experience
-      const fallbackResult = {
-        verified: true,
-        confidence: 96,
-        reason: "Face identity authenticated via high-resolution live capture.",
-        badge: "ai_verified_executive",
+      // Fail closed — do NOT auto-approve on error
+      const errorResult = {
+        verified: false,
+        confidence: 0,
+        reason: "Verification service temporarily unavailable. Please try again.",
+        badge: "unverified",
       };
-      setVerificationResult(fallbackResult);
-      onVerified(fallbackResult);
+      setVerificationResult(errorResult);
+      onVerified(errorResult);
     } finally {
       setIsVerifying(false);
     }

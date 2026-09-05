@@ -1,9 +1,6 @@
-// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PKPass } from 'passkit-generator';
-import fs from 'fs';
-import path from 'path';
 
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
@@ -23,16 +20,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 
     // In a real environment, you must load these from secure environment variables or secure storage
     // using process.env.APPLE_WALLET_CERT, process.env.APPLE_WALLET_KEY, etc.
-    const pass = new PKPass({
-      "passTypeIdentifier": "pass.com.zyniq.digitalcard",
-      "teamIdentifier": process.env.APPLE_TEAM_ID || "TEAMID1234",
-      "organizationName": "ZYNIQ",
-      "description": `Digital Business Card for ${card.full_name}`
-    }, {
-      signerCert: process.env.APPLE_SIGNER_CERT || "",
-      signerKey: process.env.APPLE_SIGNER_KEY || "",
-      signerKeyPassphrase: process.env.APPLE_SIGNER_PASSPHRASE || ""
-    });
+    const pass = new PKPass(
+      {},
+      {
+        wwdr: process.env.APPLE_WWDR_CERT || "",
+        signerCert: process.env.APPLE_SIGNER_CERT || "",
+        signerKey: process.env.APPLE_SIGNER_KEY || "",
+        signerKeyPassphrase: process.env.APPLE_SIGNER_PASSPHRASE || ""
+      },
+      {
+        passTypeIdentifier: "pass.com.zyniq.digitalcard",
+        teamIdentifier: process.env.APPLE_TEAM_ID || "TEAMID1234",
+        organizationName: "ZYNIQ",
+        description: `Digital Business Card for ${card.full_name}`
+      }
+    );
 
     pass.type = 'generic';
     
@@ -62,16 +64,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 
     const qrUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://d-b-c.netlify.app'}/${card.slug}`;
     
-    pass.barcode = {
+    pass.setBarcodes({
       message: qrUrl,
       format: 'PKBarcodeFormatQR',
       messageEncoding: 'iso-8859-1'
-    };
+    });
 
-    pass.nfc = {
+    pass.setNFC({
       message: qrUrl,
       encryptionPublicKey: process.env.APPLE_NFC_PUBLIC_KEY || ""
-    };
+    });
 
     // Note: To successfully generate, you need valid certs in the env variables
     // Otherwise it will throw. We'll wrap in try/catch for the demo mode.
@@ -79,14 +81,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     try {
       buffer = await pass.getAsBuffer();
     } catch (certError) {
-      console.warn("Wallet certs missing. Returning mock response.", certError);
-      return NextResponse.json({ 
-        message: 'Wallet generated (mock). To get a real .pkpass, configure Apple Developer Certificates in .env.',
-        requiresCerts: true 
-      });
+      console.warn("Wallet certs missing:", certError);
+      return NextResponse.json(
+        { error: "Apple Developer certificates not configured" },
+        { status: 501 }
+      );
     }
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
@@ -94,8 +96,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
       }
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal server error";
     console.error('Wallet generation error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

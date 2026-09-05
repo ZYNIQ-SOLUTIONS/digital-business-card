@@ -1,11 +1,10 @@
-/* eslint-disable */
 "use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
-import { GoogleIcon, GitHubIcon } from "@/components/icons";
+import { GoogleIcon, GitHubIcon, TelegramIcon } from "@/components/icons";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -26,9 +25,13 @@ export default function AuthPage() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const inviteCode = urlParams.get("invite");
+      const nextParam = urlParams.get("next") || urlParams.get("redirect");
       const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
       if (inviteCode) {
         redirectUrl.searchParams.set("invite", inviteCode);
+      }
+      if (nextParam) {
+        redirectUrl.searchParams.set("next", nextParam);
       }
 
       const { error } = await supabase.auth.signInWithOtp({
@@ -57,9 +60,13 @@ export default function AuthPage() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const inviteCode = urlParams.get("invite");
+      const nextParam = urlParams.get("next") || urlParams.get("redirect");
       const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
       if (inviteCode) {
         redirectUrl.searchParams.set("invite", inviteCode);
+      }
+      if (nextParam) {
+        redirectUrl.searchParams.set("next", nextParam);
       }
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -173,6 +180,17 @@ export default function AuthPage() {
                   <GitHubIcon className="w-3.5 h-3.5" />
                 )}
                 <span>Continue with GitHub</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={true}
+                className="w-full py-3 px-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] text-[#86868B] font-medium text-xs flex items-center justify-center gap-2.5 transition shadow-2xs opacity-60 cursor-not-allowed"
+                title="Telegram login coming soon"
+              >
+                <TelegramIcon className="w-3.5 h-3.5 text-[#86868B]" />
+                <span>Continue with Telegram</span>
+                <span className="text-[10px] bg-black/[0.06] text-[#86868B] px-1.5 py-0.5 rounded-md font-semibold ml-1">Coming Soon</span>
               </button>
             </div>
 

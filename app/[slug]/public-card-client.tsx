@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 
 // Crypto Verified Badge Component
@@ -87,6 +86,7 @@ interface PublicCardClientProps {
   slug: string;
   fallbackMode?: boolean;
   connectionsCount?: number;
+  customThemeData?: any;
 }
 
 const NetworkScorePill = ({ count, show, t }: { count: number, show: boolean, t: any }) => {
@@ -142,11 +142,45 @@ const handleSocialClick = (e: React.MouseEvent<HTMLAnchorElement>, socialId: str
   }, 750);
 };
 
+export const WORK_PLATFORMS = new Set([
+  "linkedin",
+  "github",
+  "email",
+  "phone",
+  "x",
+  "twitter",
+  "calendar",
+  "calendly",
+  "slack",
+  "medium",
+  "substack",
+  "behance",
+  "dribbble",
+]);
+
+export const SOCIAL_PLATFORMS = new Set([
+  "instagram",
+  "tiktok",
+  "youtube",
+  "spotify",
+  "snapchat",
+  "twitch",
+  "discord",
+  "telegram",
+  "whatsapp",
+  "facebook",
+  "threads",
+  "pinterest",
+  "reddit",
+  "signal",
+]);
+
 export default function PublicCardClient({
   initialCard,
   slug,
   fallbackMode,
   connectionsCount = 0,
+  customThemeData = null,
 }: PublicCardClientProps) {
   const searchParams = useSearchParams();
   const modeId = searchParams?.get("mode");
@@ -203,7 +237,7 @@ export default function PublicCardClient({
   
 
   const activeTheme = card.theme || "apple-light";
-  const baseTheme = themes[activeTheme] || themes["apple-light"];
+  const baseTheme = customThemeData || themes[activeTheme] || themes["apple-light"];
   
   // Patch theme tokens to inject custom premium classes if defined
   const t = { ...baseTheme };
@@ -224,9 +258,7 @@ export default function PublicCardClient({
   const [activeTab, setActiveTab] = useState<"card" | "about" | "contact" | "nfc">("card");
   const [downloadedVCard, setDownloadedVCard] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [isWalletLoading, setIsWalletLoading] = useState(false);
-  const [walletFeedback, setWalletFeedback] = useState<string | null>(null);
-  const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+      const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAppleDevice, setIsAppleDevice] = useState(true);
@@ -279,8 +311,59 @@ export default function PublicCardClient({
     }
   };
 
+  // Contextual Mode Social Filtering (P1-5)
+  const filteredLinks = React.useMemo(() => {
+    if (!Array.isArray(card?.socials)) return [];
+    const mode = (card?.active_mode || "all").toLowerCase();
+
+    return card.socials.filter((s: any) => {
+      if (!s || !s.url) return false;
+      if (mode === "all" || mode === "default") return true;
+
+      const id = (s.id || "").toLowerCase();
+      const category = (s.category || "").toLowerCase();
+
+      if (mode === "work") {
+        return (
+          WORK_PLATFORMS.has(id) ||
+          category === "professional" ||
+          category === "work" ||
+          category === "code & dev" ||
+          category === "booking"
+        );
+      }
+
+      if (mode === "social") {
+        return (
+          SOCIAL_PLATFORMS.has(id) ||
+          category === "social" ||
+          category === "personal" ||
+          category === "direct chat" ||
+          category === "media & content"
+        );
+      }
+
+      return true;
+    });
+  }, [card?.socials, card?.active_mode]);
+
+  // Download Event Telemetry helper (P2-5)
+  const sendDownloadTelemetry = (eventType: "vcard_download" | "wallet_download") => {
+    if (!card?.id) return;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(card.id);
+    if (!isUUID) return;
+
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId: card.id, eventType }),
+    }).catch((err) => {
+      console.warn(`Telemetry ping failed for ${eventType}:`, err);
+    });
+  };
 
   const handleDownloadVCard = async () => {
+    sendDownloadTelemetry("vcard_download");
     let photoStr = "";
     if (card.avatar_url) {
       try {
@@ -339,36 +422,6 @@ export default function PublicCardClient({
     setTimeout(() => setDownloadedVCard(false), 3500);
   };
 
-  const handleDownloadWalletPass = async () => {
-    setIsWalletLoading(true);
-    setWalletFeedback(null);
-    try {
-      const res = await fetch(`/api/wallet?cardId=${card.id || slug}`);
-      if (res.status === 200) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${(card.full_name || "Card").replace(/\s+/g, "")}.pkpass`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        setWalletFeedback("Apple Wallet pass downloaded successfully!");
-      } else {
-        const data = await res.json();
-        if (res.status === 501) {
-          setWalletFeedback("Live iOS certificate signing configured in ./certificates");
-        } else {
-          setWalletFeedback(data.error || "Could not generate pass.");
-        }
-      }
-    } catch {
-      setWalletFeedback("Apple Wallet server reachable.");
-    } finally {
-      setIsWalletLoading(false);
-    }
-  };
 
   const handleShare = async () => {
     if (typeof window !== "undefined" && navigator.share) {
@@ -488,6 +541,7 @@ export default function PublicCardClient({
           .custom-accent-bg { background-color: ${card.custom_accent_color} !important; }
           .custom-accent-text { color: ${card.custom_accent_color} !important; }
         ` : ''}
+        ${baseTheme?.customCss || ''}
       `}</style>
       
       {!card.custom_background_image && <div className={`fixed inset-0 ${t.gradient} opacity-50 pointer-events-none`} />}
@@ -606,7 +660,7 @@ export default function PublicCardClient({
               </div>
 
               {/* Social Media Channels */}
-              {Array.isArray(card.socials) && card.socials.some((s: any) => s.url) && (
+              {filteredLinks.length > 0 && (
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-3 px-1">
                     <span className={`text-[13px] font-semibold ${t.textSecondary} uppercase tracking-wider`}>
@@ -615,28 +669,26 @@ export default function PublicCardClient({
                   </div>
 
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                    {card.socials
-                      .filter((s: any) => s.url)
-                      .map((social: any) => {
-                        const Icon = getSocialIcon(social.id);
-                        return (
-                          <a
-                            key={social.id}
-                            href={social.url}
-                            onClick={(e) => handleSocialClick(e, social.id, social.url, isAppleDevice)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={social.name}
-                            title={social.name}
-                            className={`flex flex-col items-center justify-center p-3 min-h-[56px] rounded-2xl ${t.pillBg} ${t.pillHover} border ${t.pillBorder} ${t.textSecondary} hover:${t.textMain} active:scale-95 transition-all group`}
-                          >
-                            <Icon className="w-5 h-5 mb-1.5 transition-transform group-hover:scale-110" />
-                            <span className={`text-[11px] font-medium tracking-tight ${t.textMain} truncate max-w-full`}>
-                              {social.name.split(" ")[0]}
-                            </span>
-                          </a>
-                        );
-                      })}
+                    {filteredLinks.map((social: any) => {
+                      const Icon = getSocialIcon(social.id);
+                      return (
+                        <a
+                          key={social.id}
+                          href={social.url}
+                          onClick={(e) => handleSocialClick(e, social.id, social.url, isAppleDevice)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={social.name}
+                          title={social.name}
+                          className={`flex flex-col items-center justify-center p-3 min-h-[56px] rounded-2xl ${t.pillBg} ${t.pillHover} border ${t.pillBorder} ${t.textSecondary} hover:${t.textMain} active:scale-95 transition-all group`}
+                        >
+                          <Icon className="w-5 h-5 mb-1.5 transition-transform group-hover:scale-110" />
+                          <span className={`text-[11px] font-medium tracking-tight ${t.textMain} truncate max-w-full`}>
+                            {social.name.split(" ")[0]}
+                          </span>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -663,28 +715,7 @@ export default function PublicCardClient({
 
               {/* Apple Wallet & Contact Actions Group */}
               <div className="w-full space-y-3">
-                <button
-                  onClick={handleDownloadWalletPass}
-                  disabled={isWalletLoading}
-                  className="w-full py-4 px-5 min-h-[60px] rounded-[24px] bg-black/90 hover:bg-black text-white font-medium flex items-center justify-between hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] disabled:opacity-60 group border border-white/10 relative overflow-hidden"
-                >
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className={`w-10 h-10 rounded-2xl ${isAppleDevice ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500' : 'bg-neutral-800'} p-[1px] shadow-sm flex items-center justify-center group-hover:rotate-3 transition-transform duration-300`}>
-                      <div className="w-full h-full bg-black/40 rounded-[15px] flex items-center justify-center backdrop-blur-sm">
-                        {isAppleDevice ? <AppleIcon className="w-4.5 h-4.5 fill-white drop-shadow-sm" /> : <CreditCard className="w-4.5 h-4.5 text-white drop-shadow-sm" />}
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <span className="block text-[15px] font-semibold leading-tight tracking-wide">
-                        {isWalletLoading ? "Generating Pass..." : (isAppleDevice ? "Add to Apple Wallet" : "Add to Wallet")}
-                      </span>
-                      <span className="block text-[12px] text-neutral-400 font-medium mt-0.5 tracking-wide">
-                        {isAppleDevice ? "Store on iPhone & Watch" : "Save as digital pass"}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:translate-x-1 group-hover:text-white transition-all relative z-10" />
-                </button>
+                
 
                 <button
                   onClick={handleDownloadVCard}
@@ -829,6 +860,34 @@ export default function PublicCardClient({
                   </button>
                 </div>
 
+                {card.portfolio_url && (
+                  <>
+                    <div className={`h-[1px] ${t.divider} w-full`} />
+                    <div className={`flex items-center justify-between py-1.5 px-2 ${t.pillHover} rounded-lg transition`}>
+                      <span className={`${t.textSecondary}`}>Portfolio</span>
+                      <a
+                        href={card.portfolio_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-1.5 font-medium ${t.textMain} hover:${t.accent} transition`}
+                      >
+                        <span className="truncate max-w-[180px]">{card.portfolio_url.replace(/^https?:\/\//, "")}</span>
+                        <ExternalLink className={`w-3 h-3 ${t.textSecondary}`} />
+                      </a>
+                    </div>
+                  </>
+                )}
+
+                {card.work_location && (
+                  <>
+                    <div className={`h-[1px] ${t.divider} w-full`} />
+                    <div className={`flex items-center justify-between py-1.5 px-2 ${t.pillHover} rounded-lg transition`}>
+                      <span className={`${t.textSecondary}`}>Location</span>
+                      <span className={`font-medium ${t.textMain}`}>{card.work_location}</span>
+                    </div>
+                  </>
+                )}
+
                 <div className={`h-[1px] ${t.divider} w-full`} />
 
                 <button
@@ -963,17 +1022,7 @@ export default function PublicCardClient({
               </div>
 
               <div className="space-y-2">
-                <button
-                  onClick={handleDownloadWalletPass}
-                  disabled={isWalletLoading}
-                  className="w-full py-2.5 px-3.5 bg-black text-white text-xs font-semibold rounded-xl flex items-center justify-between hover:bg-neutral-800 transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <AppleIcon className="w-3.5 h-3.5 fill-white" />
-                    <span>{isAppleDevice ? "Add to Apple Wallet" : "Add to Wallet"}</span>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                
 
                 <button
                   onClick={handleDownloadVCard}
@@ -1009,14 +1058,14 @@ export default function PublicCardClient({
           )}
 
           {/* Bento Tile 4: Social Channels Grid */}
-          {Array.isArray(card.socials) && card.socials.some((s: any) => s.url) && (
+          {filteredLinks.length > 0 && (
             <div className={`${t.cardBg} backdrop-blur-2xl border ${t.border} rounded-3xl p-5 shadow-md space-y-3`}>
               <div className="flex items-center justify-between">
                 <span className={`text-[11px] font-bold ${t.textSecondary} uppercase tracking-wider`}>Connected Social Networks</span>
-                <span className={`text-[10px] font-mono ${t.textSecondary}`}>{card.socials.filter((s:any)=>s.url).length} Links</span>
+                <span className={`text-[10px] font-mono ${t.textSecondary}`}>{filteredLinks.length} Links</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {card.socials.filter((s: any) => s.url).map((social: any) => {
+                {filteredLinks.map((social: any) => {
                   const Icon = getSocialIcon(social.id);
                   return (
                     <a
@@ -1165,13 +1214,7 @@ export default function PublicCardClient({
               <span>Save Executive vCard to Contacts</span>
             </button>
 
-            <button
-              onClick={handleDownloadWalletPass}
-              className="w-full py-3.5 rounded-2xl bg-black text-white font-semibold text-xs tracking-wide flex items-center justify-center gap-2 hover:bg-neutral-800 transition"
-            >
-              <AppleIcon className="w-4 h-4 fill-white" />
-              <span>{isAppleDevice ? "Save to Apple Wallet Pass" : "Download Digital Pass"}</span>
-            </button>
+            
           </div>
         </section>
       )}
@@ -1255,13 +1298,7 @@ export default function PublicCardClient({
             >
               EXTRACT VCARD RECORD
             </button>
-            <button
-              onClick={handleDownloadWalletPass}
-              className="w-full py-3 rounded-xl bg-neutral-900 border border-cyan-500/40 text-cyan-300 font-bold text-xs hover:bg-neutral-800 transition flex items-center justify-center gap-2"
-            >
-              <AppleIcon className="w-3.5 h-3.5 fill-cyan-300" />
-              <span>TRANSMIT WALLET PASS</span>
-            </button>
+            
           </div>
         </section>
       )}
@@ -1357,9 +1394,9 @@ export default function PublicCardClient({
             )}
 
             {/* Social Grid */}
-            {Array.isArray(card.socials) && card.socials.some((s: any) => s.url) && (
+            {filteredLinks.length > 0 && (
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 pt-2">
-                {card.socials.filter((s: any) => s.url).map((social: any) => {
+                {filteredLinks.map((social: any) => {
                   const Icon = getSocialIcon(social.id);
                   return (
                     <a
@@ -1387,13 +1424,7 @@ export default function PublicCardClient({
                 <Check className="w-4 h-4" />
                 <span>Save Contact Card (.vcf)</span>
               </button>
-              <button
-                onClick={handleDownloadWalletPass}
-                className="w-full py-3.5 rounded-2xl bg-black text-white font-semibold text-xs flex items-center justify-center gap-2 hover:bg-neutral-800 transition"
-              >
-                <AppleIcon className="w-4 h-4 fill-white" />
-                <span>{isAppleDevice ? "Add to Apple Wallet" : "Download Pass"}</span>
-              </button>
+              
             </div>
           </div>
         </section>
@@ -1508,9 +1539,9 @@ export default function PublicCardClient({
             </div>
 
             {/* Social Grid */}
-            {Array.isArray(card.socials) && card.socials.some((s: any) => s.url) && (
+            {filteredLinks.length > 0 && (
               <div className="grid grid-cols-4 gap-2 pt-1">
-                {card.socials.filter((s: any) => s.url).map((social: any) => {
+                {filteredLinks.map((social: any) => {
                   const Icon = getSocialIcon(social.id);
                   return (
                     <a
@@ -1538,13 +1569,7 @@ export default function PublicCardClient({
                 <Check className="w-4 h-4" />
                 <span>Save Contact Card (.VCF)</span>
               </button>
-              <button
-                onClick={handleDownloadWalletPass}
-                className="w-full py-3 bg-black hover:bg-neutral-800 text-white font-black text-xs uppercase tracking-wider border-2 border-black rounded-xl shadow-[3px_3px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition flex items-center justify-center gap-2"
-              >
-                <AppleIcon className="w-4 h-4 fill-white" />
-                <span>{isAppleDevice ? "Add to Apple Wallet" : "Download Pass"}</span>
-              </button>
+              
             </div>
           </div>
         </section>
@@ -1892,37 +1917,46 @@ export default function PublicCardClient({
                 <span>SAVE CONTACT VCF [PRESS A]</span>
               </button>
 
-              <button
-                onClick={handleDownloadWalletPass}
-                className="w-full py-2.5 bg-[#38BDF8] text-black font-black text-xs uppercase tracking-wider rounded-lg shadow-[0_4px_0_#0284C7] active:translate-y-[2px] active:shadow-[0_2px_0_#0284C7] transition flex items-center justify-center gap-2"
-              >
-                <AppleIcon className="w-4 h-4 fill-black" />
-                <span>WALLET NFC [PRESS B]</span>
-              </button>
+              
             </div>
           </div>
         </section>
       )}
 
-      {/* Floating Share Info Back CTA */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <button
-          onClick={() => setIsExchangeModalOpen(true)}
-          className={`w-16 h-16 rounded-full ${t.accentBg} ${t.accentHover} text-white shadow-2xl active:scale-[0.98] hover:scale-105 transition-all flex items-center justify-center`}
-          title="Share Your Info Back"
-        >
-          <QrCode className="w-7 h-7" />
-        </button>
-      </div>
 
-      {/* Floating Add to Home Screen CTA */}
-      <div className="fixed bottom-6 left-6 z-40">
+
+      {/* Speed Dial Menu */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+        {/* Expanded Options */}
+        <div className={`flex flex-col items-end gap-3 transition-all duration-300 origin-bottom ${isSpeedDialOpen ? 'scale-100 opacity-100 translate-y-0 pointer-events-auto' : 'scale-90 opacity-0 translate-y-8 pointer-events-none'}`}>
+          <button
+            onClick={() => { setIsInstallModalOpen(true); setIsSpeedDialOpen(false); }}
+            className="flex items-center gap-3 bg-white px-4 py-3 rounded-full shadow-xl border border-black/5 active:scale-95 transition-transform"
+          >
+            <span className="text-sm font-semibold text-gray-800">Add to Home Screen</span>
+            <div className="w-8 h-8 rounded-full bg-blue-50 text-[#0071E3] flex items-center justify-center">
+              <Smartphone className="w-4 h-4" />
+            </div>
+          </button>
+          
+          <button
+            onClick={() => { setIsExchangeModalOpen(true); setIsSpeedDialOpen(false); }}
+            className="flex items-center gap-3 bg-white px-4 py-3 rounded-full shadow-xl border border-black/5 active:scale-95 transition-transform"
+          >
+            <span className="text-sm font-semibold text-gray-800">Exchange Contact</span>
+            <div className={`w-8 h-8 rounded-full ${t.accentBg} text-white flex items-center justify-center`}>
+              <QrCode className="w-4 h-4" />
+            </div>
+          </button>
+        </div>
+
+        {/* Main FAB */}
         <button
-          onClick={() => setIsInstallModalOpen(true)}
-          className={`w-16 h-16 rounded-full bg-white text-black shadow-2xl active:scale-[0.98] hover:scale-105 transition-all flex items-center justify-center border border-black/10`}
-          title="Add to Home Screen"
+          onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
+          className={`w-14 h-14 rounded-full ${isSpeedDialOpen ? 'bg-gray-800' : t.accentBg} text-white shadow-2xl active:scale-[0.95] hover:scale-105 transition-all flex items-center justify-center`}
+          title="Quick Actions"
         >
-          <Smartphone className="w-7 h-7 text-[#0071E3]" />
+          <Plus className={`w-6 h-6 transition-transform duration-300 ${isSpeedDialOpen ? 'rotate-45' : 'rotate-0'}`} />
         </button>
       </div>
 

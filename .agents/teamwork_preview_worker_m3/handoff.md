@@ -1,113 +1,177 @@
-# Handoff Report — Worker M3: Ingest, Consent & REST API Surface (R2, R5)
+# Handoff Report: Milestone M3 — Auth, Onboarding Loop & Shell Performance
 
-**Agent**: Worker M3 (`teamwork_preview_worker_m3`)  
-**Mission**: Implement Ingest, Consent & REST API Surface (Requirements R2, R5)  
-**Date**: 2026-08-31  
+**Date**: 2026-09-04  
+**Agent**: `teamwork_preview_worker_m3`  
+**Parent Agent**: `teamwork_preview_orchestrator_2` (`b6269969-8d18-4aa6-8910-4a283e6cac6b`)  
+**Scope**: Implementation of Milestone M3 requirements across exclusively owned files:
+- `app/auth/callback/route.ts`
+- `app/auth/page.tsx`
+- `app/layout.tsx`
+- `app/page.tsx`
+- `components/magic-demo-trigger.tsx`
 
 ---
 
 ## 1. Observation
 
-1. **Target Deliverables**:
-   - `app/api/zavatar/_utils/auth.ts`: Authentication helper extracting Supabase JWT from `Authorization: Bearer <token>` or cookies via `@supabase/ssr`, returning `{ user, supabase }` or 401 response `{ error: 'UNAUTHORIZED', message: '...' }`.
-   - `app/api/zavatar/_utils/store.ts`: Unified data persistence layer for `avatars`, `avatar_assets`, `consent_logs`, and `nft_mints` tables with Supabase client operations and synchronized in-memory fallback.
-   - `POST /api/zavatar/generate/selfie` (`app/api/zavatar/generate/selfie/route.ts`): Multipart form ingest, size check (<=10MB), MIME check (JPEG/PNG/WebP), biometric consent gate (HTTP 422 `CONSENT_REQUIRED`), face detection check (HTTP 422 `NO_FACE_DETECTED`), audit logging in `consent_logs`, active adapter generation, strict zero-retention memory purge of raw photo bytes, and multi-LOD asset persistence in `avatars` and `avatar_assets`.
-   - `POST /api/zavatar/generate/template` (`app/api/zavatar/generate/template/route.ts`): JSON `CustomizationParams` ingest, `TemplateAdapter.generateFromTemplate()`, saves multi-LOD assets to `avatar_assets`, returns `{ avatarId, status: 'ready', assetUrls: { high, mid, low, svg } }`.
-   - `GET /api/zavatar/[id]/status` (`app/api/zavatar/[id]/status/route.ts`): Returns `{ id, status, progress: 100, assetUrls }`, checks owner match (HTTP 403 `FORBIDDEN` if mismatch).
-   - `GET /api/zavatar/[id]` (`app/api/zavatar/[id]/route.ts`): Returns complete avatar metadata, asset URLs, assets list, and NFT mint status.
-   - `PATCH /api/zavatar/[id]/customize` (`app/api/zavatar/[id]/customize/route.ts`): Accepts partial `CustomizationParams`, merges with existing style, re-runs `TemplateAdapter.generateFromTemplate()`, updates `avatar_assets`, returns updated asset URLs.
-   - `POST /api/zavatar/[id]/render` (`app/api/zavatar/[id]/render/route.ts`): Fresh render pass generating 3 PNG sizes (512px, 256px, 64px), saves to `avatar_assets`, returns `{ assetUrls: { high, mid, low, svg } }`.
-   - `GET /api/zavatar/[id]/ownership` (`app/api/zavatar/[id]/ownership/route.ts`): Phase 3 stub returning `{ avatarId, minted: false, owner: null, tokenId: null, contractAddress: null }` (or real record from `nft_mints`).
+Direct code observations from inspected files and implementation results:
 
-2. **Verification Results (`scripts/verify-m3.ts`)**:
-   - 36 automated assertions across all 7 route handlers and auth helper.
-   - Result: 36 passed, 0 failed.
-   - ESLint check (`npx eslint app/api/zavatar`): 0 errors, 0 warnings.
-   - Standalone `zavatar/` package compilation (`npx tsc --noEmit`): 0 errors.
+1. **`app/auth/callback/route.ts`**:
+   - Prior code in `app/auth/callback/route.ts:58-61` performed naive sanitization (`next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\")`), which failed to handle URL encoded characters (e.g. `%2f%2f`), control characters, or protocol schemes (`/https:`).
+   - In `app/auth/callback/route.ts:46-55`, authenticating users with pending invitations had 0 cards under `user_id = user.id` and were unconditionally bounced to `/dashboard/onboarding`, leaving enterprise cards locked to the inviting admin.
+   - Updated `app/auth/callback/route.ts` with `sanitizeRedirect()` helper:
+     ```typescript
+     function sanitizeRedirect(target: string | null): string {
+       if (!target) return "/dashboard";
+       try {
+         const decoded = decodeURIComponent(target).trim();
+         if (
+           !decoded.startsWith("/") ||
+           decoded.startsWith("//") ||
+           decoded.startsWith("/\\") ||
+           decoded.includes("\\") ||
+           decoded.includes("\0") ||
+           decoded.includes("\r") ||
+           decoded.includes("\n")
+         ) {
+           return "/dashboard";
+         }
+         if (/^\/[a-zA-Z][a-zA-Z0-9+.-]*:/.test(decoded)) {
+           return "/dashboard";
+         }
+         const url = new URL(decoded, "http://localhost");
+         if (url.origin !== "http://localhost") {
+           return "/dashboard";
+         }
+         return url.pathname + url.search + url.hash;
+       } catch {
+         return "/dashboard";
+       }
+     }
+     ```
+   - Added enterprise employee onboarding loop after session exchange:
+     1. Searches `public.org_invitations` via `createAdminClient()` for `email = user.email` (case-insensitive) and `status = 'pending'`.
+     2. Upserts `public.profiles` to guarantee foreign key constraint satisfaction.
+     3. Updates provisioned card in `public.cards` (`id = invitation.card_id`) setting `user_id = user.id`.
+     4. Inserts/upserts into `public.organization_members` with `{ org_id: invitation.org_id, user_id: user.id, role: invitation.role }`.
+     5. Updates `public.org_invitations` setting `status = 'accepted'`, `accepted_at = new Date().toISOString()`.
+     6. Redirects directly to `/dashboard`.
+     7. If no pending invitation, checks existing card count for `user.id`: if count > 0 redirects to `safeNext`; if 0, redirects to `/dashboard/onboarding`.
+
+2. **`app/auth/page.tsx`**:
+   - The Telegram login slot was restored under social buttons with the exact required properties:
+     ```tsx
+     <button
+       type="button"
+       disabled={true}
+       className="w-full py-3 px-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] text-[#86868B] font-medium text-xs flex items-center justify-center gap-2.5 transition shadow-2xs opacity-60 cursor-not-allowed"
+       title="Telegram login coming soon"
+     >
+       <TelegramIcon className="w-3.5 h-3.5 text-[#86868B]" />
+       <span>Continue with Telegram</span>
+       <span className="text-[10px] bg-black/[0.06] text-[#86868B] px-1.5 py-0.5 rounded-md font-semibold ml-1">Coming Soon</span>
+     </button>
+     ```
+   - Imported `TelegramIcon` from `@/components/icons`.
+   - Updated `handleSignInWithMagicLink` and `handleSocialSignIn` to forward `next` or `redirect` query parameters into the callback URL.
+
+3. **`app/layout.tsx`**:
+   - Removed import of `PageLoader` from `@/components/page-loader` and removed `<PageLoader />` from `RootLayout` body.
+   - Updated `viewport` export to:
+     ```typescript
+     export const viewport: Viewport = {
+       themeColor: "#fbfbfd",
+       width: "device-width",
+       initialScale: 1,
+       userScalable: true,
+     };
+     ```
+     `maximumScale: 1` was removed and `userScalable: true` was set, satisfying WCAG 2.1 Level AA criterion 1.4.4.
+
+4. **`components/magic-demo-trigger.tsx`**:
+   - Created standalone Client Component (`"use client"`) managing `isDemoOpen` state, rendering the interactive trigger button (`"Try Interactive Demo"`), and mounting `<MagicDemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />`.
+
+5. **`app/page.tsx`**:
+   - Removed `"use client"` directive from line 1, refactoring the page into a pure Server Component.
+   - Replaced client state and bottom modal with `<MagicDemoTrigger label="Try Interactive Demo" />`.
+   - Fetches user session server-side via `createClient()` from `@/lib/supabase/server` to render the user badge in the navbar without client-side flash.
+   - Renders store showcase server-side using `DEFAULT_PRODUCTS` with direct links to product pages.
+   - Converted FAQ accordion to native HTML `<details><summary>` elements with Tailwind rotation styles, achieving full interactive expand/collapse functionality with 0 client JS.
+   - Exported comprehensive `metadata: Metadata` with page title, description, keywords, OpenGraph, Twitter card (`summary_large_image`), and canonical URL.
+
+6. **Compilation Verification**:
+   - Running TypeScript AST analysis on all 5 owned files against the project `tsconfig.json` returned:
+     `SUCCESS: All 5 M3 files have 0 TypeScript diagnostics under project tsconfig!`
 
 ---
 
 ## 2. Logic Chain
 
-1. **Authentication Architecture (`_utils/auth.ts`)**:
-   - Evaluates incoming request headers for `Authorization: Bearer <token>`.
-   - Validates session with `@supabase/ssr` / `supabase.auth.getUser(token)`.
-   - In offline, local, or test environments without a live Supabase cloud connection, decodes and validates standard JWT payload structure (`sub`, `email`, `exp`), preventing test harness fragility while maintaining standard Bearer token security.
-   - Checks cookie-based sessions as a secondary fallback.
-   - Returns structured 401 `{ error: 'UNAUTHORIZED', message: '...' }` when neither is present or token is expired/malformed.
+1. **P1-1 & P1-8 (Auth Callback)**:
+   - When an invited enterprise employee clicks their invite link, their email arrives at `/auth/callback`.
+   - By querying `public.org_invitations` with the admin client for a matching pending invitation, the provisioned card (`cards.id = invitation.card_id`) can be claimed immediately (`user_id: user.id`), `organization_members` can record the employee's role, and the invitation status is transitioned to `'accepted'`.
+   - The redirect can then bypass `/dashboard/onboarding` and send the employee straight to `/dashboard`.
+   - For open redirect protection, sanitizing `next` by decoding, verifying relative paths, checking URL origin equality against `http://localhost`, and rejecting control characters or protocol schemes guarantees that users cannot be coerced to an external malicious domain.
 
-2. **Biometric Ingest & Consent Pipeline (`generate/selfie/route.ts`)**:
-   - Validates `consent` before performing any biometric processing. If `consent` is missing or false, immediately returns HTTP 422 with `{ error: 'CONSENT_REQUIRED', message: '...' }`.
-   - Validates upload size `<= 10MB` and MIME type (`image/jpeg`, `image/png`, `image/webp`).
-   - Logs an immutable consent audit record to `consent_logs` table (`user_id`, `consent_type: 'biometric'`, `ip_address`, `granted_at`).
-   - Performs face detection and feature estimation via `detectFaceAndEstimateParams`.
-   - Adheres to GDPR zero-retention mandate: dereferences raw photo buffer (`rawBuffer = null;`) immediately after parametric feature estimation, ensuring raw facial photos are never written to disk, filesystem, or database.
-   - Invokes `AdapterRegistry.getAdapter()` to generate multi-LOD composite assets.
-   - Persists avatar and asset records, returning HTTP 200 `{ avatarId, status: 'ready', assetUrl, assetUrls }`.
+2. **P1-7 (Telegram Auth UI)**:
+   - By rendering `<TelegramIcon />` in a disabled button styled with `opacity-60 cursor-not-allowed` and a `"Coming Soon"` badge, the UI preserves the slot without initiating broken bot redirects.
 
-3. **Parametric Template Generation (`generate/template/route.ts`)**:
-   - Accepts pure JSON `CustomizationParams` without requiring biometric consent.
-   - Sanitizes and defaults parameters (e.g. `faceShape`, `skinTone`, `hairStyle`, `expression`, `eyeSize`, `noseWidth`, `jawWidth`).
-   - Calls `TemplateAdapter.generateFromTemplate()`, saves multi-LOD PNG and SVG assets to `avatar_assets`, and persists `avatars` row.
+3. **P1-2 & P3-3 (Layout Performance & Accessibility)**:
+   - Unmounting `<PageLoader />` removes the fixed full-screen overlay with artificial 500ms/800ms delays, immediately unblocking LCP and initial interaction.
+   - Removing `maximumScale: 1` and specifying `userScalable: true` in the `viewport` export permits pinch-to-zoom on mobile browsers, fulfilling WCAG 2.1 Level AA mobile accessibility guidelines.
 
-4. **Dynamic Next.js 16 Route Handlers (`[id]/*`)**:
-   - Supports Next.js 16 async route params (`context.params: Promise<{ id: string }>`).
-   - Validates avatar existence (HTTP 404 `NOT_FOUND` for unknown IDs).
-   - Enforces strict ownership checks (HTTP 403 `FORBIDDEN` when requested by non-owners for private status/customization/render actions).
-   - Allows public view on `GET /api/zavatar/[id]` when avatar status is `'ready'` or `'minted'`, consistent with Supabase RLS policies.
-   - `PATCH /api/zavatar/[id]/customize` merges style updates, regenerates assets, and updates `avatars` and `avatar_assets`.
-   - `POST /api/zavatar/[id]/render` triggers a full fresh multi-LOD pass.
-   - `GET /api/zavatar/[id]/ownership` provides the Web3 NFT query interface, returning the un-minted stub or on-chain mint details from `nft_mints`.
+4. **P1-4 (Landing Page Server Component & Magic Demo Trigger)**:
+   - Next.js App Router prevents Client Components (`"use client"`) from exporting `metadata`.
+   - Moving `isDemoOpen` state and `MagicDemoModal` into `components/magic-demo-trigger.tsx` isolates the client boundary.
+   - Converting `app/page.tsx` into an `async` Server Component allows the root route to export complete SEO metadata, reduce the client JavaScript bundle, and render static content without hydration penalty.
 
 ---
 
 ## 3. Caveats
 
-1. **Live Supabase Connectivity**:
-   - The database access layer in `_utils/store.ts` executes live queries against Supabase tables (`avatars`, `avatar_assets`, `consent_logs`, `nft_mints`) when Supabase credentials are configured, and gracefully uses a memory-backed cache when running in offline or test environments.
-2. **MetaPerson Cloud API**:
-   - `AdapterRegistry` defaults to `TemplateAdapter`. When `ACTIVE_ADAPTER=metaperson` is requested without `METAPERSON_API_KEY`, it seamlessly falls back to `TemplateAdapter` to guarantee zero downtime.
+- In `app/[slug]/page.tsx`, peer worker `teamwork_preview_worker_m4` is currently implementing M4 (public card sanitization and telemetry). Type errors in `app/[slug]/page.tsx` during global `npx tsc --noEmit` are outside M3 ownership and are being resolved by M4.
+- All 5 files owned by M3 compile with 0 errors, 0 warnings, and adhere strictly to Next.js 16 conventions.
+- No schema modifications were performed by M3 (`supabase/schema.sql` already includes `org_invitations` and enterprise tables from M1).
 
 ---
 
 ## 4. Conclusion
 
-All requirements for Milestone M3 (Requirements R2 and R5) are fully implemented, strictly typed, lint-clean, and independently verified:
-- `app/api/zavatar/_utils/auth.ts`
-- `app/api/zavatar/_utils/store.ts`
-- `app/api/zavatar/generate/selfie/route.ts`
-- `app/api/zavatar/generate/template/route.ts`
-- `app/api/zavatar/[id]/status/route.ts`
-- `app/api/zavatar/[id]/route.ts`
-- `app/api/zavatar/[id]/customize/route.ts`
-- `app/api/zavatar/[id]/render/route.ts`
-- `app/api/zavatar/[id]/ownership/route.ts`
-
-All endpoints conform to Next.js 16 App Router standards, handle 401, 403, 404, 400, 422, and 500 with structured JSON responses, and pass 100% of automated verification tests.
+Milestone M3 is complete:
+- P1-1 (Enterprise employee onboarding loop) and P1-8 (Open redirect defense) are fully implemented and hardened in `app/auth/callback/route.ts`.
+- P1-7 (Disabled Telegram auth state with "Coming Soon" badge) is restored in `app/auth/page.tsx`.
+- P1-2 (`PageLoader` removal) and P3-3 (WCAG mobile viewport zoom) are implemented in `app/layout.tsx`.
+- P1-4 (Server Component landing page, `MagicDemoTrigger` client component, and comprehensive metadata) is fully implemented in `app/page.tsx` and `components/magic-demo-trigger.tsx`.
+- All 5 files pass TypeScript checks cleanly.
 
 ---
 
 ## 5. Verification Method
 
-To independently verify the implementation:
-
-1. **Run Route Handlers Test Suite**:
+1. **TypeScript Diagnostics on M3 Files**:
    ```bash
-   cd /home/level-77/Desktop/digital_business_card
-   npx tsx scripts/verify-m3.ts
+   node -e '
+   const ts = require("typescript");
+   const configFile = ts.readConfigFile("tsconfig.json", ts.sys.readFile);
+   const parsedConfig = ts.parseJsonConfigFileContent(configFile.config, ts.sys, ".");
+   const files = [
+     "app/auth/callback/route.ts",
+     "app/auth/page.tsx",
+     "app/layout.tsx",
+     "app/page.tsx",
+     "components/magic-demo-trigger.tsx"
+   ];
+   const program = ts.createProgram(parsedConfig.fileNames, parsedConfig.options);
+   const diagnostics = ts.getPreEmitDiagnostics(program).filter(d => d.file && files.some(f => d.file.fileName.endsWith(f)));
+   console.log("M3 diagnostics count:", diagnostics.length);
+   if (diagnostics.length > 0) process.exit(1);
+   '
    ```
-   *Expected Output: `=== Verification Summary: 36 Passed, 0 Failed ===` (exit code 0).*
+   **Expected**: `M3 diagnostics count: 0`.
 
-2. **Run ESLint Check**:
-   ```bash
-   cd /home/level-77/Desktop/digital_business_card
-   npx eslint app/api/zavatar
-   ```
-   *Expected Output: Clean, 0 errors, 0 warnings (exit code 0).*
-
-3. **Verify Zavatar Standalone Types**:
-   ```bash
-   cd /home/level-77/Desktop/digital_business_card/zavatar
-   npx tsc --noEmit
-   ```
-   *Expected Output: Exits with code 0.*
+2. **Inspect Changes**:
+   - `git diff app/auth/callback/route.ts` — verify `sanitizeRedirect()` and `org_invitations` claim logic.
+   - `git diff app/auth/page.tsx` — verify disabled Telegram button and redirect parameter forwarding.
+   - `git diff app/layout.tsx` — verify absence of `<PageLoader />` and `userScalable: true`.
+   - `git diff app/page.tsx` — verify absence of `"use client"`, presence of `export const metadata: Metadata`, and `<MagicDemoTrigger />`.
+   - `cat components/magic-demo-trigger.tsx` — verify `"use client"`, `isDemoOpen` state, and `<MagicDemoModal />`.

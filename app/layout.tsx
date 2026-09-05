@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { PageLoader } from "@/components/page-loader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://d-b-c.netlify.app"),
   title: "IZN | The Zen of Networking",
   description: "The Last Business Card You Will Ever Need. Instantly share your contact info right from your Apple or Samsung Wallet.",
   manifest: "/manifest.json",
@@ -32,8 +32,7 @@ export const viewport: Viewport = {
   themeColor: "#fbfbfd",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  userScalable: true,
 };
 
 import { ErrorTracking } from "@/components/error-tracking";
@@ -53,7 +52,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-[#F5F5F7] text-[#1D1D1F] selection:bg-[#0071E3] selection:text-white font-sans">
         <ErrorTracking />
-        <PageLoader />
         {children}
       </body>
     </html>

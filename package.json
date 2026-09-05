@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
+    "@marsidev/react-turnstile": "^1.6.1",
     "@pixiv/three-vrm": "^3.5.5",
     "@pixiv/three-vrm-animation": "^3.5.5",
     "@react-three/drei": "^10.7.8",

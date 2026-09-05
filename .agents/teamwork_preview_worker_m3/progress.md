@@ -1,22 +1,17 @@
-# Progress: Worker M3 (Ingest, Consent & REST API Surface)
+# Progress — Milestone M3: Auth, Onboarding Loop & Shell Performance
 
-- Last visited: 2026-08-31T06:42:00Z
-- Status: Complete
+Last visited: 2026-09-04T13:14:15Z
 
-## Checklist
-- [x] Create BRIEFING.md, DISPATCH.md, and progress.md
-- [x] Read ORIGINAL_REQUEST.md, PROJECT.md, and explorer survey handoff
-- [x] Inspect existing codebase (types, db schemas, adapters in lib/avatar, supabase clients)
-- [x] Implement `app/api/zavatar/_utils/auth.ts`
-- [x] Implement `app/api/zavatar/_utils/store.ts`
-- [x] Implement `POST /api/zavatar/generate/selfie` route
-- [x] Implement `POST /api/zavatar/generate/template` route
-- [x] Implement `GET /api/zavatar/[id]/status` route
-- [x] Implement `GET /api/zavatar/[id]` route
-- [x] Implement `PATCH /api/zavatar/[id]/customize` route
-- [x] Implement `POST /api/zavatar/[id]/render` route
-- [x] Implement `GET /api/zavatar/[id]/ownership` route
-- [x] Write and run comprehensive verification tests (`scripts/verify-m3.ts` - 36/36 passed)
-- [x] Run ESLint check (0 errors, 0 warnings)
-- [x] Update BRIEFING.md and write handoff.md
-- [x] Send completion message to parent orchestrator
+## Status
+All 4 implementation tasks completed and verified with 0 errors across all 5 owned files.
+
+## Steps
+- [x] 1. Read mandatory inputs (ORIGINAL_REQUEST.md, AUDIT_REPORT.md, PROJECT.md, survey flows report/handoff)
+- [x] 2. Inspect target files (app/auth/callback/route.ts, app/auth/page.tsx, app/layout.tsx, app/page.tsx, components/magic-demo-trigger.tsx) and related schemas/utilities
+- [x] 3. Formulate detailed implementation plan and verify baseline build
+- [x] 4. Implement changes to `app/auth/callback/route.ts` (P1-1 employee onboarding loop & P1-8 open redirect defense)
+- [x] 5. Implement changes to `app/auth/page.tsx` (P1-7 disabled Telegram login button with "Coming Soon" badge)
+- [x] 6. Implement changes to `app/layout.tsx` (P1-2 remove PageLoader & P3-3 mobile viewport zoom fix)
+- [x] 7. Implement `components/magic-demo-trigger.tsx` and refactor `app/page.tsx` to Server Component with comprehensive metadata (P1-4)
+- [x] 8. Verify with TypeScript compiler (`npx tsc --noEmit` on owned files passes cleanly with 0 errors)
+- [ ] 9. Write `handoff.md` and send message to orchestrator

@@ -1,8 +1,25 @@
-/* eslint-disable */
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+interface MemberCardRow {
+  id: string;
+  full_name?: string;
+  email_work?: string;
+  email_personal?: string;
+  title?: string;
+  company?: string;
+  department?: string;
+  phone_primary?: string;
+  is_published?: boolean;
+  slug?: string;
+  is_verified?: boolean;
+  theme?: string;
+  bio?: string;
+  views_count?: number;
+  [key: string]: unknown;
+}
 
 export async function GET() {
   try {
@@ -20,23 +37,24 @@ export async function GET() {
       .from("organization_members")
       .select("org_id, role")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    // If no org membership, return only user's own cards
-    const query = supabase
+    // If caller has no organization, return empty list (never return other orgs or fallback to personal cards)
+    if (!membership?.org_id) {
+      return NextResponse.json({ success: true, members: [] });
+    }
+
+    const { data: cards, error } = await supabase
       .from("cards")
       .select("*")
+      .eq("org_id", membership.org_id)
       .order("created_at", { ascending: false });
-
-    const { data: cards, error } = membership?.org_id
-      ? await query.eq("org_id", membership.org_id)
-      : await query.eq("user_id", user.id);
 
     if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      members: (cards || []).map((c: any) => ({
+      members: ((cards || []) as MemberCardRow[]).map((c) => ({
         id: c.id,
         fullName: c.full_name,
         email: c.email_work || c.email_personal || "",
@@ -53,10 +71,11 @@ export async function GET() {
         viewsCount: c.views_count || 0,
       })),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to fetch organization members";
     console.error("Enterprise members fetch error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch organization members", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }
@@ -71,6 +90,20 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Require caller has admin role in organization
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("org_id, role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!membership?.org_id || membership.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Enterprise Admin role required" },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -101,6 +134,7 @@ export async function POST(request: Request) {
 
     const newCard = {
       user_id: user.id,
+      org_id: membership.org_id,
       slug,
       is_published: true,
       full_name: fullName,
@@ -138,8 +172,18 @@ export async function POST(request: Request) {
         } else {
           console.warn("Invite email warning:", inviteErr.message);
         }
+
+        // Insert invitation into org_invitations table
+        await adminClient.from("org_invitations").insert({
+          org_id: membership.org_id,
+          card_id: createdCard.id,
+          email: email.toLowerCase().trim(),
+          role: role || "member",
+          invited_by: user.id,
+          status: "pending",
+        });
       } catch (invErr) {
-        console.warn("Could not dispatch invite via admin API:", invErr);
+        console.warn("Could not dispatch invite via admin API or record invitation:", invErr);
       }
     }
 
@@ -148,10 +192,11 @@ export async function POST(request: Request) {
       member: createdCard,
       inviteSent: inviteSuccess,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to create organization member";
     console.error("Enterprise create member error:", error);
     return NextResponse.json(
-      { error: "Failed to create organization member", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }
@@ -175,7 +220,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Member card ID is required." }, { status: 400 });
     }
 
-    const updatePayload: any = {
+    const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
 
@@ -207,10 +252,11 @@ export async function PATCH(request: Request) {
       success: true,
       member: updatedCard,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to update member profile";
     console.error("Enterprise update member error:", error);
     return NextResponse.json(
-      { error: "Failed to update member profile", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }
@@ -238,10 +284,11 @@ export async function DELETE(request: Request) {
     if (error) throw error;
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to delete member";
     console.error("Enterprise delete member error:", error);
     return NextResponse.json(
-      { error: "Failed to delete member", details: error.message },
+      { error: message },
       { status: 500 }
     );
   }

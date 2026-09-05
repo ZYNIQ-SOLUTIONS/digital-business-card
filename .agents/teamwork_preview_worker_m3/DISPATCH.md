@@ -1,31 +1,47 @@
-## 2026-08-31T06:37:07Z
-You are Worker M3: Ingest, Consent & REST API Surface (Requirements R2, R5).
-Your working directory is: /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m3/
-Create your directory if needed, write BRIEFING.md and progress.md in it.
+## 2026-09-04T13:03:39Z
 
-MANDATORY: Read /home/level-77/Desktop/digital_business_card/.agents/ORIGINAL_REQUEST.md and /home/level-77/Desktop/digital_business_card/PROJECT.md before starting.
-Also inspect the API architecture in /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_explorer_survey_2/handoff.md.
+You are a teamwork_preview_worker subagent.
+Your assigned working directory is: /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m3
+Your parent is: teamwork_preview_orchestrator_2 (id: b6269969-8d18-4aa6-8910-4a283e6cac6b)
 
 MANDATORY INTEGRITY WARNING:
 DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
 
-Write ownership:
-You have exclusive write ownership of all files under:
-`/home/level-77/Desktop/digital_business_card/app/api/zavatar/`
+MANDATORY INPUTS:
+- Read /home/level-77/Desktop/digital_business_card/.agents/ORIGINAL_REQUEST.md (specifically section starting at ## 2026-09-04T12:34:31Z)
+- Read /home/level-77/Desktop/digital_business_card/AUDIT_REPORT.md
+- Read /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_orchestrator_2/PROJECT.md
+- Read /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_explorer_survey_flows_1/report.md and handoff.md
 
-Your mission:
-1. Implement `app/api/zavatar/_utils/auth.ts`:
-   - Extracts user session from Supabase JWT in `Authorization: Bearer <token>` header or cookies via `@supabase/ssr`.
-   - Returns `{ user, supabase }` or a standard 401 error response `{ error: 'UNAUTHORIZED', message: '...' }`.
-2. Implement all 7 Next.js 16 App Router route handlers:
-   - `POST /api/zavatar/generate/selfie` (`app/api/zavatar/generate/selfie/route.ts`): multipart form data (`image`, `consent`, `style`), validates file size (<= 10MB) & mime type (JPEG/PNG/WebP), biometric consent gate (HTTP 422 `{ error: 'CONSENT_REQUIRED', message: '...' }` if consent false/missing), face detection verification, audit logging in `consent_logs`, calls active adapter's `generateFromSelfie`, purges raw selfie bytes from memory, inserts into `avatars` and `avatar_assets`, returns `{ avatarId, status, assetUrl, assetUrls }`.
-   - `POST /api/zavatar/generate/template` (`app/api/zavatar/generate/template/route.ts`): accepts JSON `CustomizationParams`, creates or updates avatar draft in Supabase, calls `TemplateAdapter.generateFromTemplate()`, saves multi-LOD assets to `avatar_assets`, returns `{ avatarId, status: 'ready', assetUrls: { high, mid, low } }`.
-   - `GET /api/zavatar/[id]/status` (`app/api/zavatar/[id]/status/route.ts`): returns `{ id, status, progress: 100, assetUrls? }`, verifies owner matches authenticated user (403 if not).
-   - `GET /api/zavatar/[id]` (`app/api/zavatar/[id]/route.ts`): returns full avatar metadata, asset URLs, and NFT mint status.
-   - `PATCH /api/zavatar/[id]/customize` (`app/api/zavatar/[id]/customize/route.ts`): accepts partial `CustomizationParams`, merges with existing style, re-runs `TemplateAdapter.generateFromTemplate()`, updates `avatar_assets`, returns updated asset URLs.
-   - `POST /api/zavatar/[id]/render` (`app/api/zavatar/[id]/render/route.ts`): triggers fresh render pass generating 3 PNG sizes (512px, 256px, 64px), saves to `avatar_assets` (lod_level: high/mid/low), returns `{ assetUrls: { high, mid, low } }`.
-   - `GET /api/zavatar/[id]/ownership` (`app/api/zavatar/[id]/ownership/route.ts`): Phase 3 stub returning `{ avatarId, minted: false, owner: null, tokenId: null, contractAddress: null }` (or real record if `nft_mints` row exists).
-3. Ensure all routes handle 401 (unauthenticated), 403 (unauthorized user), 404 (not found), and structured JSON error responses.
-4. Verify all route handlers by writing and executing a test script or node verification.
-5. Write your report to /home/level-77/Desktop/digital_business_card/.agents/teamwork_preview_worker_m3/handoff.md.
-6. Send a completion message when done.
+WRITE OWNERSHIP:
+You EXCLUSIVELY own:
+- /home/level-77/Desktop/digital_business_card/app/auth/callback/route.ts
+- /home/level-77/Desktop/digital_business_card/app/auth/page.tsx
+- /home/level-77/Desktop/digital_business_card/app/layout.tsx
+- /home/level-77/Desktop/digital_business_card/app/page.tsx
+- /home/level-77/Desktop/digital_business_card/components/magic-demo-trigger.tsx (create this)
+Do NOT modify any other files.
+
+YOUR TASK (Milestone M3: Auth, Onboarding Loop & Shell Performance):
+1. P1-1 & P1-8 in `app/auth/callback/route.ts`:
+   - Open redirect defense (P1-8): Strictly sanitize `next` query parameter. Ensure it starts with `/`, does NOT start with `//`, and does not contain `\` or external protocols. If invalid, default to `/dashboard`.
+   - Employee onboarding loop (P1-1): After user session exchange, check `public.org_invitations` using `createAdminClient()` for `email = user.email` and `status = 'pending'`.
+     - If found:
+       - Update the provisioned card (`cards` where `id = invitation.card_id`) setting `user_id: user.id`.
+       - Insert into `public.organization_members` with `{ org_id: invitation.org_id, user_id: user.id, role: invitation.role }`.
+       - Update `public.org_invitations` setting `status: 'accepted'`, `accepted_at: new Date().toISOString()`.
+       - Redirect to `/dashboard`.
+     - If no invitation: count existing cards for `user.id`. If count > 0 redirect to `next` (or `/dashboard`); if 0 cards, redirect to `/dashboard/onboarding`.
+2. P1-7 in `app/auth/page.tsx`:
+   - Restore the Telegram login slot as a disabled button with "Coming Soon" badge. Use `<TelegramIcon />` from `@/components/icons`. Style with `opacity-60 cursor-not-allowed` and `disabled={true}`, without any redirect or onClick action.
+3. P1-2 & P3-3 in `app/layout.tsx`:
+   - P1-2: Remove `<PageLoader />` from `RootLayout` so initial page render and LCP are not blocked by the artificial timer/overlay.
+   - P3-3: In the `viewport` export (or configuration in `layout.tsx`), set `userScalable: true` and remove `maximumScale: 1` to comply with WCAG 2.1 Level AA mobile viewport zoom.
+4. P1-4 in `app/page.tsx` & `components/magic-demo-trigger.tsx`:
+   - Create `components/magic-demo-trigger.tsx` as a Client Component (`"use client"`) that manages `isDemoOpen` state, renders the trigger button(s) ("Try Interactive Demo", etc.), and mounts `<MagicDemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />`.
+   - Refactor `app/page.tsx` to be a pure Server Component (REMOVE `"use client"` at line 1). Replace the interactive state and modal in `app/page.tsx` with `<MagicDemoTrigger />`.
+   - Export comprehensive `metadata: Metadata` from `app/page.tsx` (title, description, openGraph, twitter, etc.).
+
+VERIFICATION:
+- Verify that `npx tsc --noEmit` and `npm run build` pass cleanly with exit code 0.
+- Write your completion report in your working directory `handoff.md` and send a message back to parent when done.

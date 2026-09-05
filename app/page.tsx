@@ -1,8 +1,6 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/server";
 import { 
   Smartphone, 
   Zap, 
@@ -36,92 +34,71 @@ import {
   Eye,
   ExternalLink
 } from "lucide-react";
-import { MagicDemoModal } from "@/components/magic-demo-modal";
+import { MagicDemoTrigger } from "@/components/magic-demo-trigger";
 import { IphoneCardShowcase } from "@/components/iphone-card-showcase";
-import { themes, themeList, ThemeCategory } from "@/lib/theme";
-import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
-import { DEFAULT_PRODUCTS, ProductDetail } from "@/lib/store/default-products";
-import { useCartStore } from "@/lib/store/cart-store";
+import { DEFAULT_PRODUCTS } from "@/lib/store/default-products";
 import { QRCodeSVG } from "qrcode.react";
-import { AppleIcon, VerifiedBadgeIcon, LinkedInIcon, WhatsAppIcon, XIcon, GitHubIcon, InstagramIcon } from "@/components/icons";
 
-export default function Home() {
-  const [isDemoOpen, setIsDemoOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  
-  // Interactive Live Sandbox State
-  const [activeThemeId, setActiveThemeId] = useState("apple-dark");
-  const [activeTemplateId, setActiveTemplateId] = useState<TemplateLayoutId>("classic-segmented");
-  const [selectedThemeCategory, setSelectedThemeCategory] = useState<ThemeCategory>("all");
-  const [nfcTapped, setNfcTapped] = useState(false);
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+export const metadata: Metadata = {
+  title: "IZN | The Last Business Card You Will Ever Need",
+  description: "Instantly share your contact credentials, portfolio, and booking links right from Apple Wallet, Samsung Wallet, or luxury physical laser-engraved NFC metal.",
+  keywords: [
+    "digital business card",
+    "NFC business card",
+    "Apple Wallet pass",
+    "smart business card",
+    "contactless card",
+    "UAE digital cards",
+  ],
+  authors: [{ name: "ZYNIQ Studio", url: "https://zyniq.studio" }],
+  creator: "ZYNIQ Studio",
+  publisher: "IZN Digital Business Cards",
+  alternates: {
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://d-b-c.netlify.app",
+  },
+  openGraph: {
+    title: "IZN | The Last Business Card You Will Ever Need",
+    description: "Instantly share your contact credentials, portfolio, and booking links right from Apple Wallet, Samsung Wallet, or luxury physical laser-engraved NFC metal.",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://d-b-c.netlify.app",
+    siteName: "IZN Digital Business Cards",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "IZN Digital Business Cards",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "IZN | The Last Business Card You Will Ever Need",
+    description: "Instantly share your contact credentials, portfolio, and booking links right from Apple Wallet, Samsung Wallet, or luxury physical laser-engraved NFC metal.",
+    creator: "@zyniqstudio",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
-  // Cart store for direct quick adding from the landing page
-  const { addItem } = useCartStore();
-  const [addedProductId, setAddedProductId] = useState<string | null>(null);
-  const [storeProducts, setStoreProducts] = useState<ProductDetail[]>([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+export default async function Home() {
+  let userName: string | null = null;
 
-  const [userName, setUserName] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserName(user.user_metadata?.full_name || 'Dashboard');
-      }
-    };
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    async function loadLiveProducts() {
-      try {
-        const res = await fetch("/api/products");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.products && Array.isArray(data.products) && data.products.length > 0) {
-            setStoreProducts(data.products);
-          } else {
-            setStoreProducts([]);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching live store products:", err);
-      } finally {
-        setIsLoadingProducts(false);
-      }
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      userName = user.user_metadata?.full_name || "Dashboard";
     }
-    loadLiveProducts();
-  }, []);
+  } catch {
+    // Fail-safe during static generation / when unconfigured
+  }
 
-  const triggerNfcTap = () => {
-    setNfcTapped(true);
-    setTimeout(() => setNfcTapped(false), 3000);
-  };
-
-  const handleQuickAdd = (product: ProductDetail) => {
-    addItem(product);
-    setAddedProductId(product.id);
-    setTimeout(() => setAddedProductId(null), 2500);
-  };
-
-  const currentTheme = themes[activeThemeId] || themes["apple-dark"];
-  const currentTemplate = cardTemplates[activeTemplateId] || cardTemplates["classic-segmented"];
-
-  const filteredThemes = themeList.filter((th) => {
-    if (selectedThemeCategory === "all") return true;
-    if (selectedThemeCategory === "dark") return th.isDark;
-    if (selectedThemeCategory === "light") return !th.isDark;
-    return th.category === selectedThemeCategory;
-  });
+  const storeProducts = DEFAULT_PRODUCTS;
 
   return (
     <div className="min-h-screen bg-[#050507] text-[#F5F5F7] selection:bg-[#8b5cf6]/30 selection:text-white font-sans antialiased overflow-x-hidden">
@@ -135,7 +112,7 @@ export default function Home() {
       </div>
 
       {/* Navbar */}
-      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-[#050507]/90 backdrop-blur-xl border-b border-white/[0.06] py-3.5" : "bg-transparent py-5"}`}>
+      <nav className="fixed top-0 inset-x-0 z-50 transition-all duration-300 bg-[#050507]/90 backdrop-blur-xl border-b border-white/[0.06] py-3.5">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group cursor-pointer">
             <svg id="logo-light" className="w-8 h-8 filter drop-shadow-[0_0_10px_rgba(139,92,246,0.4)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
@@ -210,13 +187,7 @@ export default function Home() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             
-            <button
-              onClick={triggerNfcTap}
-              className="w-full sm:w-auto px-7 py-4 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-white font-semibold text-sm transition border border-white/[0.12] flex items-center justify-center gap-2 backdrop-blur-md active:scale-95"
-            >
-              <Smartphone className="w-4 h-4 text-[#0ea5e9]" />
-              <span>Simulate NFC Tap</span>
-            </button>
+            <MagicDemoTrigger label="Try Interactive Demo" />
           </div>
 
           {/* Social Proof Bar */}
@@ -293,11 +264,6 @@ export default function Home() {
           </div>
 
           {/* Real Store Products Grid Showcase */}
-          {isLoadingProducts ? (
-            <div className="text-center text-gray-500 py-10">Loading products...</div>
-          ) : storeProducts.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">No products available at the moment.</div>
-          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {storeProducts.slice(0, 3).map((prod) => (
               <div
@@ -360,32 +326,18 @@ export default function Home() {
                       <span>Customize</span>
                     </Link>
 
-                    <button
-                      onClick={() => handleQuickAdd(prod)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1 shadow-sm ${
-                        addedProductId === prod.id
-                          ? "bg-[#10b981] text-white"
-                          : "bg-white text-black hover:bg-neutral-200"
-                      }`}
+                    <Link
+                      href={`/store/product?id=${prod.id}`}
+                      className="py-2.5 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1 shadow-sm bg-white text-black hover:bg-neutral-200"
                     >
-                      {addedProductId === prod.id ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Added!</span>
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>Add to Bag</span>
-                        </>
-                      )}
-                    </button>
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>Order Card</span>
+                    </Link>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          )}
 
           {/* Quick Hardware Guarantees Bar */}
           <div className="p-6 rounded-3xl bg-neutral-900/40 border border-white/[0.06] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-gray-300">
@@ -694,21 +646,18 @@ export default function Home() {
               { q: "How fast is shipping for physical NFC metal cards?", a: "Orders across the UAE (Dubai, Abu Dhabi, Sharjah) are delivered in 24–48 hours. Worldwide express delivery arrives in 3–5 business days with full tracking." },
               { q: "Can I customize the laser engraving with my company logo?", a: "Yes! Every physical card includes complimentary precision fiber laser engraving with your custom name, title, and logo vector." },
             ].map((faq, idx) => (
-              <div
+              <details
                 key={idx}
-                onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/15 transition cursor-pointer space-y-2"
+                className="group p-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/15 transition space-y-2"
               >
-                <div className="flex items-center justify-between">
+                <summary className="flex items-center justify-between cursor-pointer list-none">
                   <span className="text-sm font-bold text-white">{faq.q}</span>
-                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${activeFaq === idx ? 'rotate-90 text-white' : ''}`} />
-                </div>
-                {activeFaq === idx && (
-                  <p className="text-xs text-gray-400 leading-relaxed pt-2 border-t border-white/[0.04]">
-                    {faq.a}
-                  </p>
-                )}
-              </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-90 group-open:text-white" />
+                </summary>
+                <p className="text-xs text-gray-400 leading-relaxed pt-2 border-t border-white/[0.04]">
+                  {faq.a}
+                </p>
+              </details>
             ))}
           </div>
         </section>
@@ -768,10 +717,6 @@ export default function Home() {
           </p>
         </div>
       </footer>
-
-      {/* Magic Demo Modal */}
-      <MagicDemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
-      
     </div>
   );
 }

@@ -37,13 +37,38 @@ export function ImageCropModal({ isOpen, onClose, imageSrc, onCropComplete }: Im
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    setCrop(centerAspectCrop(width, height, 1));
+    const initialCrop = centerAspectCrop(width, height, 1);
+    setCrop(initialCrop);
+
+    // Fallback: Initialize completedCrop in pixels so clicking 'Apply Crop' immediately works
+    const size = Math.min(width, height) * 0.9;
+    setCompletedCrop({
+      unit: "px",
+      x: (width - size) / 2,
+      y: (height - size) / 2,
+      width: size,
+      height: size,
+    });
   }
 
   const getCroppedImg = async () => {
-    if (!completedCrop || !imgRef.current) return;
+    if (!imgRef.current) return;
     
     const image = imgRef.current;
+
+    // Use completedCrop if set; otherwise calculate default centered crop fallback
+    let targetCrop = completedCrop;
+    if (!targetCrop || !targetCrop.width || !targetCrop.height) {
+      const size = Math.min(image.width, image.height) * 0.9;
+      targetCrop = {
+        unit: "px",
+        x: (image.width - size) / 2,
+        y: (image.height - size) / 2,
+        width: size,
+        height: size,
+      };
+    }
+
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
@@ -52,19 +77,22 @@ export function ImageCropModal({ isOpen, onClose, imageSrc, onCropComplete }: Im
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
 
-    canvas.width = completedCrop.width;
-    canvas.height = completedCrop.height;
+    const pixelWidth = Math.round(targetCrop.width * scaleX);
+    const pixelHeight = Math.round(targetCrop.height * scaleY);
+
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
 
     ctx.drawImage(
       image,
-      completedCrop.x * scaleX,
-      completedCrop.y * scaleY,
-      completedCrop.width * scaleX,
-      completedCrop.height * scaleY,
+      targetCrop.x * scaleX,
+      targetCrop.y * scaleY,
+      targetCrop.width * scaleX,
+      targetCrop.height * scaleY,
       0,
       0,
-      completedCrop.width,
-      completedCrop.height,
+      pixelWidth,
+      pixelHeight,
     );
 
     canvas.toBlob(
