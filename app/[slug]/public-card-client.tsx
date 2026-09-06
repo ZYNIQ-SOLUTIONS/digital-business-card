@@ -268,6 +268,7 @@ export default function PublicCardClient({
   const [hasUnlocked, setHasUnlocked] = useState(card.is_private !== true);
   const [enteredPin, setEnteredPin] = useState("");
   const [pinError, setPinError] = useState(false);
+  const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   
   const supabase = createClient();
   const router = useRouter();
