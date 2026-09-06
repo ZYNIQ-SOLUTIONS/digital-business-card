@@ -35,6 +35,7 @@ export const viewport: Viewport = {
   userScalable: true,
 };
 
+import NextTopLoader from 'nextjs-toploader';
 import { ErrorTracking } from "@/components/error-tracking";
 
 export default function RootLayout({
@@ -50,7 +51,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className="min-h-full flex flex-col bg-[#F5F5F7] text-[#1D1D1F] selection:bg-[#0071E3] selection:text-white font-sans">
+            <body className="min-h-full flex flex-col bg-[#F5F5F7] text-[#1D1D1F] selection:bg-[#0071E3] selection:text-white font-sans">
+        <NextTopLoader 
+          color="#0071E3"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #0071E3,0 0 5px #0071E3"
+          zIndex={1600}
+        />
         <ErrorTracking />
         {children}
       </body>
