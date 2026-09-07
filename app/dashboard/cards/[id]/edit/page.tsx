@@ -4,7 +4,7 @@ import React, { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, Save, Eye, Sparkles, Upload, Phone, Mail, Globe, MapPin, Check, Loader2, ExternalLink, ChevronRight, ChevronDown, ShieldCheck, Building2, Share2, Calendar, Camera, X, Plus, Search, LayoutGrid, Palette, Terminal, Layers, Award, Zap, CreditCard } from "lucide-react";
+import { ArrowLeft, Save, Eye, Sparkles, Upload, Phone, Mail, Globe, MapPin, Check, Loader2, ExternalLink, ChevronRight, ChevronDown, ShieldCheck, Building2, Share2, Calendar, Camera, X, Plus, Search, LayoutGrid, Palette, Terminal, Layers, Award, Zap, CreditCard, AlertCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { 
@@ -132,9 +132,16 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
 
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > MAX_FILE_SIZE) {
+        setErrorMsg("Avatar image exceeds the 5MB size limit. Please choose a smaller image.");
+        e.target.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.addEventListener("load", () => {
         setImageToCrop(reader.result?.toString() || null);
@@ -180,6 +187,11 @@ export default function CardEditPage({ params }: CardEditPageProps) {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
     e.target.value = '';
+
+    if (file.size > MAX_FILE_SIZE) {
+      setErrorMsg("Background image exceeds the 5MB size limit. Please choose a smaller image.");
+      return;
+    }
 
     setUploadingBg(true);
     setErrorMsg(null);
@@ -266,6 +278,12 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       .single();
 
     if (!error && data) {
+      if (Array.isArray(data.icebreakers)) {
+        setIcebreakers(data.icebreakers);
+      }
+      if (data.crypto_identity?.walletAddress) {
+        setHasWalletIdentity(true);
+      }
       setCard({
         ...data,
         template_layout: data.template_layout || "classic-segmented",
@@ -338,12 +356,13 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         vcard_downloads_count: _vcards,
         wallet_downloads_count: _wallets,
         template_layout: _tpl,
+        icebreakers: _ib,
         ...rest
       } = card;
 
       const p: any = {
-        icebreakers,
         ...rest,
+        icebreakers,
         avatar_initials: initials,
         theme: card.theme || "apple-light",
         updated_at: new Date().toISOString(),
@@ -403,7 +422,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       handleSave(true);
     }, 1500);
     return () => clearTimeout(timer);
-  }, [card, loading]);
+  }, [card, loading, icebreakers]);
 
   const updateSocial = (socialId: string, fields: Record<string, any>) => {
     setCard((prev: any) => ({
@@ -532,13 +551,51 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           <button
             onClick={() => handleSave(false)}
             disabled={saving}
-            className="px-4 py-2 rounded-xl bg-[#1D1D1F] text-white text-xs font-semibold hover:bg-black/80 disabled:opacity-50 flex items-center gap-1.5 transition shadow-[0_4px_14px_rgba(0,0,0,0.1)]"
+            className={`px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-50 flex items-center gap-1.5 transition shadow-[0_4px_14px_rgba(0,0,0,0.1)] ${
+              saveSuccess
+                ? "bg-green-600 text-white"
+                : "bg-[#1D1D1F] text-white hover:bg-black/80"
+            }`}
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+            {saving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : saveSuccess ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-white" />
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Changes</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Visible Dismissible Error Banner */}
+      {errorMsg && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 flex items-start justify-between gap-3 text-xs shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-red-800">Action Failed</p>
+              <p className="text-red-700">{errorMsg}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setErrorMsg(null)}
+            className="text-red-500 hover:text-red-800 p-1 rounded-lg hover:bg-red-100 transition shrink-0"
+            title="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       
       {/* Main Grid: Form Sections (Left 7 cols) & Live Preview Mockup (Right 5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -944,21 +1001,32 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     </div>
                   </div>
 
-                  {/* Crypto Identity */}
-                  <div className="p-4 bg-[#F5F5F7] rounded-2xl border border-black/[0.04] flex items-center justify-between">
+                  {/* Crypto Identity & AI Verification */}
+                  <div className="p-4 bg-[#F5F5F7] rounded-2xl border border-black/[0.04] flex items-center justify-between gap-3 flex-wrap">
                     <div>
                       <span className="block text-[11px] font-semibold text-[#86868B] uppercase mb-0.5">Cryptographic Identity Badge</span>
-                      <span className="block text-[10px] text-neutral-500">Sign a wallet transaction to prove ownership and prevent impersonation.</span>
+                      <span className="block text-[10px] text-neutral-500">Sign a wallet transaction or verify with AI camera to prove ownership.</span>
                     </div>
-                    {hasWalletIdentity ? (
-                      <div className="px-3 py-1.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Verified
-                      </div>
-                    ) : (
-                      <button type="button" onClick={handleVerifyWallet} className="px-3 py-1.5 bg-[#1D1D1F] text-white text-[10px] font-bold rounded-full hover:bg-black transition">
-                        Connect Wallet
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsVerifyOpen(true)}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0071E3] text-[10px] font-bold rounded-full border border-blue-200/80 flex items-center gap-1 transition"
+                        title="Verify with AI Camera"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>Verify with AI Camera</span>
                       </button>
-                    )}
+                      {hasWalletIdentity ? (
+                        <div className="px-3 py-1.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 flex items-center gap-1">
+                          <ShieldCheck className="w-3.5 h-3.5" /> Verified
+                        </div>
+                      ) : (
+                        <button type="button" onClick={handleVerifyWallet} className="px-3 py-1.5 bg-[#1D1D1F] text-white text-[10px] font-bold rounded-full hover:bg-black transition">
+                          Connect Wallet
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Context Modes (Teaser) */}
@@ -1300,13 +1368,43 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     />
                     <input
                       type="text"
-                      placeholder="City & Country"
+                      placeholder="City"
                       value={card.office_address?.city || ""}
                       onChange={(e) => setCard({
                         ...card,
                         office_address: { ...card.office_address, city: e.target.value }
                       })}
                       className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="State / Region"
+                      value={card.office_address?.region || ""}
+                      onChange={(e) => setCard({
+                        ...card,
+                        office_address: { ...card.office_address, region: e.target.value }
+                      })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Postal / Zip Code"
+                      value={card.office_address?.postalCode || ""}
+                      onChange={(e) => setCard({
+                        ...card,
+                        office_address: { ...card.office_address, postalCode: e.target.value }
+                      })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={card.office_address?.country || ""}
+                      onChange={(e) => setCard({
+                        ...card,
+                        office_address: { ...card.office_address, country: e.target.value }
+                      })}
+                      className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white sm:col-span-2"
                     />
                   </div>
                 </div>
@@ -1368,8 +1466,17 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                       </label>
                       <input
                         type="number"
-                        value={card.booking_slot_duration}
-                        onChange={(e) => setCard({ ...card, booking_slot_duration: e.target.value === '' ? ('' as any) : Number(e.target.value) })}
+                        min={5}
+                        max={240}
+                        step={5}
+                        value={card.booking_slot_duration === null || card.booking_slot_duration === undefined ? "" : card.booking_slot_duration}
+                        onChange={(e) => {
+                          const val = e.target.value.trim();
+                          setCard({
+                            ...card,
+                            booking_slot_duration: val === "" ? 30 : (Number(val) || 30),
+                          });
+                        }}
                         className="w-full p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.05] text-xs focus:outline-none focus:bg-white"
                       />
                     </div>
@@ -1864,10 +1971,10 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white uppercase tracking-wider">{card.full_name || "Name"}</h4>
-                      <p className="text-[9px] text-cyan-400">// {card.title || "TITLE"}</p>
+                      <p className="text-[9px] text-cyan-400">{"// "}{card.title || "TITLE"}</p>
                     </div>
                     <div className="p-2 rounded-xl bg-black/50 border border-cyan-500/40">
-                      <QRCodeSVG value={`https://card.app/${card.slug}`} size={70} level="Q" className="w-16 h-16 mx-auto" />
+                      <QRCodeSVG value={`https://card.app/${card.slug || "demo"}`} size={70} level="Q" className="w-16 h-16 mx-auto" />
                     </div>
                     <div className="w-full py-1.5 rounded-lg bg-cyan-500 text-black text-[9px] font-bold">
                       EXTRACT VCARD STREAM
@@ -1904,6 +2011,297 @@ export default function CardEditPage({ params }: CardEditPageProps) {
                     </div>
                   </div>
                 )}
+
+                {/* Template 6: Neo-Brutalist Bold Mockup */}
+                {template === "neobrutalist-bold" && (
+                  <div className="w-full space-y-3 text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 bg-[#FDE047] text-black font-black text-[9px] uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000000] rounded rotate-[-1deg]">
+                        ★ Verified Card
+                      </span>
+                      <span className="text-[8px] font-bold bg-white px-2 py-0.5 border border-black rounded shadow-[1px_1px_0px_#000]">
+                        NEO-POP
+                      </span>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-white border-2 border-black rounded-2xl shadow-[3px_3px_0px_#000000]">
+                      <div className="w-12 h-12 rounded-xl bg-[#FDE047] border-2 border-black shadow-[2px_2px_0px_#000000] overflow-hidden shrink-0 flex items-center justify-center">
+                        {card.avatar_url ? (
+                          <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-base font-black text-black">{card.avatar_initials || "IK"}</span>
+                        )}
+                      </div>
+                      <div className="truncate flex-1">
+                        <h4 className="text-xs font-black text-black truncate">{card.full_name || "Name"}</h4>
+                        <p className="text-[10px] font-bold text-[#432DD7] truncate">{card.title || "Title"}</p>
+                        <p className="text-[9px] font-semibold text-gray-600 truncate">{card.company || "Company"}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2 bg-white border-2 border-black rounded-xl shadow-[2px_2px_0px_#000000] flex flex-col items-center">
+                        <QRCodeSVG value={`https://card.app/${card.slug || "demo"}`} size={50} level="Q" className="w-12 h-12 mb-1" />
+                        <span className="text-[8px] font-black text-black uppercase">Scan NFC</span>
+                      </div>
+                      <div className="p-2 bg-[#FDE047] border-2 border-black rounded-xl shadow-[2px_2px_0px_#000000] flex flex-col justify-between">
+                        <span className="text-[9px] font-black text-black uppercase">Instant Connect</span>
+                        <div className="py-1 px-2 rounded-lg bg-black text-white text-[8px] font-black text-center">
+                          SAVE CONTACT
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Template 7: Claude Warm Editorial Mockup */}
+                {template === "claude-editorial" && (
+                  <div className="w-full space-y-3 text-left">
+                    <div className="border-b border-[#E5E0D8] pb-2 flex items-center justify-between">
+                      <span className="text-[9px] uppercase tracking-widest font-serif text-[#C85A32] font-bold">
+                        Executive Memorandum
+                      </span>
+                      <span className="text-[8px] font-mono text-[#86868B]">VOL. 26</span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full border border-[#D5CFC7] overflow-hidden shrink-0 flex items-center justify-center bg-[#F4F1EC]">
+                        {card.avatar_url ? (
+                          <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-serif font-bold text-[#1C1A17]">{card.avatar_initials || "IK"}</span>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-serif font-bold text-[#1C1A17]">{card.full_name || "Name"}</h4>
+                        <p className="text-[10px] text-[#C85A32] font-serif italic">{card.title || "Title"}</p>
+                        <p className="text-[9px] text-[#706B65]">{card.company || "Company"}</p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-[#F4F1EC] border border-[#E5E0D8] space-y-1.5">
+                      <div className="flex items-center justify-between text-[9px] font-serif text-[#1C1A17]">
+                        <span>Direct Communication Channel</span>
+                        <ChevronRight className="w-3 h-3 text-[#C85A32]" />
+                      </div>
+                      <div className="w-full py-1.5 rounded-lg bg-[#1C1A17] text-[#FAF9F5] text-[9px] font-serif font-bold text-center">
+                        Acquire Dossier (.vcf)
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Template 8: Matrix Cyber Terminal Mockup */}
+                {template === "matrix-terminal" && (
+                  <div className="w-full space-y-2.5 font-mono text-left bg-black p-3 rounded-2xl border border-green-500/40 text-green-400 shadow-[0_0_15px_rgba(0,255,102,0.1)]">
+                    <div className="text-[8px] text-green-500/80 flex items-center justify-between border-b border-green-900/60 pb-1">
+                      <span>[SYS://IDENTITY_STREAM]</span>
+                      <span className="animate-pulse">● REC</span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-11 h-11 rounded-lg border border-green-500/70 p-0.5 overflow-hidden shrink-0 bg-green-950/40 flex items-center justify-center">
+                        {card.avatar_url ? (
+                          <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover rounded" />
+                        ) : (
+                          <span className="text-xs font-bold text-green-300">{card.avatar_initials || "IK"}</span>
+                        )}
+                      </div>
+                      <div className="truncate">
+                        <p className="text-xs font-bold text-white tracking-wider truncate">&gt; {card.full_name || "USER"}</p>
+                        <p className="text-[9px] text-green-400 truncate">// {card.title || "OPERATOR"}</p>
+                        <p className="text-[8px] text-green-600 truncate">{card.company || "NETWORK"}</p>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-green-950/20 border border-green-800/50 flex items-center justify-between">
+                      <span className="text-[8px] text-green-300">PROTOCOL: NFC_PASS</span>
+                      <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-900/60 text-green-300 font-bold">256-BIT</span>
+                    </div>
+
+                    <div className="w-full py-1.5 rounded-lg bg-green-500 text-black text-[9px] font-bold text-center hover:bg-green-400 transition">
+                      EXECUTE_VCARD_PAYLOAD
+                    </div>
+                  </div>
+                )}
+
+                {/* Template 9: Claymorphic 3D Puff Mockup */}
+                {template === "clay-3d" && (
+                  <div className="w-full space-y-3 text-center">
+                    <div className="w-16 h-16 mx-auto rounded-[22px] bg-gradient-to-br from-indigo-100 to-purple-100 border border-white/60 shadow-[inset_0_2px_4px_rgba(255,255,255,0.9),0_6px_14px_rgba(100,100,200,0.15)] flex items-center justify-center overflow-hidden">
+                      {card.avatar_url ? (
+                        <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-bold text-purple-600">{card.avatar_initials || "IK"}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 className={`text-xs font-bold ${pt.textMain}`}>{card.full_name || "Name"}</h4>
+                      <p className={`text-[10px] font-semibold ${pt.accent}`}>{card.title || "Title"}</p>
+                      <p className={`text-[9px] ${pt.textSecondary}`}>{card.company || "Company"}</p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <div className="p-2 rounded-2xl bg-white shadow-[0_4px_10px_rgba(0,0,0,0.06)] border border-black/[0.03] text-[8px] font-bold">
+                        Call
+                      </div>
+                      <div className="p-2 rounded-2xl bg-white shadow-[0_4px_10px_rgba(0,0,0,0.06)] border border-black/[0.03] text-[8px] font-bold">
+                        Email
+                      </div>
+                      <div className="p-2 rounded-2xl bg-white shadow-[0_4px_10px_rgba(0,0,0,0.06)] border border-black/[0.03] text-[8px] font-bold">
+                        Meet
+                      </div>
+                    </div>
+
+                    <div className={`w-full py-2 rounded-2xl ${pt.accentBg} text-white text-[9px] font-bold shadow-[0_6px_16px_rgba(0,113,227,0.25)]`}>
+                      Download Clay Pass
+                    </div>
+                  </div>
+                )}
+
+                {/* Template 10: Japanese Riso Studio Mockup */}
+                {template === "riso-duotone" && (
+                  <div className="w-full space-y-2.5 text-left p-2.5 rounded-2xl bg-[#FFFDF7] border-2 border-dashed border-[#FF4B4B]">
+                    <div className="flex items-center justify-between border-b border-[#FF4B4B]/30 pb-1">
+                      <span className="text-[9px] font-black text-[#FF4B4B] tracking-widest uppercase">
+                        RISO PRINT NO. 01
+                      </span>
+                      <span className="text-[8px] font-mono text-[#004C6D]">SPOT INK</span>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-12 h-12 rounded-xl bg-[#004C6D] border-2 border-[#FF4B4B] overflow-hidden shrink-0 flex items-center justify-center">
+                        {card.avatar_url ? (
+                          <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-base font-black text-[#FFFDF7]">{card.avatar_initials || "IK"}</span>
+                        )}
+                      </div>
+                      <div className="truncate">
+                        <h4 className="text-xs font-black text-[#004C6D] truncate">{card.full_name || "Name"}</h4>
+                        <p className="text-[10px] font-bold text-[#FF4B4B] truncate">{card.title || "Title"}</p>
+                        <p className="text-[9px] text-[#004C6D]/80 truncate">{card.company || "Company"}</p>
+                      </div>
+                    </div>
+
+                    <div className="w-full py-1.5 rounded-xl bg-[#FF4B4B] text-white text-[9px] font-black text-center shadow-xs">
+                      STAMP &amp; SAVE VCARD
+                    </div>
+                  </div>
+                )}
+
+                {/* Template 11: Sega 8-Bit Arcade Mockup */}
+                {template === "retro-arcade" && (
+                  <div className="w-full space-y-2.5 font-mono text-center bg-indigo-950 p-3 rounded-2xl border-2 border-yellow-400 text-yellow-300 shadow-[4px_4px_0px_#000]">
+                    <div className="text-[8px] uppercase tracking-wider flex items-center justify-between border-b border-yellow-500/30 pb-1">
+                      <span>1P READY</span>
+                      <span className="text-pink-400 animate-pulse">HI-SCORE: 9999</span>
+                    </div>
+
+                    <div className="w-14 h-14 mx-auto rounded-lg border-2 border-yellow-400 bg-black overflow-hidden flex items-center justify-center">
+                      {card.avatar_url ? (
+                        <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-base font-bold text-yellow-300">{card.avatar_initials || "IK"}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <h4 className="text-xs font-bold text-white uppercase">{card.full_name || "PLAYER 1"}</h4>
+                      <p className="text-[9px] text-pink-400">LVL 99 {card.title || "CHAMPION"}</p>
+                      <p className="text-[8px] text-yellow-200">{card.company || "ARCADE"}</p>
+                    </div>
+
+                    <div className="w-full py-1.5 rounded bg-yellow-400 text-black text-[9px] font-black border border-black shadow-[2px_2px_0px_#000]">
+                      INSERT COIN // SAVE PASS
+                    </div>
+                  </div>
+                )}
+
+                {/* Fallback for Custom Templates */}
+                {![
+                  "classic-segmented",
+                  "bento-grid",
+                  "executive-minimal",
+                  "cyber-holo",
+                  "creative-hero",
+                  "neobrutalist-bold",
+                  "claude-editorial",
+                  "matrix-terminal",
+                  "clay-3d",
+                  "riso-duotone",
+                  "retro-arcade",
+                ].includes(template) && (
+                  <div className="w-full space-y-3 text-center">
+                    <div className={`w-16 h-16 mx-auto rounded-2xl ${pt.avatarBg} border ${pt.avatarBorder} flex items-center justify-center overflow-hidden`}>
+                      {card.avatar_url ? (
+                        <img src={card.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className={`text-xl font-bold ${pt.textMain}`}>{card.avatar_initials || "IK"}</span>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className={`text-xs font-bold ${pt.textMain}`}>{card.full_name || "Name"}</h4>
+                      <p className={`text-[10px] font-semibold ${pt.accent}`}>{card.title || "Title"}</p>
+                      <p className={`text-[9px] ${pt.textSecondary}`}>{card.company || "Company"}</p>
+                    </div>
+                    <div className={`w-full py-1.5 rounded-xl ${pt.accentBg} text-white text-[9px] font-bold`}>
+                      Save Contact (.vcf)
+                    </div>
+                  </div>
+                )}
+
+                {/* Live Details Block: Socials, Skills, Bio, Portfolio */}
+                <div className="w-full pt-3 space-y-2 border-t border-black/[0.06] dark:border-white/[0.06] text-center">
+                  {card.bio && (
+                    <p className={`text-[10px] leading-relaxed ${pt.textSecondary} line-clamp-2 px-1 italic`}>
+                      "{card.bio}"
+                    </p>
+                  )}
+                  {card.portfolio_url && (
+                    <div className="pt-0.5">
+                      <a
+                        href={card.portfolio_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[9px] font-bold ${pt.accent} ${pt.pillBg} border ${pt.pillBorder} hover:opacity-80 transition`}
+                      >
+                        <Globe className="w-3 h-3" />
+                        <span>Portfolio</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  )}
+                  {Array.isArray(card.skills) && card.skills.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-center gap-1 w-full pt-1">
+                      {card.skills.slice(0, 5).map((skill: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className={`px-2 py-0.5 rounded-full text-[8px] font-semibold ${pt.pillBg} ${pt.textMain} border ${pt.pillBorder}`}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {Array.isArray(card.socials) && card.socials.some((s: any) => s.active && s.url) && (
+                    <div className="flex flex-wrap items-center justify-center gap-1 w-full pt-1">
+                      {card.socials
+                        .filter((s: any) => s.active && s.url)
+                        .slice(0, 6)
+                        .map((social: any) => (
+                          <span
+                            key={social.id}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[8px] font-medium ${pt.pillBg} ${pt.textMain} border ${pt.pillBorder}`}
+                          >
+                            <SocialIcon id={social.id} className="w-2.5 h-2.5" />
+                            <span>{social.name}</span>
+                          </span>
+                        ))}
+                    </div>
+                  )}
+                </div>
 
                 </div>
               </div>

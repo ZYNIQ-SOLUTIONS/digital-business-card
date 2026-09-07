@@ -407,3 +407,27 @@ Fix all 7 critical security issues identified in `AUDIT_REPORT.md` without break
 - [ ] No file-level `/* eslint-disable */` suppressions that mask real bugs remain
 - [ ] `next.config.ts` exports a `headers()` function with security headers
 </USER_REQUEST>
+
+## 2026-09-07T06:57:58Z
+
+<USER_REQUEST>
+Perform a comprehensive functional audit and End-to-End (E2E) testing of the Digital Business Card platform. Identify and resolve any broken user flows, and implement an automated E2E test suite to guarantee the application is production-ready.
+
+Working directory: /home/level-77/Desktop/digital_business_card
+Integrity mode: demo
+
+## Requirements
+
+### R1. Comprehensive Flow Audit & Fixes
+Systematically test all core application flows (Authentication, Dashboard, Card Editing, Wallet Pass generation, etc.). Identify any runtime errors, state bugs, or broken UI elements and fix them so the app is fully functional.
+
+### R2. Playwright E2E Test Suite
+Implement an End-to-End testing suite using Playwright covering the critical paths of the application. 
+
+## Acceptance Criteria
+
+### Testing & Stability
+- [ ] A Playwright test suite is configured and executes successfully against the core critical paths.
+- [ ] An agent-generated verification report is provided, documenting the manual testing of all major application flows and confirming they are fully operational and production-ready.
+- [ ] Any UI bugs or broken logic discovered during the audit are successfully fixed in the codebase.
+</USER_REQUEST>

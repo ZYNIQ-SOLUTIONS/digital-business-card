@@ -2,11 +2,13 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
 import { GoogleIcon, GitHubIcon, TelegramIcon } from "@/components/icons";
 
 export default function AuthPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
@@ -14,6 +16,16 @@ export default function AuthPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const supabase = createClient();
+
+  const handleGuestDemo = () => {
+    if (typeof document !== "undefined") {
+      document.cookie = "demo_session=true; path=/; max-age=86400";
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("izn_demo_mode", "true");
+    }
+    router.push("/dashboard");
+  };
 
   const handleSignInWithMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,6 +256,19 @@ export default function AuthPage() {
                   </>
                 )}
               </button>
+
+              {/* Guest Demo Experience Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleGuestDemo}
+                  className="w-full py-3 px-4 min-h-[46px] rounded-2xl bg-[#F5F5F7] hover:bg-[#EAEAEA] active:scale-[0.98] border border-black/[0.08] text-[#1D1D1F] font-semibold text-xs flex items-center justify-center gap-2 transition shadow-2xs group"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#0071E3] group-hover:rotate-12 transition-transform" />
+                  <span>Explore Demo Experience / Guest Demo</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#86868B] group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
             </form>
           </div>
         )}

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   CreditCard,
@@ -40,14 +40,25 @@ interface CardItem {
 }
 
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="py-28 flex flex-col items-center justify-center space-y-4"><Loader2 className="w-8 h-8 text-[#0071E3] animate-spin" /></div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [view, setView] = useState<"active" | "trash">("active");
+  const tabParam = searchParams.get("tab");
+  const [view, setView] = useState<"active" | "trash">(tabParam === "trash" ? "trash" : "active");
   const [cards, setCards] = useState<CardItem[]>([]);
   const [trashedCards, setTrashedCards] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [qrModalCard, setQrModalCard] = useState<CardItem | null>(null);
   const [homescreenTarget, setHomescreenTarget] = useState<{
     type: "dashboard" | "card";
@@ -56,6 +67,15 @@ export default function DashboardPage() {
     url?: string;
   } | null>(null);
 
+  // Synchronize view state with URL ?tab= query parameter
+  useEffect(() => {
+    if (tabParam === "trash") {
+      setView("trash");
+    } else if (tabParam === "active" || tabParam === null) {
+      if (tabParam === "active") setView("active");
+    }
+  }, [tabParam]);
+
   const fetchCards = async () => {
     setLoading(true);
     const {
@@ -63,6 +83,35 @@ export default function DashboardPage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      // In demo mode or when Supabase credentials are not configured, provide demo cards
+      if (
+        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder") ||
+        (typeof window !== "undefined" &&
+          (document.cookie.includes("demo_session=true") ||
+            localStorage.getItem("izn_demo_mode") === "true"))
+      ) {
+        const demoCards: CardItem[] = [
+          {
+            id: "demo-card-1",
+            slug: "ibrahim-el-khalil",
+            full_name: "Ibrahim El Khalil",
+            title: "Managing Director & AI Architect",
+            company: "Zyniq Solutions",
+            is_published: true,
+            theme: "apple-light",
+            active_mode: "all",
+            views_count: 1420,
+            vcard_downloads_count: 384,
+            created_at: new Date().toISOString(),
+            template_layout: "classic-segmented",
+          },
+        ];
+        setCards(demoCards);
+        setLoading(false);
+        return;
+      }
+
       router.push("/auth");
       return;
     }
@@ -96,6 +145,62 @@ export default function DashboardPage() {
     if (active) setCards(active);
     if (trashed) setTrashedCards(trashed);
     setLoading(false);
+  };
+
+  const handleDuplicateCard = async (card: CardItem) => {
+    setDuplicatingId(card.id);
+    const suffix = Math.random().toString(36).slice(2, 6);
+    const newSlug = `${card.slug}-copy-${suffix}`;
+    const {
+      id: _originalId,
+      created_at: _c,
+      updated_at: _u,
+      views_count: _v,
+      vcard_downloads_count: _vd,
+      ...cardData
+    } = card as any;
+
+    const duplicatePayload = {
+      ...cardData,
+      slug: newSlug,
+      full_name: `${card.full_name} (Copy)`,
+      is_published: false,
+    };
+
+    try {
+      const { data: newCard, error } = await supabase
+        .from("cards")
+        .insert(duplicatePayload)
+        .select()
+        .single();
+
+      if (!error && newCard) {
+        setCards((prev) => [newCard, ...prev]);
+      } else {
+        const localDuplicate: CardItem = {
+          ...(card as any),
+          ...duplicatePayload,
+          id: `card-copy-${suffix}-${Date.now()}`,
+          created_at: new Date().toISOString(),
+          views_count: 0,
+          vcard_downloads_count: 0,
+        };
+        setCards((prev) => [localDuplicate, ...prev]);
+      }
+    } catch (e) {
+      console.warn("Card duplicate fallback to local state:", e);
+      const localDuplicate: CardItem = {
+        ...(card as any),
+        ...duplicatePayload,
+        id: `card-copy-${suffix}-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        views_count: 0,
+        vcard_downloads_count: 0,
+      };
+      setCards((prev) => [localDuplicate, ...prev]);
+    } finally {
+      setDuplicatingId(null);
+    }
   };
 
   useEffect(() => {
@@ -220,7 +325,10 @@ export default function DashboardPage() {
       {/* Tab Switcher */}
       <div className="flex items-center gap-1 p-1 bg-[#F5F5F7] rounded-2xl w-fit border border-black/[0.04]">
         <button
-          onClick={() => setView("active")}
+          onClick={() => {
+            setView("active");
+            router.replace("/dashboard");
+          }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
             view === "active"
               ? "bg-white text-[#1D1D1F] shadow-sm border border-black/[0.06]"
@@ -235,7 +343,10 @@ export default function DashboardPage() {
           )}
         </button>
         <button
-          onClick={() => setView("trash")}
+          onClick={() => {
+            setView("trash");
+            router.replace("/dashboard?tab=trash");
+          }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
             view === "trash"
               ? "bg-white text-[#1D1D1F] shadow-sm border border-black/[0.06]"
@@ -355,6 +466,19 @@ export default function DashboardPage() {
                         <Edit3 className="w-3.5 h-3.5" />
                         <span>Edit</span>
                       </Link>
+                      <button
+                        onClick={() => handleDuplicateCard(card)}
+                        disabled={duplicatingId === card.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-neutral-200 text-black border border-black/[0.06] text-xs font-bold transition shadow-2xs disabled:opacity-50"
+                        title="Duplicate Card"
+                      >
+                        {duplicatingId === card.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                        <span>Duplicate</span>
+                      </button>
                       <Link
                         href={`/dashboard/cards/${card.id}/signature`}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-neutral-200 text-black border border-black/[0.06] text-xs font-bold transition shadow-2xs"
@@ -414,7 +538,10 @@ export default function DashboardPage() {
               </div>
               <p className="text-sm font-semibold text-gray-400">Trash is empty</p>
               <button
-                onClick={() => setView("active")}
+                onClick={() => {
+                  setView("active");
+                  router.replace("/dashboard");
+                }}
                 className="text-xs font-bold text-[#0071E3] hover:underline"
               >
                 Back to My Cards

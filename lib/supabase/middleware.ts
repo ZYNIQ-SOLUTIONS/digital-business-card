@@ -44,9 +44,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const isDemoSession = request.cookies.get("demo_session")?.value === "true";
+
   // Protect /dashboard routes
   if (
     !user &&
+    !isDemoSession &&
     request.nextUrl.pathname.startsWith("/dashboard")
   ) {
     const url = request.nextUrl.clone();
@@ -55,8 +58,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If logged in and visiting /auth, redirect to /dashboard
-  if (user && request.nextUrl.pathname.startsWith("/auth")) {
+  // If logged in and visiting /auth (excluding callback), redirect to /dashboard
+  if (
+    user &&
+    request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/auth/callback")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

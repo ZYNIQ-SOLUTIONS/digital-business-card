@@ -315,7 +315,7 @@ export default function PublicCardClient({
   // Contextual Mode Social Filtering (P1-5)
   const filteredLinks = React.useMemo(() => {
     if (!Array.isArray(card?.socials)) return [];
-    const mode = (card?.active_mode || "all").toLowerCase();
+    const mode = (modeId || card?.active_mode || "all").toLowerCase();
 
     return card.socials.filter((s: any) => {
       if (!s || !s.url) return false;
@@ -346,7 +346,7 @@ export default function PublicCardClient({
 
       return true;
     });
-  }, [card?.socials, card?.active_mode]);
+  }, [card?.socials, card?.active_mode, modeId]);
 
   // Download Event Telemetry helper (P2-5)
   const sendDownloadTelemetry = (eventType: "vcard_download" | "wallet_download") => {
@@ -1963,7 +1963,7 @@ export default function PublicCardClient({
 
       <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3 pb-8 pt-6 z-20">
         <div className="w-full max-w-[90%] pb-3">
-          <WalletButtons slug={slug} t={t} />
+          <WalletButtons slug={slug} cardId={card?.id} t={t} />
         </div>
         <ZavatarUpsellCard avatarId={card.avatar_id} className="w-full max-w-[90%]" />
         <Link
