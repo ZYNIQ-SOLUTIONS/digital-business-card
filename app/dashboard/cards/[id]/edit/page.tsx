@@ -188,7 +188,7 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       if (!user) throw new Error("Not logged in");
 
       const ext = file.name.split('.').pop() || 'jpg';
-      const fileName = `backgrounds/${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/backgrounds/${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars') // reuse the same public bucket
