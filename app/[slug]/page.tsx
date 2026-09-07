@@ -271,10 +271,24 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
 
   // 2. Non-blocking view counter via RPC using Next.js 16 after() (P2-2 & P1-2)
   if (card) {
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.SUPABASE_URL;
+    const supabaseAnonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_KEY ||
+      process.env.SUPABASE_KEY;
+
     after(async () => {
       try {
-        const client = await createClient();
-        await client.rpc("increment_card_views", { p_slug: slug });
+        if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
+          const { createClient: createDirectClient } = await import("@supabase/supabase-js");
+          const client = createDirectClient(supabaseUrl, supabaseAnonKey, {
+            auth: { persistSession: false },
+          });
+          await client.rpc("increment_card_views", { p_slug: slug });
+        }
       } catch (err) {
         console.error("Non-blocking increment_card_views RPC error:", err);
       }
