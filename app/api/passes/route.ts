@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const WALLET_API_URL = process.env.WALLETWALLET_API_URL || "https://api.walletwallet.io/v1/passes";
-const WALLET_API_KEY = process.env.WALLETWALLET_API_KEY || "";
+// Using the provided endpoint from the docs
+const WALLET_API_URL = process.env.WALLETWALLET_API_URL || "https://api.walletwallet.dev/api/passes";
+const WALLET_API_KEY = process.env.WALLETWALLET_API_KEY || "ww_live_8588c0e2edbfc84dfe9f71aefc77b257";
 
 export const dynamic = "force-dynamic";
 
@@ -34,51 +35,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Card not found or access denied" }, { status: 404 });
     }
 
-    // 2. Format the payload for the external Wallet API
+    // 2. Format the payload for the external Wallet API based on the docs
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://d-b-c.netlify.app";
     const publicUrl = `${siteUrl}/${card.slug}`;
-    const qrCodeLink = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(publicUrl)}`;
 
     const walletPayload = {
-      fullName: card.full_name,
-      jobTitle: card.title || "Professional",
-      company: card.company || "Independent",
-      avatarUrl: card.avatar_url || `${siteUrl}/default-avatar.png`,
-      publicProfileUrl: publicUrl,
-      qrCodeUrl: qrCodeLink,
-      phone: card.phone_primary,
-      email: card.email_work,
+      barcodeValue: publicUrl,
+      barcodeFormat: "QR",
+      logoText: card.company || "IZN Card",
+      primaryFields: [
+        { label: "NAME", value: card.full_name }
+      ],
+      secondaryFields: [
+        { label: "TITLE", value: card.title || "Professional" },
+        { label: "EMAIL", value: card.email_work || "" }
+      ].filter(f => f.value),
+      colorPreset: card.theme === 'dark' ? "dark" : "light"
     };
 
     // 3. Call the External Wallet API
     let appleUrl = "";
     let googleUrl = "";
 
-    if (WALLET_API_KEY && !WALLET_API_KEY.includes("placeholder")) {
-      const response = await fetch(WALLET_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${WALLET_API_KEY}`,
-        },
-        body: JSON.stringify(walletPayload),
-      });
+    console.log("Calling WalletWallet API with payload:", JSON.stringify(walletPayload));
 
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("Wallet API Error:", errText);
-        throw new Error("Failed to generate passes with external provider");
-      }
+    const response = await fetch(WALLET_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${WALLET_API_KEY}`,
+      },
+      body: JSON.stringify(walletPayload),
+    });
 
-      const walletData = await response.json();
-      appleUrl = walletData.applePassUrl;
-      googleUrl = walletData.googlePassUrl;
-    } else {
-      // Mock generation for development/testing if API key is missing
-      console.warn("Using mock wallet generation (WALLETWALLET_API_KEY missing)");
-      appleUrl = `${siteUrl}/api/wallet/apple/${card.slug}`; // Fallback to our existing endpoints
-      googleUrl = `${siteUrl}/api/wallet/google/${card.slug}`;
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Wallet API Error Response:", errText);
+      throw new Error(`Failed to generate passes: ${errText}`);
     }
+
+    const walletData = await response.json();
+    console.log("WalletWallet API Success:", walletData);
+    
+    // Attempt to extract URLs based on standard WalletWallet response
+    // Fallbacks provided in case the API structure varies slightly
+    appleUrl = walletData.applePassUrl || walletData.appleUrl || walletData.url || "";
+    googleUrl = walletData.googlePassUrl || walletData.googleUrl || walletData.url || "";
 
     // 4. Cache the generated URLs in Supabase
     const { error: updateError } = await supabase
@@ -98,6 +100,7 @@ export async function POST(request: Request) {
       success: true,
       appleUrl,
       googleUrl,
+      rawResponse: walletData
     });
   } catch (error: any) {
     console.error("Pass generation error:", error);
