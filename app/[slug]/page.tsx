@@ -199,9 +199,8 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
   // 1. Fetch sanitized public card using explicit public column whitelist (P2-1)
   const initialResult = await supabase
     .from("cards")
-    .select(PUBLIC_CARD_COLUMNS.join(", "))
+    .select([...PUBLIC_CARD_COLUMNS, "user_id"].join(", "))
     .eq("slug", slug)
-    .eq("is_published", true)
     .single();
 
   let card: any = initialResult.data;
@@ -211,9 +210,8 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
   if (error && error.code === "42703") {
     const retryResult = await supabase
       .from("cards")
-      .select(VERIFIED_BASE_COLUMNS.join(", "))
+      .select([...VERIFIED_BASE_COLUMNS, "user_id"].join(", "))
       .eq("slug", slug)
-      .eq("is_published", true)
       .single();
     card = retryResult.data;
     error = retryResult.error;
@@ -225,6 +223,15 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
       return <PublicCardClient initialCard={null} slug={slug} fallbackMode={true} />;
     }
     notFound();
+  }
+
+  // Authorization check for unpublished cards
+  if (!card.is_published) {
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = authData?.user;
+    if (!currentUser || currentUser.id !== card.user_id) {
+      notFound();
+    }
   }
 
   // Defense-in-depth sanitization: ensure sensitive fields are strictly stripped
