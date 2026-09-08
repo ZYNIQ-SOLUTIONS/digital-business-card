@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Mail, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
 import { GoogleIcon, GitHubIcon, TelegramIcon } from "@/components/icons";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function AuthPage() {
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string>("");
 
   const supabase = createClient();
 
@@ -30,6 +32,11 @@ export default function AuthPage() {
   const handleSignInWithMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      setErrorMsg("Please complete the security check.");
+      return;
+    }
 
     setIsLoading(true);
     setErrorMsg(null);
@@ -50,6 +57,7 @@ export default function AuthPage() {
         email,
         options: {
           emailRedirectTo: redirectUrl.toString(),
+          captchaToken: captchaToken || undefined,
         },
       });
 
@@ -232,6 +240,17 @@ export default function AuthPage() {
                   <Mail className="w-4 h-4 text-[#86868B] absolute left-4" />
                 </div>
               </div>
+
+              
+              {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                <div className="flex justify-center pt-2 pb-2">
+                  <Turnstile
+                    siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setCaptchaToken(token)}
+                    options={{ theme: 'light' }}
+                  />
+                </div>
+              )}
 
               {errorMsg && (
                 <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[12px] leading-tight">
