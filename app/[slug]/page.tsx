@@ -199,7 +199,7 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
   // 1. Fetch sanitized public card using explicit public column whitelist (P2-1)
   const initialResult = await supabase
     .from("cards")
-    .select([...PUBLIC_CARD_COLUMNS, "user_id"].join(", "))
+    .select(PUBLIC_CARD_COLUMNS.join(", "))
     .eq("slug", slug)
     .single();
 
@@ -210,7 +210,7 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
   if (error && error.code === "42703") {
     const retryResult = await supabase
       .from("cards")
-      .select([...VERIFIED_BASE_COLUMNS, "user_id"].join(", "))
+      .select(VERIFIED_BASE_COLUMNS.join(", "))
       .eq("slug", slug)
       .single();
     card = retryResult.data;
@@ -229,8 +229,21 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
   if (!card.is_published) {
     const { data: authData } = await supabase.auth.getUser();
     const currentUser = authData?.user;
-    if (!currentUser || currentUser.id !== card.user_id) {
+    
+    if (!currentUser) {
       notFound();
+    } else {
+      // Verify ownership securely
+      const { data: ownership } = await supabase
+        .from("cards")
+        .select("id")
+        .eq("slug", slug)
+        .eq("user_id", currentUser.id)
+        .single();
+        
+      if (!ownership) {
+        notFound();
+      }
     }
   }
 
