@@ -196,26 +196,15 @@ export default async function PublicCardPage({ params }: PublicCardPageProps) {
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Fetch sanitized public card using explicit public column whitelist (P2-1)
-  const initialResult = await supabase
+  // Fetch public card. We use select("*") because production might have a different schema than development.
+  // We rely on the strict defense-in-depth sanitization below to remove sensitive fields before rendering.
+  const { data, error } = await supabase
     .from("cards")
-    .select(PUBLIC_CARD_COLUMNS.join(", "))
+    .select("*")
     .eq("slug", slug)
     .single();
 
-  let card: any = initialResult.data;
-  let error: any = initialResult.error;
-
-  // If extended optional columns don't exist in PostgreSQL schema, fallback to verified base columns
-  if (error && error.code === "42703") {
-    const retryResult = await supabase
-      .from("cards")
-      .select(VERIFIED_BASE_COLUMNS.join(", "))
-      .eq("slug", slug)
-      .single();
-    card = retryResult.data;
-    error = retryResult.error;
-  }
+  let card: any = data;
 
   if (error || !card) {
     // If running in development without Supabase connected or card not found
