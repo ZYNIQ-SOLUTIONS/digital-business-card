@@ -199,20 +199,16 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
-      const ext = file.name.split('.').pop() || 'jpg';
-      const fileName = `${user.id}/backgrounds/${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
+      // BYPASS SUPABASE STORAGE API (Due to 503 Schema Cache Error)
+      const base64data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars') // reuse the same public bucket
-        .upload(fileName, file, { contentType: file.type, upsert: false });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      setCard((prev: any) => ({ ...prev, custom_background_image: publicUrlData.publicUrl }));
+      setCard((prev: any) => ({ ...prev, custom_background_image: base64data }));
+      await supabase.from("cards").update({ custom_background_image: base64data }).eq("id", id);
     } catch (err: any) {
       console.error("Background upload error:", err);
       setErrorMsg("Background upload failed: " + err.message);
