@@ -234,3 +234,31 @@ export const DEFAULT_PRODUCTS: ProductDetail[] = [
 export function getProductById(id: string): ProductDetail | undefined {
   return DEFAULT_PRODUCTS.find((p) => p.id === id || p.name.toLowerCase().replace(/\s+/g, '-').includes(id.toLowerCase()));
 }
+
+export function resolveStoreProduct(dbProduct: any, fallbackId?: string): ProductDetail {
+  const fallback = (fallbackId ? getProductById(fallbackId) : undefined) || DEFAULT_PRODUCTS[0];
+  if (!dbProduct) return fallback;
+
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    description: dbProduct.description,
+    price: Number(dbProduct.price),
+    image_url: dbProduct.image_url || fallback.image_url,
+    category: dbProduct.category || fallback.category,
+    in_stock: dbProduct.in_stock ?? true,
+    rating: fallback.rating,
+    reviewsCount: fallback.reviewsCount,
+    badge: fallback.badge,
+    material: fallback.material,
+    weight: fallback.weight,
+    dimensions: fallback.dimensions,
+    chipType: fallback.chipType,
+    compatibility: fallback.compatibility,
+    features: fallback.features,
+    images: dbProduct.image_url ? [dbProduct.image_url, ...fallback.images.slice(1)] : fallback.images,
+    specs: fallback.specs,
+    faqs: fallback.faqs,
+  };
+}
+

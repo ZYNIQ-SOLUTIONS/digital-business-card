@@ -135,9 +135,6 @@ export default async function Home() {
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#enterprise" className="hover:text-white transition-colors">Enterprise</a>
             <a href="#about" className="hover:text-white transition-colors">About</a>
-            <Link href="/store" className="hover:text-white transition-colors font-semibold text-[#10b981] flex items-center gap-1">
-              <span>Store</span>
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -697,7 +694,7 @@ export default async function Home() {
       <footer className="w-full border-t border-white/[0.06] py-12 bg-[#050507]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2.5">
-            <svg id="logo-light" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+            <svg id="logo-light-footer" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
               <path d="M 40 100 A 60 60 0 0 1 160 100" fill="none" stroke="#8b5cf6" strokeWidth="16" strokeLinecap="round" />
               <path d="M 160 100 A 60 60 0 0 1 40 100" fill="none" stroke="#10b981" strokeWidth="16" strokeLinecap="round" />
               <circle cx="100" cy="100" r="16" fill="#ffffff" />
