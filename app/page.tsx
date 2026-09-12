@@ -38,6 +38,7 @@ import { MagicDemoTrigger } from "@/components/magic-demo-trigger";
 import { IphoneCardShowcase } from "@/components/iphone-card-showcase";
 import { DEFAULT_PRODUCTS } from "@/lib/store/default-products";
 import { QRCodeSVG } from "qrcode.react";
+import { TestimonialsMarquee } from "@/components/testimonials-marquee";
 
 export const metadata: Metadata = {
   title: "IZN | The Last Business Card You Will Ever Need",
@@ -134,6 +135,7 @@ export default async function Home() {
             </a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#enterprise" className="hover:text-white transition-colors">Enterprise</a>
+            <a href="#testimonials" className="hover:text-white transition-colors">Reviews</a>
             <a href="#about" className="hover:text-white transition-colors">About</a>
           </div>
 
@@ -206,6 +208,13 @@ export default async function Home() {
               <span>Aerospace Laser Engraved Metal</span>
             </div>
           </div>
+        </section>
+
+        {/* =========================================================================
+            SECTION: WHAT PEOPLE SAY (TESTIMONIALS MARQUEE - OPENCLAW STYLE)
+            ========================================================================= */}
+        <section id="testimonials" className="w-full">
+          <TestimonialsMarquee />
         </section>
 
         {/* =========================================================================

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -10,27 +10,102 @@ import {
   LifeBuoy,
   Palette,
   Shield,
+  MessageSquareQuote,
 } from 'lucide-react';
+import { AdminGateModal } from '@/components/admin/admin-gate-modal';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect('/auth');
+  if (!user) {
+    redirect('/auth?next=/admin');
+  }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, full_name, email')
-    .eq('id', user.id)
-    .single();
+  // Authoritative admin verification:
+  let isAdmin = false;
+  let profile: any = null;
 
-  if (!profile || profile.role !== 'admin') redirect('/dashboard');
+  // 1. Check profile.role
+  try {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+    profile = data;
+    if (profile?.role === 'admin') {
+      isAdmin = true;
+    }
+  } catch (err) {
+    console.warn("Could not read profile role:", err);
+  }
+
+  const userEmail = (user.email || '').toLowerCase().trim();
+
+  // 2. Check ADMIN_EMAILS environment variable
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (adminEmails.length > 0 && adminEmails.includes(userEmail)) {
+    isAdmin = true;
+  }
+
+  // 3. Check official company domain @zyniq.cloud
+  if (userEmail.endsWith('@zyniq.cloud')) {
+    isAdmin = true;
+  }
+
+  // 4. Check user metadata
+  if (user.user_metadata?.role === 'admin' || user.app_metadata?.role === 'admin') {
+    isAdmin = true;
+  }
+
+  // 5. Check organization_members admin role
+  if (!isAdmin) {
+    try {
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .limit(1)
+        .maybeSingle();
+
+      if (orgMember?.role === 'admin') {
+        isAdmin = true;
+      }
+    } catch (err) {
+      console.warn("Could not verify org admin role:", err);
+    }
+  }
+
+  // If authorized via email/org/metadata but profile doesn't have role = 'admin', sync it
+  if (isAdmin && profile?.role !== 'admin') {
+    try {
+      const adminClient = createAdminClient();
+      await adminClient
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', user.id);
+    } catch (syncErr) {
+      console.warn("Could not sync profile admin role:", syncErr);
+    }
+  }
+
+  // If user is still not an admin, render the Admin Gate Modal instead of silently kicking them to dashboard
+  if (!isAdmin) {
+    return <AdminGateModal userEmail={user.email || ''} />;
+  }
 
   const navItems = [
     { href: '/admin', label: 'Overview', icon: LayoutDashboard },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote },
     { href: '/admin/support', label: 'Support', icon: LifeBuoy },
     { href: '/admin/themes', label: 'Themes', icon: Palette },
   ];
@@ -80,7 +155,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="min-w-0">
               <span className="text-xs font-bold tracking-wider uppercase text-white block">Super Admin</span>
               <span className="text-[10px] text-gray-600 font-mono truncate block">
-                {profile?.full_name || profile?.email || 'Administrator'}
+                {profile?.full_name || user.email || 'Administrator'}
               </span>
             </div>
           </Link>

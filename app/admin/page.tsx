@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import {
   Package,
   ShoppingCart,
@@ -71,7 +71,11 @@ function StatCard({
 }
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
+  let adminClient: any = null;
+  try {
+    adminClient = createAdminClient();
+  } catch {}
+  const client = adminClient || (await createClient());
 
   const now = new Date();
   const thirtyDaysAgo = new Date(now);
@@ -96,21 +100,21 @@ export default async function AdminDashboardPage() {
     recentOrdersRes,
     recentUsersRes,
   ] = await Promise.all([
-    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('updated_at', thirtyDaysAgo.toISOString()),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('updated_at', sixtyDaysAgo.toISOString()).lt('updated_at', thirtyDaysAgo.toISOString()),
-    supabase.from('cards').select('id', { count: 'exact', head: true }),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('is_published', true).neq('is_deleted', true),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).eq('is_published', false).neq('is_deleted', true),
-    supabase.from('cards').select('id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
-    supabase.from('orders').select('id', { count: 'exact', head: true }),
-    supabase.from('orders').select('total_amount'),
-    supabase.from('support_tickets').select('id', { count: 'exact', head: true }),
-    supabase.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'opened'),
-    supabase.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['resolved', 'closed']),
-    supabase.from('cards').select('views_count'),
-    supabase.from('orders').select('id, customer_name, total_amount, status, created_at').order('created_at', { ascending: false }).limit(6),
-    supabase.from('profiles').select('id, full_name, email, plan, updated_at').order('updated_at', { ascending: false }).limit(5),
+    client.from('profiles').select('id', { count: 'exact', head: true }),
+    client.from('profiles').select('id', { count: 'exact', head: true }).gte('updated_at', thirtyDaysAgo.toISOString()),
+    client.from('profiles').select('id', { count: 'exact', head: true }).gte('updated_at', sixtyDaysAgo.toISOString()).lt('updated_at', thirtyDaysAgo.toISOString()),
+    client.from('cards').select('id', { count: 'exact', head: true }),
+    client.from('cards').select('id', { count: 'exact', head: true }).eq('is_published', true).neq('is_deleted', true),
+    client.from('cards').select('id', { count: 'exact', head: true }).eq('is_published', false).neq('is_deleted', true),
+    client.from('cards').select('id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()),
+    client.from('orders').select('id', { count: 'exact', head: true }),
+    client.from('orders').select('total_amount'),
+    client.from('support_tickets').select('id', { count: 'exact', head: true }),
+    client.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'opened'),
+    client.from('support_tickets').select('id', { count: 'exact', head: true }).in('status', ['resolved', 'closed']),
+    client.from('cards').select('views_count'),
+    client.from('orders').select('id, customer_name, total_amount, status, created_at').order('created_at', { ascending: false }).limit(6),
+    client.from('profiles').select('id, full_name, email, updated_at').order('updated_at', { ascending: false }).limit(5),
   ]);
 
   // Computed values
