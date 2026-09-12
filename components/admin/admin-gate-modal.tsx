@@ -77,9 +77,6 @@ export function AdminGateModal({ userEmail }: { userEmail: string }) {
               />
               <KeyRound className="w-4 h-4 text-gray-500 absolute right-3.5 top-3.5 pointer-events-none" />
             </div>
-            <p className="text-[10px] text-gray-500">
-              Passcode: default <code className="text-gray-400 font-mono">zyniq-admin-2026</code> or configured in <code className="text-gray-400 font-mono">ADMIN_SECRET_KEY</code>.
-            </p>
           </div>
 
           <button

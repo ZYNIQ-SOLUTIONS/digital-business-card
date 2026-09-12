@@ -12,7 +12,7 @@ export async function claimAdminRole(passcode: string) {
       return { error: 'Please sign in first.' };
     }
 
-    const validPasscode = process.env.ADMIN_SECRET_KEY || 'zyniq-admin-2026';
+    const validPasscode = process.env.ADMIN_SECRET_KEY;
     const userEmail = (user.email || '').toLowerCase().trim();
 
     // Check if passcode matches, or if email matches ADMIN_EMAILS or @zyniq.cloud
@@ -22,8 +22,7 @@ export async function claimAdminRole(passcode: string) {
       .filter(Boolean);
 
     const isMatch =
-      passcode.trim() === validPasscode ||
-      passcode.trim() === 'zyniq2026' ||
+      (validPasscode && passcode.trim() === validPasscode) ||
       (adminEmails.length > 0 && adminEmails.includes(userEmail)) ||
       userEmail.endsWith('@zyniq.cloud');
 
