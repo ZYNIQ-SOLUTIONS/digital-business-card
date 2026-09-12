@@ -160,21 +160,16 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
-      const fileName = `${user.id}/avatar-${Date.now()}.jpg`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, croppedBlob, { contentType: 'image/jpeg', upsert: true });
+      // BYPASS SUPABASE STORAGE API (Due to 503 Schema Cache Error / Invalid Schema)
+      const base64data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(croppedBlob);
+      });
 
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      const newAvatarUrl = publicUrlData.publicUrl;
-      setCard((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
-      await supabase.from("cards").update({ avatar_url: newAvatarUrl }).eq("id", id);
+      setCard((prev: any) => ({ ...prev, avatar_url: base64data }));
+      await supabase.from("cards").update({ avatar_url: base64data }).eq("id", id);
     } catch (err: any) {
       console.error("Avatar upload error:", err);
       setErrorMsg("Avatar upload failed: " + err.message);
