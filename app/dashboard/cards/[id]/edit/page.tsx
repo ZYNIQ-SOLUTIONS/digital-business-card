@@ -17,6 +17,8 @@ import { AiBioModal } from "@/components/ai-bio-modal";
 import { VerifyModal } from "@/components/verify-modal";
 import { ImageCropModal } from "@/components/image-crop-modal";
 import { WalletPassButtons } from "@/components/wallet-pass-buttons";
+import { NftMintModal } from "@/components/nft-mint-modal";
+import { calculateNetworkingScore } from "@/lib/networking-score";
 import { themes, themeList, ThemeCategory, ThemeTokens } from "@/lib/theme";
 import { cardTemplates, templateList, TemplateLayoutId } from "@/lib/templates";
 
@@ -94,6 +96,9 @@ export default function CardEditPage({ params }: CardEditPageProps) {
   const cardRef = useRef<any>(null);
   const [isBioAiOpen, setIsBioAiOpen] = useState(false);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
+  const [isNftModalOpen, setIsNftModalOpen] = useState(false);
+  const [existingNft, setExistingNft] = useState<any>(null);
+  const [connectionsCount, setConnectionsCount] = useState<number>(0);
 
   // Theme filtering and search state
   const [allThemesList, setAllThemesList] = useState<ThemeTokens[]>(themeList);
@@ -296,6 +301,32 @@ export default function CardEditPage({ params }: CardEditPageProps) {
           return found ? { ...defSocial, ...found, active: found.active ?? true } : defSocial;
         }),
       });
+
+      // Fetch connections count
+      try {
+        const { count: cCount } = await supabase
+          .from("card_connections")
+          .select("*", { count: "exact", head: true })
+          .eq("connected_card_id", id);
+        if (cCount !== null && cCount !== undefined) {
+          setConnectionsCount(cCount);
+        }
+      } catch (e) {
+        console.warn("Error fetching card connections:", e);
+      }
+
+      // Fetch NFT status
+      try {
+        const nftRes = await fetch(`/api/cards/${id}/nft`);
+        if (nftRes.ok) {
+          const nftJson = await nftRes.json();
+          if (nftJson?.nft) {
+            setExistingNft(nftJson.nft);
+          }
+        }
+      } catch (e) {
+        console.warn("Error fetching NFT details:", e);
+      }
     } else {
       setErrorMsg("Card not found or access denied.");
     }
@@ -1744,6 +1775,148 @@ export default function CardEditPage({ params }: CardEditPageProps) {
             )}
           </div>
 
+          {/* Section 8: Networking Score & Blockchain NFT Identity */}
+          {(() => {
+            const scoreData = calculateNetworkingScore(card, connectionsCount);
+            return (
+              <div className="bg-white rounded-3xl p-6 border border-black/[0.06] shadow-xs space-y-4">
+                <div 
+                  className="flex items-center justify-between border-b pb-2 cursor-pointer select-none"
+                  onClick={() => toggleSection(8)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">
+                      {expandedSections[8] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-[#8b5cf6]" />
+                      <h2 className="text-sm font-semibold text-[#1D1D1F]">
+                        8. Networking Score &amp; Web3 NFT Identity
+                      </h2>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border"
+                      style={{ 
+                        backgroundColor: scoreData.tierBg, 
+                        color: scoreData.tierColor,
+                        borderColor: scoreData.tierBorder 
+                      }}
+                    >
+                      {scoreData.score}/1,000 pts ({scoreData.tier})
+                    </span>
+                    {existingNft && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30 flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> Minted
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {expandedSections[8] && (
+                  <div className="space-y-5 pt-2">
+                    {/* Score Bar & Tier Overview */}
+                    <div className="p-4 rounded-2xl bg-neutral-900 text-white space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400">Current Networking Reputation</span>
+                          <div className="flex items-baseline gap-2 mt-0.5">
+                            <span className="text-2xl font-black text-white">{scoreData.score}</span>
+                            <span className="text-xs text-gray-400 font-mono">/ 1,000 pts</span>
+                            <span 
+                              className="text-xs font-bold px-2 py-0.5 rounded-md ml-1"
+                              style={{ backgroundColor: scoreData.tierBg, color: scoreData.tierColor }}
+                            >
+                              {scoreData.tier} Tier
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsNftModalOpen(true)}
+                          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#0ea5e9] text-white text-xs font-bold hover:brightness-110 transition shadow-md flex items-center gap-1.5"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                          <span>{existingNft ? "View On-Chain NFT" : "Mint On-Chain NFT"}</span>
+                        </button>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-[#cd7f32] via-[#f59e0b] to-[#38bdf8]"
+                          style={{ width: `${(scoreData.score / 1000) * 100}%` }}
+                        />
+                      </div>
+
+                      {scoreData.nextTier && (
+                        <p className="text-[11px] text-gray-400">
+                          Earn <span className="text-white font-bold">{scoreData.pointsToNextTier} more points</span> to unlock the <span className="text-amber-300 font-bold">{scoreData.nextTier}</span> tier badge.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Breakdown Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                        <span className="text-[10px] text-gray-500 block">Profile Data</span>
+                        <span className="text-xs font-bold text-[#1D1D1F]">{scoreData.breakdown.profileCompleteness.current}/{scoreData.breakdown.profileCompleteness.max}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                        <span className="text-[10px] text-gray-500 block">AI Verification</span>
+                        <span className="text-xs font-bold text-[#1D1D1F]">{scoreData.breakdown.identityVerification.current}/{scoreData.breakdown.identityVerification.max}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                        <span className="text-[10px] text-gray-500 block">Connections</span>
+                        <span className="text-xs font-bold text-[#1D1D1F]">{scoreData.breakdown.connections.current}/{scoreData.breakdown.connections.max}</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                        <span className="text-[10px] text-gray-500 block">Taps &amp; Views</span>
+                        <span className="text-xs font-bold text-[#1D1D1F]">{scoreData.breakdown.views.current}/{scoreData.breakdown.views.max}</span>
+                      </div>
+                    </div>
+
+                    {/* Recommendations */}
+                    {scoreData.recommendations.length > 0 && (
+                      <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 text-xs space-y-1.5">
+                        <span className="font-bold text-[#0071E3] block text-[11px] uppercase tracking-wide">
+                          Boost Your Networking Score:
+                        </span>
+                        <ul className="space-y-1 text-neutral-600 text-[11px]">
+                          {scoreData.recommendations.map((rec, idx) => (
+                            <li key={idx} className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#0071E3]" />
+                              <span>{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* On-Chain Base Sepolia Notice */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-[#FBFBFD] border border-black/[0.05] text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-gray-600">Base Sepolia Smart Contract:</span>
+                        <code className="text-[10px] font-mono text-gray-800">0x742d...f44e</code>
+                      </div>
+                      <a 
+                        href="https://sepolia.basescan.org/address/0x742d35Cc6634C0532925a3b844Bc454e4438f44e" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[#0071E3] font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span>BaseScan</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         </div>
 
@@ -2335,6 +2508,26 @@ export default function CardEditPage({ params }: CardEditPageProps) {
         }}
         cardId={id}
         fullName={card.full_name}
+      />
+
+      {/* Web3 Base Sepolia NFT Minting Modal */}
+      <NftMintModal
+        isOpen={isNftModalOpen}
+        onClose={() => setIsNftModalOpen(false)}
+        cardId={id}
+        card={card}
+        scoreDetails={calculateNetworkingScore(card, connectionsCount)}
+        existingNft={existingNft}
+        onMintSuccess={(newNft) => {
+          setExistingNft(newNft);
+          setCard((prev: any) => ({
+            ...prev,
+            crypto_identity: {
+              ...(prev.crypto_identity || {}),
+              nft: newNft,
+            },
+          }));
+        }}
       />
 
       {/* Mobile Floating Action & Preview Bar */}

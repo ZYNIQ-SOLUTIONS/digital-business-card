@@ -42,10 +42,12 @@ import {
   Award,
   Layers,
   Send,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import { themes } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/client";
+import { calculateNetworkingScore, NetworkingScoreDetails } from "@/lib/networking-score";
 import { ExchangeModal } from "@/components/exchange-modal";
 import { BookingModal } from "@/components/booking-modal";
 import { AddToHomescreenModal } from "@/components/add-to-homescreen-modal";
@@ -89,13 +91,39 @@ interface PublicCardClientProps {
   customThemeData?: any;
 }
 
-const NetworkScorePill = ({ count, show, t }: { count: number, show: boolean, t: any }) => {
-  if (!show || count <= 0) return null;
+const NetworkScorePill = ({ 
+  card,
+  count, 
+  show, 
+  t, 
+  onClick 
+}: { 
+  card: any;
+  count: number; 
+  show: boolean; 
+  t: any;
+  onClick?: () => void;
+}) => {
+  if (!show) return null;
+  const scoreDetails = calculateNetworkingScore(card, count);
+
   return (
-    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${t.pillBg} border ${t.pillBorder} shadow-sm shrink-0 ml-1`} title={`${count} people have connected with this card`}>
-      <Users className={`w-3.5 h-3.5 ${t.accent}`} />
-      <span className={`text-[10px] font-bold ${t.textMain}`}>{count} Connections</span>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-xs shrink-0 ml-1 transition hover:scale-105 active:scale-95 cursor-pointer text-left`}
+      style={{
+        backgroundColor: scoreDetails.tierBg,
+        borderColor: scoreDetails.tierBorder,
+        color: scoreDetails.tierColor,
+      }}
+      title={`Networking Reputation: ${scoreDetails.score}/1,000 pts (${scoreDetails.tier} Tier). Tap to view verification breakdown.`}
+    >
+      <Sparkles className="w-3 h-3 shrink-0" style={{ color: scoreDetails.tierColor }} />
+      <span className="text-[10px] font-bold">
+        {scoreDetails.score} pts • {scoreDetails.tier}
+      </span>
+    </button>
   );
 };
 
@@ -269,9 +297,23 @@ export default function PublicCardClient({
   const [enteredPin, setEnteredPin] = useState("");
   const [pinError, setPinError] = useState(false);
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+  const [nftData, setNftData] = useState<any>(null);
   
   const supabase = createClient();
   const router = useRouter();
+
+  React.useEffect(() => {
+    // Fetch card NFT metadata if present
+    if (card?.id) {
+      fetch(`/api/cards/${card.id}/nft`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json?.nft) setNftData(json.nft);
+        })
+        .catch(() => {});
+    }
+  }, [card?.id]);
 
   React.useEffect(() => {
     setIsAppleDevice(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent));
@@ -576,7 +618,7 @@ export default function PublicCardClient({
               ) : (
                 <ShieldCheck className={`w-5 h-5 ${t.accent}`} />
               )}
-              <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+              <NetworkScorePill card={card} count={connectionsCount} show={card.show_network_score !== false} t={t} onClick={() => setIsScoreModalOpen(true)} />
             </div>
 
             <p className={`text-[15px] font-semibold ${t.accent} tracking-normal`}>
@@ -952,7 +994,7 @@ export default function PublicCardClient({
                 </div>
                 <h1 className={`text-2xl font-bold tracking-tight ${t.textMain} flex items-center gap-2 flex-wrap`}>
                   {card.full_name}
-                  <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+                  <NetworkScorePill card={card} count={connectionsCount} show={card.show_network_score !== false} t={t} onClick={() => setIsScoreModalOpen(true)} />
                 </h1>
                 <p className={`text-xs font-semibold ${t.accent}`}>
                   {card.title}
@@ -1116,7 +1158,7 @@ export default function PublicCardClient({
                   {card.full_name}
                 </h1>
                 {card.is_verified && <VerifiedBadgeIcon className="w-4 h-4 text-green-500" />}
-                <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+                <NetworkScorePill card={card} count={connectionsCount} show={card.show_network_score !== false} t={t} onClick={() => setIsScoreModalOpen(true)} />
               </div>
               <p className={`text-xs font-semibold ${t.accent} uppercase tracking-wider`}>
                 {card.title}
@@ -1353,7 +1395,7 @@ export default function PublicCardClient({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h1 className={`text-2xl font-bold tracking-tight ${t.textMain}`}>{card.full_name}</h1>
                 {card.is_verified && <VerifiedBadgeIcon className="w-5 h-5 text-green-500" />}
-                <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+                <NetworkScorePill card={card} count={connectionsCount} show={card.show_network_score !== false} t={t} onClick={() => setIsScoreModalOpen(true)} />
               </div>
               <p className={`text-xs font-semibold ${t.accent}`}>{card.title} • {card.company}</p>
               {card.tagline && (
@@ -1441,7 +1483,7 @@ export default function PublicCardClient({
               <span className="px-3 py-1 bg-[#FDE047] text-black font-black text-[10px] uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000000] rounded-lg rotate-[-1deg]">
                 ★ Verified NFC Identity
               </span>
-              <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+              <NetworkScorePill card={card} count={connectionsCount} show={card.show_network_score !== false} t={t} onClick={() => setIsScoreModalOpen(true)} />
             </div>
 
             {/* Profile Row */}
@@ -1593,7 +1635,7 @@ export default function PublicCardClient({
                     initialsClassName="text-2xl font-bold text-[#141413]"
                   />
                 </div>
-                <NetworkScorePill count={connectionsCount} show={card.show_network_score !== false} t={t} />
+                <NetworkScorePill card={card} count={connectionsCount} show={card.show_network_score !== false} t={t} onClick={() => setIsScoreModalOpen(true)} />
               </div>
 
               <div>
@@ -2004,6 +2046,130 @@ export default function PublicCardClient({
           url: `/${slug}`
         }}
       />
+
+      {/* Verified Networking Score & Blockchain NFT Modal */}
+      {isScoreModalOpen && (() => {
+        const scoreData = calculateNetworkingScore(card, connectionsCount);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+            <div 
+              className="w-full max-w-md bg-[#121214] text-white rounded-3xl border border-white/10 p-6 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8b5cf6] to-[#10b981] flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Verified Networking Identity</h3>
+                    <p className="text-[10px] text-gray-400">Cryptographically verifiable on-chain reputation</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsScoreModalOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Gauge / Score Box */}
+              <div 
+                className="p-5 rounded-2xl border text-center space-y-2 relative overflow-hidden"
+                style={{ backgroundColor: scoreData.tierBg, borderColor: scoreData.tierBorder }}
+              >
+                <span className="text-[10px] uppercase font-mono tracking-widest text-gray-300">Networking Score</span>
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-4xl font-black text-white">{scoreData.score}</span>
+                  <span className="text-sm text-gray-400 font-mono">/ 1,000 pts</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-white/10 text-xs font-bold text-white">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: scoreData.tierColor }} />
+                  <span>{scoreData.tier} Tier</span>
+                </div>
+              </div>
+
+              {/* Breakdown Grid */}
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
+                  Score Verification Breakdown
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between">
+                    <span className="text-gray-400">Profile Data</span>
+                    <span className="font-bold text-white">{scoreData.breakdown.profileCompleteness.current} / {scoreData.breakdown.profileCompleteness.max}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between">
+                    <span className="text-gray-400">AI Verification</span>
+                    <span className="font-bold text-[#10b981]">{card.is_verified ? "150 / 150" : "0 / 150"}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between">
+                    <span className="text-gray-400">Connections</span>
+                    <span className="font-bold text-white">{scoreData.breakdown.connections.current} / {scoreData.breakdown.connections.max}</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-between">
+                    <span className="text-gray-400">Card Taps</span>
+                    <span className="font-bold text-white">{scoreData.breakdown.views.current} / {scoreData.breakdown.views.max}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* On-Chain Base Sepolia Info */}
+              <div className="p-4 rounded-2xl bg-neutral-900 border border-white/[0.08] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                    <span className="text-xs font-bold text-white">Base Sepolia Blockchain</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-gray-400">Chain ID: 84532</span>
+                </div>
+                {nftData ? (
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-gray-400">Token ID:</span>
+                      <span className="font-mono text-white font-bold">#{nftData.token_id || "1"}</span>
+                    </div>
+                    {nftData.transaction_hash && (
+                      <a
+                        href={`https://sepolia.basescan.org/tx/${nftData.transaction_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-[#38bdf8] font-bold hover:underline pt-1"
+                      >
+                        <span>View BaseScan Proof</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    This card can be minted as a Soulbound dynamic NFT on Base Sepolia. The owner can mint it directly from their card dashboard.
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center gap-3">
+                <Link
+                  href="/auth"
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#8b5cf6] to-[#10b981] text-white text-xs font-bold text-center hover:brightness-110 transition shadow-md"
+                >
+                  Create Your Card
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsScoreModalOpen(false)}
+                  className="px-4 py-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-white text-xs font-bold transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Footer */}
       {!card.white_label && (

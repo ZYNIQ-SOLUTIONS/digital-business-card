@@ -39,6 +39,7 @@ import { IphoneCardShowcase } from "@/components/iphone-card-showcase";
 import { DEFAULT_PRODUCTS } from "@/lib/store/default-products";
 import { QRCodeSVG } from "qrcode.react";
 import { TestimonialsMarquee } from "@/components/testimonials-marquee";
+import { BlockchainNftShowcase } from "@/components/blockchain-nft-showcase";
 
 export const metadata: Metadata = {
   title: "IZN | The Last Business Card You Will Ever Need",
@@ -128,6 +129,10 @@ export default async function Home() {
             <a href="#interactive-exhibit" className="hover:text-white transition-colors flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#10b981]" />
               <span>Live Card Engine</span>
+            </a>
+            <a href="#blockchain-identity" className="hover:text-white transition-colors flex items-center gap-1.5 text-[#38bdf8]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#38bdf8]" />
+              <span>Web3 & Score</span>
             </a>
             <a href="#hardware-store" className="hover:text-white transition-colors flex items-center gap-1.5">
               <ShoppingBag className="w-3.5 h-3.5 text-amber-300" />
@@ -449,6 +454,13 @@ export default async function Home() {
             </div>
           </div>
 
+        </section>
+
+        {/* =========================================================================
+            SECTION: BLOCKCHAIN IDENTITY & NETWORKING SCORE (BASE SEPOLIA NFT)
+            ========================================================================= */}
+        <section id="blockchain-identity" className="w-full">
+          <BlockchainNftShowcase />
         </section>
 
         {/* =========================================================================
