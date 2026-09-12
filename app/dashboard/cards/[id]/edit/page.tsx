@@ -165,16 +165,33 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
-      // BYPASS SUPABASE STORAGE API (Due to 503 Schema Cache Error / Invalid Schema)
-      const base64data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(croppedBlob);
-      });
+      // Attempt to use Supabase Storage to avoid large payload errors
+      const fileName = `${user.id}-${Date.now()}.png`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, croppedBlob, {
+          contentType: 'image/png',
+          upsert: true
+        });
 
-      setCard((prev: any) => ({ ...prev, avatar_url: base64data }));
-      await supabase.from("cards").update({ avatar_url: base64data }).eq("id", id);
+      let finalUrl = "";
+      if (uploadError) {
+        console.warn("Avatars bucket upload failed, falling back to products bucket...", uploadError);
+        const { data: fallbackData, error: fallbackError } = await supabase.storage
+          .from('products')
+          .upload(`avatar-${fileName}`, croppedBlob, { contentType: 'image/png', upsert: true });
+          
+        if (fallbackError) throw new Error("Storage upload failed: " + fallbackError.message);
+        
+        const { data: publicUrlData } = supabase.storage.from('products').getPublicUrl(`avatar-${fileName}`);
+        finalUrl = publicUrlData.publicUrl;
+      } else {
+        const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        finalUrl = publicUrlData.publicUrl;
+      }
+
+      setCard((prev: any) => ({ ...prev, avatar_url: finalUrl }));
+      await supabase.from("cards").update({ avatar_url: finalUrl }).eq("id", id);
     } catch (err: any) {
       console.error("Avatar upload error:", err);
       setErrorMsg("Avatar upload failed: " + err.message);
@@ -199,16 +216,30 @@ export default function CardEditPage({ params }: CardEditPageProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
-      // BYPASS SUPABASE STORAGE API (Due to 503 Schema Cache Error)
-      const base64data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // Attempt to use Supabase Storage
+      const fileName = `${user.id}-bg-${Date.now()}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('backgrounds')
+        .upload(fileName, file, { upsert: true });
 
-      setCard((prev: any) => ({ ...prev, custom_background_image: base64data }));
-      await supabase.from("cards").update({ custom_background_image: base64data }).eq("id", id);
+      let finalUrl = "";
+      if (uploadError) {
+        console.warn("Backgrounds bucket upload failed, falling back to products bucket...", uploadError);
+        const { data: fallbackData, error: fallbackError } = await supabase.storage
+          .from('products')
+          .upload(`bg-${fileName}`, file, { upsert: true });
+          
+        if (fallbackError) throw new Error("Storage upload failed: " + fallbackError.message);
+        
+        const { data: publicUrlData } = supabase.storage.from('products').getPublicUrl(`bg-${fileName}`);
+        finalUrl = publicUrlData.publicUrl;
+      } else {
+        const { data: publicUrlData } = supabase.storage.from('backgrounds').getPublicUrl(fileName);
+        finalUrl = publicUrlData.publicUrl;
+      }
+
+      setCard((prev: any) => ({ ...prev, custom_background_image: finalUrl }));
+      await supabase.from("cards").update({ custom_background_image: finalUrl }).eq("id", id);
     } catch (err: any) {
       console.error("Background upload error:", err);
       setErrorMsg("Background upload failed: " + err.message);

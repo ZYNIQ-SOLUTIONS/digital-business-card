@@ -342,25 +342,6 @@ function DashboardContent() {
             </span>
           )}
         </button>
-        <button
-          onClick={() => {
-            setView("trash");
-            router.replace("/dashboard?tab=trash");
-          }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-            view === "trash"
-              ? "bg-white text-[#1D1D1F] shadow-sm border border-black/[0.06]"
-              : "text-gray-500 hover:text-[#1D1D1F]"
-          }`}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          Trash
-          {trashedCards.length > 0 && (
-            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${view === "trash" ? "bg-red-500 text-white" : "bg-red-100 text-red-600"}`}>
-              {trashedCards.length}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* ── ACTIVE CARDS VIEW ── */}

@@ -134,10 +134,6 @@ export default async function Home() {
               <ShieldCheck className="w-3.5 h-3.5 text-[#38bdf8]" />
               <span>Web3 & Score</span>
             </a>
-            <a href="#hardware-store" className="hover:text-white transition-colors flex items-center gap-1.5">
-              <ShoppingBag className="w-3.5 h-3.5 text-amber-300" />
-              <span>NFC Hardware</span>
-            </a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#enterprise" className="hover:text-white transition-colors">Enterprise</a>
             <a href="#testimonials" className="hover:text-white transition-colors">Reviews</a>
